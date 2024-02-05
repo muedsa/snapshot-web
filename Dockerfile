@@ -11,7 +11,7 @@ RUN git clone https://github.com/muedsa/snapshot && \
 FROM openjdk:11
 EXPOSE 8080:8080
 RUN apt update && \
-    apt install libgl1-mesa-glx && \
+    apt -y install libgl1-mesa-glx && \
     mkdir /app
 
 COPY --from=build /home/gradle/src/build/libs/*.jar /app/snapshot-web-all.jar
