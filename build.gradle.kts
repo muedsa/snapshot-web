@@ -26,7 +26,7 @@ group = "com.muedsa.snapshot-web"
 version = "0.0.0"
 
 application {
-    mainClass.set("com.muedsa.ApplicationKt")
+    mainClass.set("com.muedsa.web.ApplicationKt")
 
     val isDevelopment: Boolean = project.ext.has("development")
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")
