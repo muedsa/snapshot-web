@@ -1,9 +1,9 @@
-FROM gradle:7-jdk11 AS build
+FROM gradle:8.6.0-jdk11 AS build
 COPY --chown=gradle:gradle . /home/gradle/src
 WORKDIR /home/gradle/src
 RUN git clone https://github.com/muedsa/snapshot && \
     cd snapshot && \
-    gradle buildJar && \
+    gradle buildJar --no-daemon && \
     cd .. \
     cp -f snapshot/build/libs/*.jar libs && \
     gradle buildFatJar --no-daemon
