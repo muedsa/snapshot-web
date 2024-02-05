@@ -13,5 +13,6 @@ EXPOSE 8080:8080
 RUN apt update && \
     apt install libgl1-mesa-glx && \
     mkdir /app
+
 COPY --from=build /home/gradle/src/build/libs/*.jar /app/snapshot-web-all.jar
 ENTRYPOINT ["java","-jar","/app/snapshot-web-all.jar"]
