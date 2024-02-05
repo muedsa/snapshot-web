@@ -3,7 +3,7 @@ COPY --chown=gradle:gradle . /home/gradle/src
 WORKDIR /home/gradle/src
 RUN git clone https://github.com/muedsa/snapshot && \
     cd snapshot && \
-    gradle buildJar --no-daemon && \
+    gradle jar --no-daemon && \
     cd .. \
     cp -f snapshot/build/libs/*.jar libs && \
     gradle buildFatJar --no-daemon
