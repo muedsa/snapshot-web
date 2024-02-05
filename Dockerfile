@@ -4,10 +4,12 @@ WORKDIR /home/gradle/src
 RUN git clone https://github.com/muedsa/snapshot && \
     cd snapshot && \
     gradle jar --no-daemon && \
+    echo 'Build jar:' && \
     ls build/libs && \
     cd .. && \
     cp -f snapshot/build/libs/*.jar libs/ && \
     gradle buildFatJar --no-daemon && \
+    echo 'Build jar:' && \
     ls build/libs
 
 FROM openjdk:11
