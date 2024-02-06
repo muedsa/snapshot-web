@@ -13,9 +13,15 @@ RUN git clone https://github.com/muedsa/snapshot && \
     ls build/libs
 
 FROM openjdk:11
+ENV TZ=Asia/Shanghai
 EXPOSE 8080:8080
-RUN apt-get update && \
-    apt-get -y install libgl1-mesa-glx fonts-wqy-zenhei fonts-wqy-microhei fonts-arphic-ukai fonts-arphic-uming && \
+RUN ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime && \
+    echo ${TZ} > /etc/timezone &&\
+    dpkg-reconfigure --frontend noninteractive tzdata && \
+    rm -rf /var/lib/apt/lists/* && \
+    DEBIAN_FRONTEND=noninteractive apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get -y install libgl1-mesa-glx \
+    fonts-wqy-zenhei fonts-wqy-microhei fonts-arphic-ukai fonts-arphic-uming && \
     mkdir /app
 COPY fonts/ /usr/share/fonts
 COPY --from=build /home/gradle/src/build/libs/*.jar /app/snapshot-web-all.jar
