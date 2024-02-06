@@ -1,6 +1,8 @@
 package com.muedsa.snapshot.web.plugins
 
+import com.muedsa.snapshot.web.FontService
 import com.muedsa.snapshot.web.ParseService
+import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.ratelimit.*
 import io.ktor.server.request.*
@@ -33,6 +35,10 @@ fun Application.configureRouting() {
                     joiner.add(FontMgr.default.getFamilyName(i))
                 }
                 call.respondText(joiner.toString())
+            }
+
+            get("/fonts.png") {
+                call.respondBytes(bytes = FontService.drawFonts(), contentType = ContentType.Image.PNG)
             }
         }
     }
