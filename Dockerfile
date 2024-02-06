@@ -14,9 +14,9 @@ RUN git clone https://github.com/muedsa/snapshot && \
 
 FROM openjdk:11
 EXPOSE 8080:8080
-RUN apt update && \
-    apt -y install libgl1-mesa-glx && \
+RUN apt-get update && \
+    apt-get -y install libgl1-mesa-glx fonts-wqy-zenhei fonts-wqy-micronhei fonts-arphic-ukai fonts-arphic-uming && \
     mkdir /app
-
+COPY fonts/ /usr/share/fonts
 COPY --from=build /home/gradle/src/build/libs/*.jar /app/snapshot-web-all.jar
 ENTRYPOINT ["java","-jar","/app/snapshot-web-all.jar"]
