@@ -28,7 +28,7 @@ object FontService {
                             fontStyle = FontStyle.BOLD
                         )
                         SimpleText(
-                            text = "原神, 启动！🤣🤣\nGenshin Impact, Launch！\uD83E\uDD23\uD83E\uDD23",
+                            text = "原神, 启动！\uD83E\uDD23\uD83E\uDD23\n原神, 啓動！\uD83E\uDD23\uD83E\uDD23\nGenshin Impact, Launch！\uD83E\uDD23\uD83E\uDD23",
                             color = Color.BLACK,
                             fontSize = 35f,
                             fontFamilyName = familyNameArr
