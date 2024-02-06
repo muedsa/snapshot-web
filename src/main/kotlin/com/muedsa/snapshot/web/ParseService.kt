@@ -8,6 +8,8 @@ import com.muedsa.snapshot.rendering.box.BoxConstraints
 import com.muedsa.snapshot.rendering.flex.CrossAxisAlignment
 import com.muedsa.snapshot.widget.*
 import io.ktor.http.*
+import io.ktor.server.application.*
+import io.ktor.server.plugins.callid.*
 import org.jetbrains.skia.Color
 import org.jetbrains.skia.EncodedImageFormat
 import org.jetbrains.skia.FontStyle
@@ -17,7 +19,7 @@ val CONTENT_TYPE_WEBP = ContentType.parse("image/webp")
 
 object ParseService {
 
-    fun parse(text: String): ImageResponse {
+    fun parse(text: String, call: ApplicationCall? = null): ImageResponse {
         var success = false
         var throwable: Throwable? = null
         var contentType: ContentType
@@ -35,7 +37,7 @@ object ParseService {
         } catch (t: Throwable) {
             throwable = t
             contentType = ContentType.Image.PNG
-            buildErrorImage(t, text)
+            buildErrorImage(t, text, call)
         }
         return ImageResponse(
             success = success,
@@ -46,7 +48,8 @@ object ParseService {
     }
 
     @OptIn(ExperimentalStdlibApi::class)
-    private fun buildErrorImage(throwable: Throwable, text: String): ByteArray {
+    private fun buildErrorImage(throwable: Throwable, text: String, call: ApplicationCall? = null): ByteArray {
+        val traceId: String? = call?.callId
         val errorText: String? = if (throwable is ParseException) {
             val start = if (throwable.pos.pos > 30) {
                 throwable.pos.pos - 30
@@ -67,6 +70,13 @@ object ParseService {
                     padding = EdgeInsets.all(20f)
                 ) {
                     Column(crossAxisAlignment = CrossAxisAlignment.START) {
+                        if (!traceId.isNullOrEmpty()) {
+                            Padding(
+                                padding = EdgeInsets.only(bottom = 20f)
+                            ) {
+                                SimpleText(text = "TraceId: $traceId")
+                            }
+                        }
                         SimpleText("Error", color = Color.RED, fontSize = 40f, fontStyle = FontStyle.BOLD)
                         if (!errorText.isNullOrEmpty()) {
                             Padding(

@@ -20,7 +20,7 @@ fun Application.configureRouting() {
         rateLimit(RateLimitName("snapshot")) {
             post("/snapshot") {
                 val req: String = call.receiveText()
-                val resp = ParseService.parse(req)
+                val resp = ParseService.parse(req, call = this.call)
                 call.respondBytes(bytes = resp.data, contentType = resp.contentType)
                 if (!resp.success) {
                     call.application.environment.log.error("req: \n$req")
