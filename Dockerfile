@@ -5,7 +5,8 @@ RUN git clone https://github.com/muedsa/snapshot && \
     cd snapshot && \
     gradle jar --no-daemon && \
     cd .. && \
-    cp -f --path snapshot/build/libs/*.jar /snapshot-web/libs/ && \
+    if [ ! -d "/home/gradle/snapshot-web/libs" ]; then mkdir /home/gradle/snapshot-web/libs; fi && \
+    cp -f snapshot/build/libs/*.jar snapshot-web/libs/ && \
     gradle buildFatJar --no-daemon
 
 FROM openjdk:11
