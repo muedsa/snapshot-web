@@ -22,5 +22,5 @@ RUN ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime && \
     fonts-wqy-zenhei fonts-wqy-microhei fonts-arphic-ukai fonts-arphic-uming && \
     mkdir /app
 COPY fonts/ /usr/share/fonts
-COPY --from=build /home/gradle/src/build/libs/*.jar /app/snapshot-web-all.jar
+COPY --from=build /home/gradle/snapshot-web/build/libs/*.jar /app/snapshot-web-all.jar
 ENTRYPOINT ["java","-jar","/app/snapshot-web-all.jar"]
