@@ -1,0 +1,1 @@
+robocopy ../snapshot/build/libs/ ./libs
