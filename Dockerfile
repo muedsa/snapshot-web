@@ -1,12 +1,11 @@
 FROM gradle:8.6.0-jdk11 AS build
-COPY --chown=gradle:gradle . /home/gradle/src
-WORKDIR /home/gradle/src
+COPY --chown=gradle:gradle . /home/gradle/snapshot-web
+WORKDIR /home/gradle
 RUN git clone https://github.com/muedsa/snapshot && \
     cd snapshot && \
     gradle jar --no-daemon && \
-    echo 'Build jar:' && \
-    ls build/libs && \
     cd .. && \
+    if [ ! -d "/home/gradle/snapshot-web/libs" ]; then mkdir /home/gradle/snapshot-web/libs; fi && \
     cp -f snapshot/build/libs/*.jar libs/ && \
     gradle buildFatJar --no-daemon && \
     echo 'Build jar:' && \
