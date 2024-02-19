@@ -16,6 +16,7 @@ var targetArch = when (val osArch: String = System.getProperty("os.arch")) {
 val ktor_version: String by project
 val kotlin_version: String by project
 val logback_version: String by project
+val prometheus_version: String by project
 
 plugins {
     kotlin("jvm") version "1.9.22"
@@ -50,6 +51,8 @@ dependencies {
     implementation("io.ktor:ktor-server-rate-limit:$ktor_version")
     implementation("io.ktor:ktor-server-call-logging:$ktor_version")
     implementation("io.ktor:ktor-server-call-id:$ktor_version")
+    implementation("io.ktor:ktor-server-metrics-micrometer:$ktor_version")
+    implementation("io.micrometer:micrometer-registry-prometheus:$prometheus_version")
 
     implementation("com.muedsa.snapshot:snapshot:0.0.0-SNAPSHOT")
     implementation("org.jetbrains.skiko:skiko-awt-runtime-$targetOs-$targetArch:0.0.0-SNAPSHOT")

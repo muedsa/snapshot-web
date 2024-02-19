@@ -15,5 +15,6 @@ fun Application.module() {
     configureCallId()
     configureRateLimit()
     configureHTTP()
+    configureMetrics()
     configureRouting()
 }
