@@ -47,6 +47,8 @@ dependencies {
     implementation("io.ktor:ktor-server-netty-jvm")
     implementation("ch.qos.logback:logback-classic:$logback_version")
 
+    implementation("com.github.loki4j:loki-logback-appender:1.4.2")
+
     // ktor plugin
     implementation("io.ktor:ktor-server-rate-limit:$ktor_version")
     implementation("io.ktor:ktor-server-call-logging:$ktor_version")
