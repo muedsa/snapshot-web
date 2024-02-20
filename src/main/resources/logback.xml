@@ -14,10 +14,10 @@
         </http>
         <format>
             <label>
-                <pattern>app=snapshot-web,host=${HOSTNAME},level=%level</pattern>
+                <pattern>app=snapshot-web,host=${HOSTNAME},level=%level,trace-id=%X{call-id}</pattern>
             </label>
             <message>
-                <pattern>l=%level h=${HOSTNAME} c=%logger{20} t=%thread | %msg %ex</pattern>
+                <pattern>l=%level h=${HOSTNAME} c=%logger{20} t=%thread id=%X{call-id} | %msg %ex</pattern>
             </message>
             <sortByTime>true</sortByTime>
         </format>
