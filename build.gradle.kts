@@ -17,6 +17,8 @@ val ktor_version: String by project
 val kotlin_version: String by project
 val logback_version: String by project
 val prometheus_version: String by project
+val loki4j_version: String by project
+val httpclient_version: String by project
 
 plugins {
     kotlin("jvm") version "1.9.22"
@@ -47,7 +49,8 @@ dependencies {
     implementation("io.ktor:ktor-server-netty-jvm")
     implementation("ch.qos.logback:logback-classic:$logback_version")
 
-    implementation("com.github.loki4j:loki-logback-appender:1.4.2")
+    implementation("com.github.loki4j:loki-logback-appender:$loki4j_version")
+    implementation("org.apache.httpcomponents:httpclient:$httpclient_version")
 
     // ktor plugin
     implementation("io.ktor:ktor-server-rate-limit:$ktor_version")

@@ -5,7 +5,7 @@
         </encoder>
     </appender>
     <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
-        <http>
+        <http class="com.github.loki4j.logback.ApacheHttpSender">
             <url>${LOKI_HOST}/loki/api/v1/push</url>
             <auth>
                 <username>${LOKI_HTTP_AUTH_NAME}</username>
