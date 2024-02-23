@@ -17,16 +17,17 @@ fun Application.configureRouting() {
 
         staticResources("/", "/static")
 
-        rateLimit(RateLimitName("snapshot")) {
-            post("/snapshot") {
-                val req: String = call.receiveText()
-                val resp = ParseService.parse(req, call = this.call)
-                call.respondBytes(bytes = resp.data, contentType = resp.contentType)
-                if (!resp.success) {
-                    call.application.environment.log.error("req: \n$req")
-                    call.application.environment.log.error("parse error", resp.throwable)
-                }
+        post("/snapshot") {
+            val req: String = call.receiveText()
+            val resp = ParseService.parse(req, call = this.call)
+            call.respondBytes(bytes = resp.data, contentType = resp.contentType)
+            if (!resp.success) {
+                call.application.environment.log.error("req: \n$req")
+                call.application.environment.log.error("parse error", resp.throwable)
             }
+        }
+
+        rateLimit(RateLimitName("snapshot")) {
 
             get("/fonts") {
                 val joiner = StringJoiner("\n")

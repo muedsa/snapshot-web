@@ -54,13 +54,13 @@
         const btn = document.querySelector('#submit');
         const textarea = document.querySelector('#textarea');
         const canvas = document.querySelector('#canvas');
-        canvas.width = 800;
-        canvas.height = 800;
+        canvas.width = 500;
+        canvas.height = 500;
         const ctx = canvas.getContext('2d');
-        ctx.textBaseline = 'top';
-        ctx.font = '15px serif';
         function submitSnapshot() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.textBaseline = 'top';
+            ctx.font = '15px serif';
             ctx.fillText('Loading', 0, 0);
             fetch('/snapshot', {
                 method: 'post',
@@ -71,6 +71,8 @@
                     const image = new Image();
                     image.src = reader.result;
                     image.onload = () => {
+                        canvas.width = image.naturalWidth;
+                        canvas.height = image.naturalHeight;
                         ctx.clearRect(0, 0, canvas.width, canvas.height);
                         ctx.drawImage(image, 0, 0, image.naturalWidth, image.naturalHeight);
                     }
