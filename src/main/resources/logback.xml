@@ -1,7 +1,7 @@
 <configuration>
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%d{YYYY-MM-dd HH:mm:ss.SSS} [%thread] %X{call-id} %-5level %logger{36} - %msg%n</pattern>
+            <pattern>%d{YYYY-MM-dd HH:mm:ss.SSS} [%thread] %X{traceId} %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
     <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
@@ -14,10 +14,10 @@
         </http>
         <format>
             <label>
-                <pattern>app=snapshot-web,host=${HOSTNAME},level=%level</pattern>
+                <pattern>app=snapshot-web,host=${HOSTNAME},level=%level,trace=%mdc{traceId:-NONE}</pattern>
             </label>
             <message>
-                <pattern>l=%level h=${HOSTNAME} c=%logger{20} t=%thread i=%X{call-id} | %msg %ex</pattern>
+                <pattern>l=%level h=${HOSTNAME} c=%logger{20} t=%thread i=%X{traceId:-NONE} | %msg %ex</pattern>
             </message>
             <sortByTime>true</sortByTime>
         </format>
