@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Snapshot Web Demo</title>
+    <style>
+        .ui-warp {
+            width: 100%;
+            display: flex;
+        }
+        .ui-left #textarea {
+            width: 600px;
+            height: 600px;
+        }
+        .ui-right {
+            margin-left: 15px;
+        }
+    </style>
+</head>
+<body>
+    <h2><a href="https://github.com/muedsa/snapshot" target="_blank">Snapshot</a> Web Demo</h2>
+    <a href="https://github.com/muedsa/snapshot-web" target="_blank">https://github.com/muedsa/snapshot-web</a>
+    <div class="ui-warp">
+        <div class="ui-left">
+            <textarea id="textarea"><Snapshot background="#FFFFFFFF" type="png">
+    <Column>
+        <Row>
+            <Container color="#FF0000" width="200" height="200" />
+            <Container color="#FFFFFF" width="200" height="200">
+                <Text color="#0000FF" fontSize="20">哈哈 233
+                    <![CDATA[ken_test <a></a> 233 哈哈]]>哈🤣🤣🤣
+                </Text>
+            </Container>
+        </Row>
+        <Row>
+            <Image width="200" height="200" url="https://samples-files.com/samples/Images/png/480-360-sample.png"
+                fit="COVER" />
+            <Container color="#FFFF00" width="200" height="200" />
+        </Row>
+    </Column>
+</Snapshot>
+            </textarea>
+            <div>
+                <button id="submit">Submit</button>
+            </div>
+        </div>
+        <div class="ui-right">
+            <canvas class="" id="canvas">
+                你的浏览器不支持 canvas，请升级你的浏览器。
+            </canvas>
+        </div>
+    </div>
+    <script>
+        const btn = document.querySelector('#submit');
+        const textarea = document.querySelector('#textarea');
+        const canvas = document.querySelector('#canvas');
+        canvas.width = 800;
+        canvas.height = 800;
+        const ctx = canvas.getContext('2d');
+        ctx.textBaseline = 'top';
+        ctx.font = '15px serif';
+        function submitSnapshot() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillText('Loading', 0, 0);
+            fetch('/snapshot', {
+                method: 'post',
+                body: textarea.value.trim()
+            }).then(resp => resp.blob()).then(blob => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const image = new Image();
+                    image.src = reader.result;
+                    image.onload = () => {
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(image, 0, 0, image.naturalWidth, image.naturalHeight);
+                    }
+                }
+                reader.readAsDataURL(blob);
+            }).catch(e => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                console.log(e);
+                ctx.fillText('error, please see more info from console', 0, 0);
+            });
+        }
+
+        btn.addEventListener('click', submitSnapshot);
+        document.addEventListener('DOMContentLoaded', submitSnapshot);
+    </script>
+</body>
+</html>

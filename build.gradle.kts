@@ -14,6 +14,7 @@ var targetArch = when (val osArch: String = System.getProperty("os.arch")) {
 }
 
 val ktor_version: String by project
+val kotlin_css_version: String by project
 val kotlin_version: String by project
 val logback_version: String by project
 val prometheus_version: String by project
@@ -61,7 +62,6 @@ dependencies {
 
     implementation("com.muedsa.snapshot:snapshot:0.0.0-SNAPSHOT")
     implementation("org.jetbrains.skiko:skiko-awt-runtime-$targetOs-$targetArch:0.0.0-SNAPSHOT")
-
 
     testImplementation("io.ktor:ktor-server-tests-jvm")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")

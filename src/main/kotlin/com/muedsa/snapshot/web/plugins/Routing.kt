@@ -4,6 +4,7 @@ import com.muedsa.snapshot.web.FontService
 import com.muedsa.snapshot.web.ParseService
 import io.ktor.http.*
 import io.ktor.server.application.*
+import io.ktor.server.http.content.*
 import io.ktor.server.plugins.ratelimit.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
@@ -13,9 +14,8 @@ import java.util.StringJoiner
 
 fun Application.configureRouting() {
     routing {
-        get("/") {
-            call.respondText("OK!")
-        }
+
+        staticResources("/", "/static")
 
         rateLimit(RateLimitName("snapshot")) {
             post("/snapshot") {
