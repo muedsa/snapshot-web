@@ -22,7 +22,7 @@ val loki4j_version: String by project
 val httpclient_version: String by project
 
 plugins {
-    kotlin("jvm") version "1.9.22"
+    kotlin("jvm") version "1.9.23"
     id("io.ktor.plugin") version "2.3.8"
 }
 
