@@ -1,1 +1,1 @@
-robocopy ../snapshot/build/libs/ ./libs
+robocopy ../snapshot/*/build/libs/ ./libs

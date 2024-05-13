@@ -60,7 +60,8 @@ dependencies {
     implementation("io.ktor:ktor-server-metrics-micrometer:$ktor_version")
     implementation("io.micrometer:micrometer-registry-prometheus:$prometheus_version")
 
-    implementation("com.muedsa.snapshot:snapshot:0.0.0-SNAPSHOT")
+    implementation("com.muedsa.snapshot:snapshot-core:0.0.0-SNAPSHOT")
+    implementation("com.muedsa.snapshot:snapshot-parser:0.0.0-SNAPSHOT")
     implementation("org.jetbrains.skiko:skiko-awt-runtime-$targetOs-$targetArch:0.0.0-SNAPSHOT")
 
     testImplementation("io.ktor:ktor-server-tests-jvm")
