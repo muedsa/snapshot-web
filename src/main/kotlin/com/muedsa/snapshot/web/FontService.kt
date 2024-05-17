@@ -2,14 +2,15 @@ package com.muedsa.snapshot.web
 
 import com.muedsa.geometry.EdgeInsets
 import com.muedsa.snapshot.SnapshotPNG
-import com.muedsa.snapshot.paint.text.SimpleTextPainter
+import com.muedsa.snapshot.paint.text.TextPainter
+import com.muedsa.snapshot.paint.text.TextStyle
 import com.muedsa.snapshot.rendering.flex.CrossAxisAlignment
 import com.muedsa.snapshot.widget.*
+import com.muedsa.snapshot.widget.text.Text
 import org.jetbrains.skia.Color
 import org.jetbrains.skia.FontMgr
 import org.jetbrains.skia.FontStyle
 
-@OptIn(ExperimentalStdlibApi::class)
 object FontService {
 
     // TODO should be cached
@@ -20,18 +21,22 @@ object FontService {
                 Column(crossAxisAlignment = CrossAxisAlignment.START) {
                     for (i in 0 until familiesCount) {
                         val familyName = FontMgr.default.getFamilyName(i)
-                        val familyNameArr = arrayOf(familyName)
-                        SimpleText(
+                        val familyNameArr = listOf(familyName)
+                        Text(
                             text = familyName,
-                            color = Color.RED,
-                            fontSize = 40f,
-                            fontStyle = FontStyle.BOLD
+                            style = TextStyle(
+                                color = Color.RED,
+                                fontSize = 40f,
+                                fontStyle = FontStyle.BOLD
+                            )
                         )
-                        SimpleText(
+                        Text(
                             text = "原神, 启动！\uD83E\uDD23\uD83E\uDD23\n原神, 啓動！\uD83E\uDD23\uD83E\uDD23\nGenshin Impact, Launch！\uD83E\uDD23\uD83E\uDD23",
-                            color = Color.BLACK,
-                            fontSize = 35f,
-                            fontFamilyName = familyNameArr
+                            style = TextStyle(
+                                color = Color.BLACK,
+                                fontSize = 35f,
+                                fontFamilies = familyNameArr
+                            )
                         )
                         SizedBox(height = 20f)
                     }
@@ -40,10 +45,10 @@ object FontService {
         }
     }
 
-    fun setDefaultFamilyNames(familyNames: Array<String>?) {
-        SimpleTextPainter.DEFAULT_FONT_FAMILY_NAME = familyNames
+    fun setDefaultFamilyNames(familyNames: List<String>?) {
+        TextPainter.DEFAULT_TEXT_STYLE.fontFamilies = familyNames
         familyNames?.let {
-            SimpleTextPainter.FONT_COLLECTION.setDefaultFontManager(FontMgr.default, familyNames[0])
+            TextPainter.FONT_COLLECTION.setDefaultFontManager(FontMgr.default, familyNames[0])
         }
     }
 }

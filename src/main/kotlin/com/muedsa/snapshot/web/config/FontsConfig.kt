@@ -7,6 +7,6 @@ import io.ktor.server.config.*
 fun Application.configureFonts() {
     val fontFamilyNames = environment.config.tryGetStringList("snapshot.font-family-names")
     if (!fontFamilyNames.isNullOrEmpty()) {
-        FontService.setDefaultFamilyNames(fontFamilyNames.toTypedArray())
+        FontService.setDefaultFamilyNames(fontFamilyNames)
     }
 }

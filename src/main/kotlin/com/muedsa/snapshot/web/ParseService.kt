@@ -2,11 +2,13 @@ package com.muedsa.snapshot.web
 
 import com.muedsa.geometry.EdgeInsets
 import com.muedsa.snapshot.SnapshotPNG
+import com.muedsa.snapshot.paint.text.TextStyle
 import com.muedsa.snapshot.parser.ParseException
 import com.muedsa.snapshot.parser.Parser
 import com.muedsa.snapshot.rendering.box.BoxConstraints
 import com.muedsa.snapshot.rendering.flex.CrossAxisAlignment
 import com.muedsa.snapshot.widget.*
+import com.muedsa.snapshot.widget.text.Text
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.callid.*
@@ -47,7 +49,6 @@ object ParseService {
         )
     }
 
-    @OptIn(ExperimentalStdlibApi::class)
     private fun buildErrorImage(throwable: Throwable, text: String, call: ApplicationCall? = null): ByteArray {
         val traceId: String? = call?.callId
         val errorText: String? = if (throwable is ParseException) {
@@ -74,21 +75,33 @@ object ParseService {
                             Padding(
                                 padding = EdgeInsets.only(bottom = 20f)
                             ) {
-                                SimpleText(text = "TraceId: $traceId")
+                                Text(text = "TraceId: $traceId")
                             }
                         }
-                        SimpleText("Error", color = Color.RED, fontSize = 40f, fontStyle = FontStyle.BOLD)
+                        Text(
+                            text = "Error",
+                            style = TextStyle(
+                                color = Color.RED,
+                                fontSize = 40f,
+                                fontStyle = FontStyle.BOLD
+                            )
+                        )
                         if (!errorText.isNullOrEmpty()) {
                             Padding(
                                 padding = EdgeInsets.only(top = 20f)
                             ) {
-                                SimpleText(text = errorText, color = Color.RED)
+                                Text(
+                                    text = errorText,
+                                    style = TextStyle(
+                                        color = Color.RED
+                                    )
+                                )
                             }
                         }
                         Padding(
                             padding = EdgeInsets.only(top = 20f)
                         ) {
-                            SimpleText(text = throwable.stackTraceToString().replace("\t", ""))
+                            Text(text = throwable.stackTraceToString().replace("\t", ""))
                         }
                     }
                 }
