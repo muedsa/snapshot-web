@@ -4,27 +4,8 @@
             <pattern>%d{YYYY-MM-dd HH:mm:ss.SSS} [%thread] %X{traceId} %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
-    <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
-        <http class="com.github.loki4j.logback.ApacheHttpSender">
-            <url>${LOKI_HOST}/loki/api/v1/push</url>
-            <auth>
-                <username>${LOKI_HTTP_AUTH_NAME}</username>
-                <password>${LOKI_HTTP_AUTH_PASSWORD}</password>
-            </auth>
-        </http>
-        <format>
-            <label>
-                <pattern>app=snapshot-web,host=${HOSTNAME},level=%level,trace=%mdc{traceId:-NONE}</pattern>
-            </label>
-            <message>
-                <pattern>l=%level h=${HOSTNAME} c=%logger{20} t=%thread i=%X{traceId:-NONE} | %msg %ex</pattern>
-            </message>
-            <sortByTime>true</sortByTime>
-        </format>
-    </appender>
-    <root level="${KTOR_LOG_LEVEL}">
+    <root level="INFO">
         <appender-ref ref="STDOUT"/>
-        <appender-ref ref="LOKI"/>
     </root>
     <logger name="org.eclipse.jetty" level="INFO"/>
     <logger name="io.netty" level="INFO"/>
