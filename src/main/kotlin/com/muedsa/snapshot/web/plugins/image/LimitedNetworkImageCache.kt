@@ -19,7 +19,12 @@ class LimitedNetworkImageCache(
     private var num: Int = 0
 
     @Synchronized
-    override fun getImage(url: String): Image {
+    override fun getImage(url: String, noCache: Boolean): Image {
+        if (noCache) {
+            val image = Image.makeFromEncoded(getImageOverHttp(url))
+            num++
+            return image
+        }
         synchronized(memoryImageCache) {
             if (debug) println("Thread[${Thread.currentThread().name}] try get image from cache: $url")
             var image = memoryImageCache[url]
@@ -54,7 +59,7 @@ class LimitedNetworkImageCache(
         check(num + 1 <= maxImageNum) { "Exceeded maximum number [$maxImageNum] of image http requests" }
         try {
             return URL(url).openStream().use { LimitedImageInputStream(it, maxSingleImageSize).readAllBytes() }
-        } catch (e: FileNotFoundException) {
+        } catch (_: FileNotFoundException) {
             throw IllegalStateException("Get http 404 from $url")
         }
     }
