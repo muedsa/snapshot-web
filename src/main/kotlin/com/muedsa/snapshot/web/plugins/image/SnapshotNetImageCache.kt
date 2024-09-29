@@ -6,6 +6,7 @@ import io.ktor.server.application.*
 import io.ktor.server.config.tryGetString
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
+import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 
 private var MEMORY_IMAGE_CACHE: MemoryImageCache? = null
@@ -51,6 +52,11 @@ fun Application.configureNetImageCache() {
             html += "</ul>"
             html += "<div>totalSize=${totalSize}</div>"
             call.respondText(html, contentType = ContentType.Text.Html)
+        }
+
+        post("/cacheClear") {
+            getMemoryImageCache()?.clear()
+            call.respondText("OK", contentType = ContentType.Text.Plain)
         }
     }
 }
