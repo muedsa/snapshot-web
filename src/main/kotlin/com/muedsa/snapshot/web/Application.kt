@@ -2,6 +2,7 @@ package com.muedsa.snapshot.web
 
 import com.muedsa.snapshot.web.config.configureFonts
 import com.muedsa.snapshot.web.plugins.*
+import com.muedsa.snapshot.web.plugins.image.configureNetImageCache
 import io.ktor.server.application.*
 import io.ktor.server.netty.*
 
@@ -17,4 +18,5 @@ fun Application.module() {
     configureHTTP()
     configureMetrics()
     configureRouting()
+    configureNetImageCache()
 }
