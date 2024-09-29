@@ -34,18 +34,22 @@ fun Application.configureNetImageCache() {
                 call.respondText("cache is null", contentType = ContentType.Text.Plain)
             }
             val cache = temp!!
-            var html = "<div> cacheNum=${cache.size}, limit=${cache.limit}</div>"
+            var html = "<div> cacheNum=${cache.size}, cacheLimit=${cache.limit}</div>"
             html += "<ul>"
+            var totalSize = 0
             cache.forEach {
+                val size = it.value.imageInfo.computeMinByteSize()
                 html += """
                     <li>
-                        <a href="${it.key}">${it.key}</a>
+                        <a href="${it.key}">${it.key}</a> $size bytes.
                         <br>
                         <img src="${it.key}">
                     </li>
                 """.trimIndent()
+                totalSize += size
             }
             html += "</ul>"
+            html += "<div>totalSize=${totalSize}</div>"
             call.respondText(html, contentType = ContentType.Text.Html)
         }
     }
