@@ -24,7 +24,7 @@ fun Application.configureNetImageCache() {
             memoryImageCache = memoryImageCache!!,
             maxImageNum = maxImageNumOnce,
             maxSingleImageSize = maxSingleImageSize,
-            debug = environment.developmentMode
+            debug = developmentMode
         )
     }
 
