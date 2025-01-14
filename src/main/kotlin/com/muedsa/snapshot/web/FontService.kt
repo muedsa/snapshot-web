@@ -27,7 +27,8 @@ object FontService {
                             style = TextStyle(
                                 color = Color.RED,
                                 fontSize = 40f,
-                                fontStyle = FontStyle.BOLD
+                                fontStyle = FontStyle.BOLD,
+                                fontFamilies = familyNameArr
                             )
                         )
                         Text(
