@@ -23,7 +23,7 @@ val httpclient_version: String by project
 
 plugins {
     kotlin("jvm") version "2.1.20"
-    id("io.ktor.plugin") version "3.1.2"
+    id("io.ktor.plugin") version "3.3.3"
 }
 
 group = "com.muedsa.snapshot-web"
