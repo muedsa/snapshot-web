@@ -1,0 +1,38 @@
+---
+title: 枚举速查
+description: 布局、绘制、图片、文本和解析器常用枚举值。
+---
+
+| 枚举 | 可用值 |
+| --- | --- |
+| `Axis` | `HORIZONTAL`、`VERTICAL` |
+| `MainAxisAlignment` | `START`、`END`、`CENTER`、`SPACE_BETWEEN`、`SPACE_AROUND`、`SPACE_EVENLY` |
+| `CrossAxisAlignment` | `START`、`END`、`CENTER`、`STRETCH`、`BASELINE` |
+| `MainAxisSize` | `MIN`、`MAX` |
+| `FlexFit` | `TIGHT`、`LOOSE` |
+| `VerticalDirection` | `UP`、`DOWN` |
+| `StackFit` | `LOOSE`、`EXPAND`、`PASSTHROUGH` |
+| `ClipBehavior` | `NONE`、`HARD_EDGE`、`ANTI_ALIAS`、`ANTI_ALIAS_WITH_SAVE_LAYER` |
+| `DecorationPosition` | `BACKGROUND`、`FOREGROUND` |
+| `BoxShape` | `RECTANGLE`、`CIRCLE` |
+| `BorderStyle` | `NONE`、`SOLID` |
+| `BoxFit` | `FILL`、`CONTAIN`、`COVER`、`FIT_WIDTH`、`FIT_HEIGHT`、`NONE`、`SCALE_DOWN` |
+| `ImageRepeat` | `REPEAT`、`REPEAT_X`、`REPEAT_Y`、`NO_REPEAT` |
+| `TextOverflow` | `CLIP`、`FADE`、`ELLIPSIS`、`VISIBLE` |
+| `TextWidthBasis` | `PARENT`、`LONGESTLINE` |
+| `Direction` | `LTR`、`RTL` |
+| `BaselineMode` | `ALPHABETIC`、`IDEOGRAPHIC` |
+| `PlaceholderAlignment` | `BASELINE`、`ABOVE_BASELINE`、`BELOW_BASELINE`、`TOP`、`BOTTOM`、`MIDDLE` |
+| `ContainerMode` | `NONE`、`SINGLE`、`MULTIPLE` |
+| `FontStyle` | `NORMAL`、`BOLD`、`ITALIC`、`BOLD_ITALIC` |
+| `FilterBlurMode` | `NORMAL`、`SOLID`、`OUTER`、`INNER` |
+
+## BoxAlignment
+
+预置常量：`TOP_LEFT`、`TOP_CENTER`、`TOP_RIGHT`、`CENTER_LEFT`、`CENTER`、`CENTER_RIGHT`、`BOTTOM_LEFT`、`BOTTOM_CENTER`、`BOTTOM_RIGHT`。
+
+它不是枚举，也可以通过 `BoxAlignment(x, y)` 创建自定义对齐，其中 x、y 通常位于 -1 到 1：`(-1,-1)` 是左上，`(0,0)` 是中心，`(1,1)` 是右下。
+
+## AlignmentDirectional
+
+方向感知版本包含：`TOP_START`、`TOP_CENTER`、`TOP_END`、`CENTER_START`、`CENTER`、`CENTER_END`、`BOTTOM_START`、`BOTTOM_CENTER`、`BOTTOM_END`。使用时必须结合文字方向解析 start/end。

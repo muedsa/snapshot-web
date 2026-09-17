@@ -1,0 +1,45 @@
+---
+title: ClipPath
+description: 使用任意 Skia Path 裁剪子树。
+sidebar:
+  order: 10
+---
+
+`ClipPath` 提供最通用的裁剪能力，clipper 根据当前布局尺寸返回 `org.jetbrains.skia.Path`。
+
+## 函数签名
+
+```kotlin
+fun ChildSlot.ClipPath(
+    clipper: ((Size) -> Path)? = null,
+    clipBehavior: ClipBehavior = ClipBehavior.ANTI_ALIAS,
+    content: ClipPath.() -> Unit = {},
+)
+```
+
+## 参数
+
+| 参数 | 默认值 | 说明 |
+| --- | --- | --- |
+| `clipper` | `null` | 根据 Size 构建 Path；null 时使用默认路径行为 |
+| `clipBehavior` | `ANTI_ALIAS` | 裁剪策略 |
+| `content` | 空 | 最多一个子 Widget |
+
+## 三角形示例
+
+```kotlin
+ClipPath(
+    clipper = { size ->
+        PathBuilder()
+            .moveTo(size.width / 2f, 0f)
+            .lineTo(size.width, size.height)
+            .lineTo(0f, size.height)
+            .closePath()
+            .detach()
+    },
+) {
+    Container(width = 240f, height = 180f, color = 0xFF38BDF8.toInt())
+}
+```
+
+复杂 Path 的抗锯齿和 saveLayer 成本高于矩形裁剪。能使用 ClipRect、ClipRRect 或 ClipOval 表达时优先使用专用 Widget。

@@ -1,0 +1,55 @@
+---
+title: RawImage
+description: 绘制一个已经解码的 Skia Image。
+sidebar:
+  order: 1
+---
+
+`RawImage` 是图片 Widget 的基础实现，接收 `org.jetbrains.skia.Image` 并根据尺寸、fit、对齐与混合参数绘制。
+
+## 函数签名
+
+```kotlin
+fun ChildSlot.RawImage(
+    image: Image,
+    width: Float? = null,
+    height: Float? = null,
+    fit: BoxFit? = null,
+    alignment: BoxAlignment = BoxAlignment.CENTER,
+    repeat: ImageRepeat = ImageRepeat.NO_REPEAT,
+    scale: Float = 1f,
+    opacity: Float = 1f,
+    color: Int? = null,
+    colorBlendMode: BlendMode? = null,
+)
+```
+
+## 参数
+
+| 参数 | 默认值 | 说明 |
+| --- | --- | --- |
+| `image` | 必填 | 已解码的 Skia Image |
+| `width` / `height` | `null` | 图片布局盒尺寸 |
+| `fit` | `null` | 图片如何适配目标盒 |
+| `alignment` | `CENTER` | fit 后的图片在盒内对齐 |
+| `repeat` | `NO_REPEAT` | 是否平铺 |
+| `scale` | `1f` | 图片像素到逻辑尺寸的比例 |
+| `opacity` | `1f` | 图片透明度 |
+| `color` | `null` | 叠加颜色 |
+| `colorBlendMode` | `null` | 颜色与图片的 BlendMode |
+
+## BoxFit
+
+`FILL` 拉伸填满；`CONTAIN` 完整显示；`COVER` 填满并裁掉超出部分；`FIT_WIDTH` / `FIT_HEIGHT` 适配单一维度；`NONE` 保持原尺寸；`SCALE_DOWN` 只在必要时缩小。
+
+```kotlin
+RawImage(
+    image = image,
+    width = 320f,
+    height = 180f,
+    fit = BoxFit.COVER,
+    alignment = BoxAlignment.CENTER,
+)
+```
+
+RawImage 是叶子 Widget，不能再挂子节点。资源加载和解码应在调用前完成。

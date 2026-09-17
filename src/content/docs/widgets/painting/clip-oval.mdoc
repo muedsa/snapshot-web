@@ -1,0 +1,34 @@
+---
+title: ClipOval
+description: 使用椭圆或圆形区域裁剪子树。
+sidebar:
+  order: 9
+---
+
+`ClipOval` 在给定矩形内生成内切椭圆。正方形区域会得到圆形，常用于头像。
+
+## 函数签名
+
+```kotlin
+fun ChildSlot.ClipOval(
+    clipper: ((Size) -> Rect)? = null,
+    clipBehavior: ClipBehavior = ClipBehavior.ANTI_ALIAS,
+    content: ClipOval.() -> Unit = {},
+)
+```
+
+## 参数
+
+| 参数 | 默认值 | 说明 |
+| --- | --- | --- |
+| `clipper` | `null` | 返回承载椭圆的外接矩形 |
+| `clipBehavior` | `ANTI_ALIAS` | 裁剪策略 |
+| `content` | 空 | 最多一个子 Widget |
+
+```kotlin
+ClipOval {
+    RawImage(image = avatar, width = 96f, height = 96f, fit = BoxFit.COVER)
+}
+```
+
+要获得正圆，应确保布局宽高相同。ClipOval 不绘制边框；圆形边框可在外层使用 BoxDecoration(shape = CIRCLE)。

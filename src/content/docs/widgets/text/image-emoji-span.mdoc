@@ -1,0 +1,60 @@
+---
+title: ImageEmojiSpan
+description: 在 RichText 中插入网络或自定义来源的图片 Emoji。
+sidebar:
+  order: 4
+---
+
+`ImageEmojiSpan` 基于 WidgetSpan 和 ProviderImage，把图片作为段落占位符。它提供 URL 与 provider 两个重载。
+
+## URL 重载
+
+```kotlin
+fun TextSpan.ImageEmojiSpan(
+    url: String,
+    alignment: PlaceholderAlignment = PlaceholderAlignment.BASELINE,
+    baseline: BaselineMode? = null,
+    width: Float? = null,
+    height: Float? = null,
+    fit: BoxFit? = null,
+    imageAlignment: BoxAlignment = BoxAlignment.CENTER,
+    repeat: ImageRepeat = ImageRepeat.NO_REPEAT,
+    scale: Float = 1f,
+    opacity: Float = 1f,
+    color: Int? = null,
+    colorBlendMode: BlendMode? = null,
+    noCache: Boolean = false,
+    cache: NetworkImageCache = NetworkImageCacheManager.defaultCache,
+)
+```
+
+provider 重载把 `url`、`noCache`、`cache` 替换为 `provider: () -> Image`，并默认 `alignment = BOTTOM`。
+
+## 参数
+
+| 参数 | 说明 |
+| --- | --- |
+| `alignment` / `baseline` | 图片占位盒与文字行的对齐 |
+| `width` / `height` | 显式尺寸；未设置时尝试继承所在 TextSpan 的字号 |
+| `fit` / `imageAlignment` / `repeat` | 图片在占位盒内的绘制方式 |
+| `scale` / `opacity` | 图片缩放系数与透明度 |
+| `color` / `colorBlendMode` | 图片着色 |
+| `url` / `provider` | 图片来源 |
+
+```kotlin
+RichText {
+    TextSpan(text = "构建成功 ", style = TextStyle(fontSize = 24f))
+    ImageEmojiSpan(
+        provider = { successIcon },
+        width = 24f,
+        height = 24f,
+        alignment = PlaceholderAlignment.MIDDLE,
+    )
+}
+```
+
+{% aside type="danger" title="URL 重载不提供生产级安全访问" %}
+URL 版本会同步访问网络，并使用与 `CachedNetworkImage` 相同的缓存接口。生产环境应注入自行实现的安全 `NetworkImageCache`；完整要求见 [CachedNetworkImage](/widgets/image/cached-network-image/)。
+{% /aside %}
+
+为了稳定字号与基线，建议关键场景显式指定 `width`、`height` 和 `alignment`。

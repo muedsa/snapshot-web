@@ -1,0 +1,106 @@
+---
+title: 图片、文本与富文本
+description: 图片来源、缓存、适配、TextStyle、TextSpan 和行内图片。
+---
+
+## 图片 Widget
+
+| Widget | 图片来源 |
+| --- | --- |
+| [`RawImage`](/widgets/image/raw-image/) | 已经解码的 Skia `Image` |
+| [`ProviderImage`](/widgets/image/provider-image/) | `() -> Image` 提供函数；构造 Widget 时立即调用 |
+| [`CachedNetworkImage`](/widgets/image/cached-network-image/) | URL，通过全局网络缓存同步获取 |
+
+它们共享大部分绘制参数：
+
+| 参数 | 含义 |
+| --- | --- |
+| `width` / `height` | 图片盒尺寸；可以只指定一个维度 |
+| `fit` | `FILL`、`CONTAIN`、`COVER` 等适配方式 |
+| `alignment` | 图片在目标盒中的对齐位置 |
+| `repeat` | 不重复、横向、纵向或双向平铺 |
+| `scale` | 图片像素与逻辑尺寸的缩放系数 |
+| `opacity` | 0 到 1 的透明度 |
+| `color` / `colorBlendMode` | 颜色叠加和混合模式 |
+
+```kotlin
+RawImage(
+    image = image,
+    width = 320f,
+    height = 180f,
+    fit = BoxFit.COVER,
+    alignment = BoxAlignment.CENTER,
+)
+```
+
+### 网络图片注意事项
+
+{% aside type="danger" title="内置网络图片访问不能直接用于生产环境" %}
+`CachedNetworkImage` 不是异步加载组件，获取和解码发生在构建/绘制调用链内。Snapshot 内置缓存没有提供完整的生产级网络安全边界；服务端应自行实现 `NetworkImageCache`，并处理：
+
+- 网络超时和失败策略；
+- 响应体大小限制；
+- 缓存容量和淘汰；
+- 渲染线程是否允许阻塞；
+- 不可信 URL 带来的 SSRF 风险。
+
+`noCache` 只表示绕过缓存，并不会让网络访问变得更安全。接口与安全要求详见 [CachedNetworkImage](/widgets/image/cached-network-image/)；也可以自行下载、校验并解码为 `Image`，再交给 `RawImage`。
+{% /aside %}
+
+## 普通文本
+
+```kotlin
+Text(
+    text = "Hello Snapshot",
+    style = TextStyle(
+        color = 0xFFF8FAFC.toInt(),
+        fontSize = 32f,
+        fontStyle = FontStyle.BOLD,
+        fontFamilies = listOf("Noto Sans SC"),
+    ),
+    maxLines = 2,
+    overflow = TextOverflow.ELLIPSIS,
+)
+```
+
+`Text` 是对单个根 `TextSpan` 的便捷封装。常用参数：对齐方向、换行开关、溢出策略、最大行数、StrutStyle、宽度基准和高度模式。
+
+## TextStyle
+
+文本样式覆盖字体、字号、颜色、字距、词距、高度、装饰线、前景/背景 Paint、阴影、字体特性等。字体查找由 Skia Paragraph 处理；在服务器或 CI 中要确保字体实际存在。
+
+为了得到跨机器稳定的文本结果：
+
+1. 显式提供字体文件或固定字体集合；
+2. 不依赖操作系统默认字体；
+3. 测试中使用 `testkit` 附带的 Noto Sans SC；
+4. 对文本优先断言度量和像素区域，不轻易把整段抗锯齿文本做跨平台 Golden。
+
+## 富文本
+
+```kotlin
+RichText(maxLines = 2, overflow = TextOverflow.ELLIPSIS) {
+    TextSpan(
+        text = "Snapshot ",
+        style = TextStyle(fontSize = 32f, color = 0xFFFFFFFF.toInt()),
+    )
+    TextSpan(
+        text = "renders",
+        style = TextStyle(fontSize = 32f, color = 0xFF38BDF8.toInt()),
+    )
+}
+```
+
+子 `TextSpan` 会继承父 Span 未覆盖的样式。不要在 `RichText` Widget 中直接嵌套普通 Widget；只有 Span 体系可以参与段落布局。
+
+## 行内 Widget 与 Emoji
+
+`WidgetSpan` 可以把一个 Widget 作为段落中的占位盒；`ImageEmojiSpan` 针对图片 Emoji 提供更方便的尺寸和基线处理。
+
+行内对象的关键参数是 `PlaceholderAlignment` 和 `BaselineMode`。使用 `BASELINE`、`ABOVE_BASELINE`、`BELOW_BASELINE` 时，应明确基线类型；使用 `TOP`、`BOTTOM`、`MIDDLE` 时按占位盒对齐。
+
+## TextPainter
+
+当你需要先测量再决定其他布局时，可以使用 `TextPainter`：设置 InlineSpan、文字方向和宽度约束后调用 layout，再读取宽高、基线和行信息。
+
+不要复用已经改变样式但尚未重新 layout 的测量结果。字体、字号、最大宽度、方向或 Span 变化后都应重新布局。

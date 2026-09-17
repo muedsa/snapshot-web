@@ -1,0 +1,94 @@
+---
+title: 类 DOM 解析器
+description: 用轻量标签文本描述一棵 Widget 树。
+---
+
+`snapshot-parser` 将类 DOM 文本解析为 `core` 的 Widget 树。根标签必须是 `Snapshot`，标签名和属性名区分大小写。
+
+## 处理流程
+
+```text
+Reader → Tokenizer → Element 树 → WidgetParser → Widget 树 → RenderBox → 图片字节
+```
+
+Tokenizer 负责标签、属性、文本和 CDATA；Parser 维护元素栈；`WidgetParserManager` 根据标签名选择构建器；根 `SnapshotElement.snapshot()` 最终调用 core 的渲染入口。
+
+```kotlin
+val text = """
+<Snapshot background="#FFFFFFFF" type="png">
+    <Column>
+        <Row>
+            <Container color="#FFFF0000" width="200" height="200" />
+            <Container color="#FF00FF00" width="200" height="200" />
+        </Row>
+        <Text color="#FF111827" fontSize="24">Hello Snapshot</Text>
+    </Column>
+</Snapshot>
+""".trimIndent()
+
+val bytes = Parser().parse(StringReader(text)).snapshot()
+```
+
+`snapshot()` 根据根标签的 `type` 返回编码后的字节。
+
+{% aside type="caution" title="每个文档使用新的 Parser" %}
+`Parser` 实例会保存解析状态，不能安全地复用于多个文档。每次解析或每个请求都应创建新的 `Parser()`。
+{% /aside %}
+
+## 常用标签
+
+`Snapshot`、`Container`、`Row`、`Column`、`Stack`、`Positioned`、`Image`、`Text` 和 `Raw` 是最常用的标签。`Container` 可以通过 `padding`、`border`、`borderRadius`、`boxShadow` 等属性表达常见卡片样式。
+
+完整内置集合还包括 `Border` 与 `Emoji`。详见[标签与属性参考](/reference/parser-tags/)。
+
+## 一个更完整的模板
+
+```xml
+<Snapshot background="#FF020617" type="png">
+  <Stack alignment="TOP_LEFT">
+    <Container width="640" height="360" color="#FF0F172A" />
+    <Positioned left="32" top="28" right="32">
+      <Column crossAxisAlignment="START">
+        <Text color="#FF38BDF8" fontSize="16" fontStyle="BOLD">SNAPSHOT REPORT</Text>
+        <Container height="16" />
+        <Text color="#FFF8FAFC" fontSize="36" fontStyle="BOLD">Declarative image rendering</Text>
+        <Container height="12" />
+        <Text color="#FF94A3B8" fontSize="20">Widget tree → layout → Skia → image</Text>
+      </Column>
+    </Positioned>
+    <Positioned right="32" bottom="28">
+      <Border border="1 SOLID #FF334155" borderRadius="16" boxShadow="ELEVATION_4">
+        <Container padding="(10,16)" color="#FF1E293B">
+          <Text color="#FFE2E8F0" fontSize="16">PNG · JPEG · WebP</Text>
+        </Container>
+      </Border>
+    </Positioned>
+  </Stack>
+</Snapshot>
+```
+
+{% aside type="note" title="Parser 能力与 Kotlin DSL 不完全相同" %}
+Parser 的 `Stack` 固定使用 `LOOSE` 和 `HARD_EDGE`，并且没有 `Expanded` 标签。模板设计应在这些能力范围内完成，或注册自定义标签扩展。
+{% /aside %}
+
+## 文本中的特殊字符
+
+解析器不做 HTML 实体解码。文本中要包含 `<` 或 `>` 时，使用 CDATA：
+
+```xml
+<Text><![CDATA[ken_test <a></a> 233]]></Text>
+```
+
+`Text` 会裁剪首尾空白；需要保留原始空白时使用 `Raw`。非文本标签中不能出现非空白原始文本。
+
+## 错误处理
+
+结构错误和属性错误会包装为 `ParseException`，错误信息带有行、列和偏移。HTTP 服务可以把它作为 400 Bad Request；布局尺寸为空或无限则更适合作为 422 Unprocessable Content。
+
+## 安全边界
+
+{% aside type="danger" title="Parser 不是安全沙箱" %}
+当输入来自用户时，不应把 Parser 当作完整安全沙箱。特别是 `Image` 和 `Emoji` 可以发起同步网络请求。服务端至少应在外层限制请求大小、解析深度、可访问域名、私网地址、下载体积、连接超时、渲染总时长和并发量，并为网络图片提供自定义的安全 `NetworkImageCache` 实现。
+{% /aside %}
+
+错误分类、HTTP 映射和自定义标签见[错误处理与扩展](/reference/parser-errors/)。

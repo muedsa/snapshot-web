@@ -1,0 +1,49 @@
+---
+title: Stack
+description: 在同一矩形区域内层叠多个普通或 Positioned 子节点。
+sidebar:
+  order: 15
+---
+
+`Stack` 用于背景叠加、角标、覆盖层和绝对定位。它先布局非 Positioned 子节点，再根据 parentData 放置 Positioned 子节点。
+
+## 函数签名
+
+```kotlin
+fun ChildSlot.Stack(
+    alignment: AlignmentGeometry = AlignmentDirectional.TOP_START,
+    textDirection: Direction = Direction.LTR,
+    fit: StackFit = StackFit.LOOSE,
+    clipBehavior: ClipBehavior = ClipBehavior.HARD_EDGE,
+    content: Stack.() -> Unit = {},
+)
+```
+
+## 参数
+
+| 参数 | 默认值 | 说明 |
+| --- | --- | --- |
+| `alignment` | `TOP_START` | 非 Positioned 及部分定位不完整子节点的对齐 |
+| `textDirection` | `LTR` | 解析 start/end 方向 |
+| `fit` | `LOOSE` | 给非 Positioned 子节点的约束方式 |
+| `clipBehavior` | `HARD_EDGE` | 超出 Stack 边界时的裁剪方式 |
+| `content` | 空 | 任意多个子 Widget |
+
+## StackFit
+
+- `LOOSE`：放松父约束后传给普通子节点；
+- `EXPAND`：把普通子节点收紧到最大可用尺寸；
+- `PASSTHROUGH`：原样传递父约束。
+
+## 示例
+
+```kotlin
+Stack(clipBehavior = ClipBehavior.NONE) {
+    Container(width = 360f, height = 200f, color = 0xFF0F172A.toInt())
+    Positioned(right = 16f, top = 16f) {
+        Container(width = 72f, height = 28f, color = 0xFF38BDF8.toInt())
+    }
+}
+```
+
+默认 `HARD_EDGE` 会裁掉阴影或变换后越界的内容。确实需要越界时改为 `NONE`，并确认祖先也未裁剪。

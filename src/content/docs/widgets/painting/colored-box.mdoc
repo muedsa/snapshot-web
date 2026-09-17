@@ -1,0 +1,36 @@
+---
+title: ColoredBox
+description: 在自身布局区域内填充纯色，并绘制一个可选子节点。
+sidebar:
+  order: 1
+---
+
+`ColoredBox` 是最简单的绘制 Widget：先用 ARGB 颜色填充自身区域，再绘制子节点。
+
+## 函数签名
+
+```kotlin
+fun ChildSlot.ColoredBox(
+    color: Int,
+    content: ColoredBox.() -> Unit = {},
+)
+```
+
+## 参数
+
+| 参数 | 说明 |
+| --- | --- |
+| `color` | ARGB Int，例如 `0xFF38BDF8.toInt()` |
+| `content` | 最多一个子 Widget |
+
+```kotlin
+SizedBox(width = 200f, height = 120f) {
+    ColoredBox(color = 0xFF38BDF8.toInt()) {
+        Center { Text("content") }
+    }
+}
+```
+
+ColoredBox 不主动决定尺寸，通常由父约束或子节点确定。如果需要同时设置尺寸，使用 SizedBox 或 Container 包裹。
+
+需要边框、圆角、渐变或阴影时使用 [DecoratedBox](/widgets/painting/decorated-box/)。

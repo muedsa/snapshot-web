@@ -1,0 +1,60 @@
+---
+title: Text
+description: 绘制单一样式入口的普通文本。
+sidebar:
+  order: 1
+---
+
+`Text` 是 RichText 的便捷封装。它把字符串和可选 TextStyle 包装成根 TextSpan，再交给段落布局器。
+
+## 函数签名
+
+```kotlin
+fun ChildSlot.Text(
+    text: String,
+    style: TextStyle? = null,
+    textAlign: Alignment = Alignment.START,
+    textDirection: Direction = Direction.LTR,
+    softWrap: Boolean = true,
+    overflow: TextOverflow = TextOverflow.CLIP,
+    maxLines: Int? = null,
+    strutStyle: StrutStyle? = null,
+    textWidthBasis: TextWidthBasis = TextWidthBasis.PARENT,
+    textHeightMode: HeightMode? = null,
+)
+```
+
+## 参数
+
+| 参数 | 默认值 | 说明 |
+| --- | --- | --- |
+| `text` | 必填 | 要绘制的字符串 |
+| `style` | `null` | 字号、颜色、字体、字距、阴影等 |
+| `textAlign` | `START` | 段落内行的水平对齐 |
+| `textDirection` | `LTR` | 文字方向 |
+| `softWrap` | `true` | 是否允许在软换行点换行 |
+| `overflow` | `CLIP` | `CLIP`、`FADE`、`ELLIPSIS` 或 `VISIBLE` |
+| `maxLines` | `null` | 最大行数 |
+| `strutStyle` | `null` | 统一行高与字体度量的 Strut 配置 |
+| `textWidthBasis` | `PARENT` | 段落宽度按父宽或最长行计算 |
+| `textHeightMode` | `null` | Skia Paragraph 高度处理模式 |
+
+```kotlin
+Text(
+    text = "Hello Snapshot",
+    style = TextStyle(
+        color = 0xFFF8FAFC.toInt(),
+        fontSize = 32f,
+        fontStyle = FontStyle.BOLD,
+        fontFamilies = listOf("Noto Sans SC"),
+    ),
+    maxLines = 1,
+    overflow = TextOverflow.ELLIPSIS,
+)
+```
+
+## TextStyle 主要字段
+
+包括 `color`、`foreground`、`background`、`fontStyle`、`fontSize`、`fontFamilies`、`height`、`letterSpacing`、`wordSpacing`、`shadows`、`fontFeatures`、`typeface`、`locale`、`baselineMode`、`fontEdging`、`fontHinting` 和 `subpixel`。
+
+服务器与 CI 中应显式固定字体，避免系统默认字体造成布局与像素差异。需要多段样式或行内 Widget 时使用 RichText。

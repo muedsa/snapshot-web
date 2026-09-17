@@ -1,0 +1,45 @@
+---
+title: Flexible
+description: 按 flex 权重分配 Flex 剩余空间，并控制子节点是否必须填满。
+sidebar:
+  order: 14
+---
+
+`Flexible` 通过 parentData 参与 Flex 剩余空间分配。
+
+## 函数签名
+
+```kotlin
+fun Flex.Flexible(
+    flex: Int = 1,
+    fit: FlexFit = FlexFit.LOOSE,
+    content: Flexible.() -> Unit = {},
+)
+```
+
+## 参数
+
+| 参数 | 默认值 | 说明 |
+| --- | --- | --- |
+| `flex` | `1` | 剩余空间分配权重 |
+| `fit` | `LOOSE` | `LOOSE` 允许更小；`TIGHT` 强制填满 |
+| `content` | 空 | 一个子 Widget |
+
+```kotlin
+SizedBox(width = 600f, height = 120f) {
+    Row {
+        Flexible(flex = 1, fit = FlexFit.LOOSE) {
+            SizedBox(width = 80f) { ColoredBox(color = 0xFF38BDF8.toInt()) }
+        }
+        Flexible(flex = 2, fit = FlexFit.TIGHT) {
+            ColoredBox(color = 0xFFA78BFA.toInt())
+        }
+    }
+}
+```
+
+`TIGHT` 与 Expanded 行为相同；`LOOSE` 只给出最大可用份额，子节点可以选择更小尺寸。
+
+{% aside type="caution" title="Flexible 只能放在 Flex 中" %}
+`Flexible` 的 DSL 签名是 `fun Flex.Flexible(...)`。它必须是 `Flex` 的直接子节点；`Row` 和 `Column` 都继承自 `Flex`，因此上面的写法有效。外层 `SizedBox` 为 Row 提供有限宽度，使主轴剩余空间可以计算。
+{% /aside %}

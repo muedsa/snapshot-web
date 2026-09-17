@@ -1,0 +1,53 @@
+---
+title: RichText
+description: 使用 InlineSpan 树绘制多样式文本和行内 Widget。
+sidebar:
+  order: 2
+---
+
+`RichText` 接收 `InlineSpan`，或通过 `TextSpan.() -> Unit` DSL 构建 Span 树。它支持样式继承、嵌套 TextSpan、WidgetSpan 与 ImageEmojiSpan。
+
+## 函数签名
+
+```kotlin
+fun ChildSlot.RichText(
+    text: InlineSpan,
+    textAlign: Alignment = Alignment.START,
+    textDirection: Direction = Direction.LTR,
+    softWrap: Boolean = true,
+    overflow: TextOverflow = TextOverflow.CLIP,
+    maxLines: Int? = null,
+    strutStyle: StrutStyle? = null,
+    textWidthBasis: TextWidthBasis = TextWidthBasis.PARENT,
+    textHeightMode: HeightMode? = null,
+)
+```
+
+DSL 重载使用相同布局参数，并增加：
+
+```kotlin
+content: TextSpan.() -> Unit
+```
+
+## 参数
+
+段落布局参数与 [Text](/widgets/text/text/) 一致。`text` 是完整 InlineSpan 根节点；DSL 重载会自动创建空根 TextSpan。
+
+## 示例
+
+```kotlin
+RichText(maxLines = 2, overflow = TextOverflow.ELLIPSIS) {
+    TextSpan(
+        text = "Snapshot ",
+        style = TextStyle(color = 0xFFF8FAFC.toInt(), fontSize = 28f),
+    )
+    TextSpan(
+        text = "renders images",
+        style = TextStyle(color = 0xFF38BDF8.toInt(), fontSize = 28f),
+    )
+}
+```
+
+子 TextSpan 会继承祖先未覆盖的 TextStyle 字段。RichText 内不能直接挂普通 Widget；行内组件必须通过 WidgetSpan 转换为段落占位符。
+
+RenderParagraph 会提取所有 WidgetSpan 子节点，先测量占位 Widget，再把对应 PlaceholderStyle 交给 Skia Paragraph。

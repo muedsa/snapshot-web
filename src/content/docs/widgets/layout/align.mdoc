@@ -1,0 +1,44 @@
+---
+title: Align
+description: 在可用空间中对齐子节点，并可按子节点尺寸决定自身大小。
+sidebar:
+  order: 8
+---
+
+`Align` 使用 `BoxAlignment` 放置单个子节点。它可以填满父级可用空间，也可以通过尺寸因子包裹子节点。
+
+## 函数签名
+
+```kotlin
+fun ChildSlot.Align(
+    alignment: BoxAlignment = BoxAlignment.CENTER,
+    widthFactor: Float? = null,
+    heightFactor: Float? = null,
+    content: Align.() -> Unit = {},
+)
+```
+
+## 参数
+
+| 参数 | 默认值 | 说明 |
+| --- | --- | --- |
+| `alignment` | `CENTER` | 子节点在自身盒子中的位置 |
+| `widthFactor` | `null` | 非空时，自身宽度尝试取子宽度 × factor |
+| `heightFactor` | `null` | 非空时，自身高度尝试取子高度 × factor |
+| `content` | 空 | 最多一个子 Widget |
+
+## 示例
+
+```kotlin
+SizedBox(width = 300f, height = 180f) {
+    Align(alignment = BoxAlignment.BOTTOM_RIGHT) {
+        SizedBox(width = 80f, height = 40f) {
+            ColoredBox(color = 0xFF38BDF8.toInt())
+        }
+    }
+}
+```
+
+`BoxAlignment(-1f, -1f)` 是左上，`(0f, 0f)` 是中心，`(1f, 1f)` 是右下。
+
+尺寸因子在无界轴上尤其有用；最终尺寸仍需满足父约束。

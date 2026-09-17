@@ -1,0 +1,94 @@
+---
+title: 绘制、装饰与效果
+description: BoxDecoration、渐变、阴影、裁剪、透明度和滤镜。
+---
+
+## BoxDecoration
+
+`BoxDecoration` 是最常用的视觉装饰对象，可组合：
+
+- `color`：纯色背景；
+- `gradient`：线性、径向或扫描渐变；
+- `image`：DecorationImage；
+- `border`：四边边框；
+- `borderRadius`：矩形圆角；
+- `boxShadow`：一组阴影；
+- `backgroundBlendMode`：背景混合模式；
+- `shape`：矩形或圆形。
+
+```kotlin
+Container(
+    width = 420f,
+    height = 220f,
+    padding = EdgeInsets.all(24f),
+    decoration = BoxDecoration(
+        gradient = LinearGradient(
+            begin = BoxAlignment.TOP_LEFT,
+            end = BoxAlignment.BOTTOM_RIGHT,
+            colors = intArrayOf(0xFF0F172A.toInt(), 0xFF312E81.toInt()),
+        ),
+        borderRadius = BorderRadius.circular(28f),
+        boxShadow = ELEVATION_MAP.getValue(8),
+    ),
+) { /* content */ }
+```
+
+`shape = CIRCLE` 时不要同时依赖矩形圆角。`backgroundBlendMode` 只有在颜色或渐变等背景层存在时才有意义。
+
+## 边框与圆角
+
+`Border` 由四个 `BorderSide` 组成，可以统一设置或分别控制。`BorderSide` 主要包含颜色、宽度和 `BorderStyle`。
+
+```kotlin
+Border.all(
+    color = 0xFF38BDF8.toInt(),
+    width = 2f,
+)
+```
+
+`BorderRadius.circular(16f)` 适用于四角一致；也可以通过 `only`、`vertical`、`horizontal` 为不同角设置半径。
+
+## 渐变
+
+| 类型 | 核心参数 |
+| --- | --- |
+| `LinearGradient` | `begin`、`end`、`colors`、`stops`、`tileMode` |
+| `RadialGradient` | `center`、`radius`、`focal`、`colors`、`stops` |
+| `SweepGradient` | `center`、`startAngle`、`endAngle`、`colors`、`stops` |
+
+`colors` 至少应有两个颜色。传入 `stops` 时，其数量应和颜色数量一致，并按 0 到 1 递增。角度使用弧度。
+
+## 阴影
+
+`BoxShadow` 包含颜色、偏移、模糊半径、扩散半径和模糊模式。`com.muedsa.snapshot.material.ELEVATION_MAP` 提供 0、1、2、3、4、6、8、9、12、16、24 级的 Material 风格阴影数组，适合快速获得一致的卡片深度。
+
+阴影会绘制到盒子边界之外；如果外层 Stack 或 Clip Widget 启用了裁剪，阴影可能被截断。
+
+## 透明度与颜色滤镜
+
+| Widget | 用途 |
+| --- | --- |
+| `Opacity` | 把整个子树作为一层合成透明度 |
+| `ColorFiltered` | 对子树应用 `ColorFilter` |
+| `ImageFiltered` | 对子树结果应用 `ImageFilter` |
+| `BackdropFilter` | 对已经绘制在当前内容背后的区域应用滤镜 |
+
+`Opacity` 的值应在 `0f..1f`。复杂子树的透明度通常需要离屏图层，频繁使用会增加内存和合成成本。
+
+模糊示例：
+
+```kotlin
+ImageFiltered(
+    imageFilter = ImageFilter.makeBlur(8f, 8f, FilterTileMode.CLAMP),
+) {
+    RawImage(image = source)
+}
+```
+
+`BackdropFilter` 只有在其背后已经有内容时才有可见效果，常用于毛玻璃样式。
+
+## Transform
+
+`Transform` 支持传入 `Matrix44CMO`，也提供旋转、平移等便捷方式。旋转角度使用弧度，`alignment` 决定变换中心。
+
+变换只改变绘制坐标，不会重新参与父节点的布局尺寸计算。因此旋转后的内容可能超出原布局边界，需要配合溢出和裁剪策略。

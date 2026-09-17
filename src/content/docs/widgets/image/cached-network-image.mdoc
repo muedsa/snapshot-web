@@ -1,0 +1,108 @@
+---
+title: CachedNetworkImage
+description: 通过 URL 同步下载并缓存网络图片。
+sidebar:
+  order: 3
+---
+
+`CachedNetworkImage` 使用 `NetworkImageCache` 获取 URL 对应的 Skia Image，再按 RawImage 的规则绘制。加载是同步的，会阻塞当前线程。
+
+## 生产环境安全说明
+
+{% aside type="danger" title="不要直接用于生产环境" %}
+**Snapshot 没有提供可直接安全用于生产环境的网络图片访问实现。** 内置的 `SimpleNoLimitedNetworkImageCache` 和 `SimpleLimitedNetworkImageCache` 只提供基础下载与内存缓存能力，不应被视为完整的网络安全边界。
+
+如果图片 URL 来自用户输入或其他不可信来源，直接使用默认实现可能带来 SSRF、内网探测、恶意重定向、超大响应体、请求长期阻塞、内存耗尽和缓存污染等风险。`SimpleLimitedNetworkImageCache` 虽能限制图片数量和单张下载大小，但并未覆盖协议、域名、解析后 IP、重定向、超时及并发隔离等生产环境要求。
+
+生产环境应根据业务的信任边界与基础设施，自行实现 [`NetworkImageCache`](#networkimagecache-接口)，在实现中完成安全的网络访问、图片校验以及缓存管理，然后通过 `cache` 参数注入，或注册为全局默认实现。
+{% /aside %}
+
+## 函数签名
+
+```kotlin
+fun ChildSlot.CachedNetworkImage(
+    url: String,
+    width: Float? = null,
+    height: Float? = null,
+    fit: BoxFit? = null,
+    alignment: BoxAlignment = BoxAlignment.CENTER,
+    repeat: ImageRepeat = ImageRepeat.NO_REPEAT,
+    scale: Float = 1f,
+    opacity: Float = 1f,
+    color: Int? = null,
+    colorBlendMode: BlendMode? = null,
+    noCache: Boolean = false,
+    cache: NetworkImageCache = NetworkImageCacheManager.defaultCache,
+)
+```
+
+## 参数
+
+| 参数 | 默认值 | 说明 |
+| --- | --- | --- |
+| `url` | 必填 | 图片 URL |
+| `width` / `height` | `null` | 目标布局尺寸 |
+| `fit`、`alignment`、`repeat` | 见 RawImage | 图片适配与定位 |
+| `scale`、`opacity` | `1f` | 缩放系数和透明度 |
+| `color`、`colorBlendMode` | `null` | 图片着色 |
+| `noCache` | `false` | true 时绕过缓存读取和写入 |
+| `cache` | 全局默认缓存 | 自定义 NetworkImageCache |
+
+```kotlin
+CachedNetworkImage(
+    url = "https://example.com/cover.png",
+    width = 320f,
+    height = 180f,
+    fit = BoxFit.COVER,
+    cache = SimpleLimitedNetworkImageCache(
+        maxImageNum = 100,
+        maxSingleImageSize = 5 * 1024 * 1024,
+    ),
+)
+```
+
+## NetworkImageCache 接口
+
+```kotlin
+interface NetworkImageCache {
+    val name: String
+
+    fun getImage(url: String, noCache: Boolean = false): Image
+    fun clearAll()
+    fun clearImage(url: String)
+    fun count(): Int
+    fun size(): Int
+}
+```
+
+自定义实现负责从 URL 安全地取得并解码 `Image`，同时定义缓存键、容量统计、淘汰以及资源释放方式。实现后可以直接传给 Widget：
+
+```kotlin
+val safeImageCache: NetworkImageCache = MySafeNetworkImageCache(/* 业务配置 */)
+
+CachedNetworkImage(
+    url = trustedImageUrl,
+    width = 320f,
+    height = 180f,
+    fit = BoxFit.COVER,
+    cache = safeImageCache,
+)
+```
+
+若整个应用都应使用同一实现，可以在启动时注册：
+
+```kotlin
+NetworkImageCacheManager.register(safeImageCache, asDefault = true)
+```
+
+内置的 `SimpleLimitedNetworkImageCache` 可用于简单场景下限制图片数量和单张下载体积，但这些限制不能替代生产环境的安全访问实现。
+
+## 安全注意事项
+
+- URL 获取使用同步网络 I/O；不要在关键 UI 或事件线程中调用。
+- 只允许明确的协议和域名；DNS 解析后再次校验 IP，拒绝回环、链路本地、私网及云元数据地址。
+- 对每次重定向重新执行协议、域名和 IP 校验，并限制重定向次数。
+- 配置连接、读取和总体请求超时，并限制响应体、图片像素数和解码后的内存占用。
+- 限制并发请求，设置缓存总容量、单项容量、过期与淘汰策略，避免缓存污染和内存耗尽。
+- 校验 HTTP 状态、`Content-Type`、文件签名和实际可解码格式；不要只信任扩展名或响应头。
+- 测试中避免访问外网，改用本地 Image 与 RawImage。

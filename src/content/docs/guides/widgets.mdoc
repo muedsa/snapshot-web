@@ -1,0 +1,104 @@
+---
+title: Widget 与布局
+description: Snapshot 常用组件、布局和装饰能力速查。
+---
+
+## 布局组件
+
+| Widget | 用途 |
+| --- | --- |
+| [`Container`](/widgets/layout/container/) | 尺寸、内外边距、底色、装饰、对齐与裁剪的组合组件 |
+| [`SizedBox`](/widgets/layout/sized-box/) | 强制宽度或高度 |
+| [`Padding`](/widgets/layout/padding/) | 为单个子节点增加内边距 |
+| [`Align`](/widgets/layout/align/) / [`Center`](/widgets/layout/center/) | 控制子节点在盒子内的位置 |
+| [`Row`](/widgets/layout/row/) / [`Column`](/widgets/layout/column/) | 一维横向或纵向布局 |
+| [`Stack`](/widgets/layout/stack/) | 多个子节点层叠布局 |
+| [`Positioned`](/widgets/layout/positioned/) | 在 `Stack` 中按边距或尺寸定位 |
+| [`Expanded`](/widgets/layout/expanded/) / [`Flexible`](/widgets/layout/flexible/) | 在 Flex 主轴上分配剩余空间 |
+
+## 完整 Widget 分类
+
+| 分类 | Widget |
+| --- | --- |
+| 约束 | [`SizedBox`](/widgets/layout/sized-box/)、[`ConstrainedBox`](/widgets/layout/constrained-box/)、[`LimitedBox`](/widgets/layout/limited-box/) |
+| 溢出 | [`OverflowBox`](/widgets/layout/overflow-box/)、[`SizedOverflowBox`](/widgets/layout/sized-overflow-box/) |
+| 间距与对齐 | [`Padding`](/widgets/layout/padding/)、[`Align`](/widgets/layout/align/)、[`Center`](/widgets/layout/center/) |
+| Flex | [`Flex`](/widgets/layout/flex/)、[`Row`](/widgets/layout/row/)、[`Column`](/widgets/layout/column/)、[`Expanded`](/widgets/layout/expanded/)、[`Flexible`](/widgets/layout/flexible/) |
+| 层叠 | [`Stack`](/widgets/layout/stack/)、[`Positioned`](/widgets/layout/positioned/) |
+| 变换 | [`Transform`](/widgets/layout/transform/) |
+| 颜色与装饰 | [`ColoredBox`](/widgets/painting/colored-box/)、[`DecoratedBox`](/widgets/painting/decorated-box/)、[`Container`](/widgets/layout/container/) |
+| 合成效果 | [`Opacity`](/widgets/painting/opacity/)、[`ColorFiltered`](/widgets/painting/color-filtered/)、[`ImageFiltered`](/widgets/painting/image-filtered/)、[`BackdropFilter`](/widgets/painting/backdrop-filter/) |
+| 裁剪 | [`ClipRect`](/widgets/painting/clip-rect/)、[`ClipRRect`](/widgets/painting/clip-rrect/)、[`ClipOval`](/widgets/painting/clip-oval/)、[`ClipPath`](/widgets/painting/clip-path/) |
+| 图片 | [`RawImage`](/widgets/image/raw-image/)、[`ProviderImage`](/widgets/image/provider-image/)、[`CachedNetworkImage`](/widgets/image/cached-network-image/) |
+| 文本与行内对象 | [`Text`](/widgets/text/text/)、[`RichText`](/widgets/text/rich-text/)、[`WidgetSpan`](/widgets/text/widget-span/)、[`ImageEmojiSpan`](/widgets/text/image-emoji-span/) |
+
+以上每个链接都对应一个独立 API 页面，包含用途、当前源码签名、参数、布局或绘制行为、完整示例与注意事项。`TextSpan` 是 `RichText` 使用的行内内容模型，而不是 Widget；它的继承和组合方式在 [RichText](/widgets/text/rich-text/) 页面中说明。
+
+## Container 参数
+
+| 参数 | 说明 |
+| --- | --- |
+| `alignment` | 子节点在盒内的对齐 |
+| `padding` | 装饰内部与子节点之间的空间 |
+| `color` | 简单背景色，不能与 decoration 同时使用 |
+| `decoration` | 背景装饰 |
+| `foregroundDecoration` | 子节点上方的前景装饰 |
+| `width` / `height` | 收紧对应维度 |
+| `constraints` | 额外 BoxConstraints |
+| `margin` | 容器外部空间 |
+| `transform` / `transformAlignment` | 绘制变换及中心 |
+| `clipBehavior` | 按 decoration 路径裁剪 |
+
+Container 适合组合式写法，但在排查布局时，拆成 `Padding`、`ConstrainedBox`、`DecoratedBox` 等原子 Widget 往往更容易理解。
+
+## 约束 Widget
+
+- `SizedBox(width, height)`：把指定维度收紧；未指定维度继续服从父约束；
+- `ConstrainedBox(constraints)`：把额外约束与父约束合并；
+- `LimitedBox(maxWidth, maxHeight)`：只有父级对应维度无限时才生效；
+- `OverflowBox`：允许子节点使用与父级不同的最小/最大约束；
+- `SizedOverflowBox`：自身尺寸固定，子节点可以按另一套约束绘制到外部。
+
+## Row、Column 与 Flex
+
+`Row` 主轴水平、`Column` 主轴垂直。`mainAxisAlignment` 控制主轴分布，`crossAxisAlignment` 控制交叉轴位置，`mainAxisSize` 决定自身在主轴上尽量大还是尽量小。
+
+基线对齐需要 `crossAxisAlignment = BASELINE` 和非空 `textBaseline`。在无界主轴内使用 Expanded 会导致无法分配剩余空间，应先由父节点建立有限尺寸。
+
+## Stack 与 Positioned
+
+Stack 适合覆盖层、角标、绝对定位和背景叠加。非 Positioned 子节点先参与 Stack 尺寸计算，Positioned 再根据边和尺寸放置。
+
+同一轴上最多提供两项，例如 `left + right` 推导宽度，或 `left + width` 推导右侧位置。
+
+## 绘制与装饰
+
+`DecoratedBox` 与 `Container` 支持圆角、边框、阴影和渐变；`Opacity`、`ColorFiltered`、`ImageFiltered` 和 `BackdropFilter` 用于图层处理。`ClipRect`、`ClipRRect`、`ClipOval` 和 `ClipPath` 可以限制绘制范围。
+
+```kotlin
+SnapshotPNG {
+    Container(
+        width = 480f,
+        height = 280f,
+        padding = EdgeInsets.all(24f),
+        decoration = BoxDecoration(
+            color = Color.WHITE,
+            borderRadius = BorderRadius.circular(24f),
+        ),
+    ) {
+        Column {
+            Text("A structured image")
+            SizedBox(height = 12f)
+            Text("Layout first. Paint second.")
+        }
+    }
+}
+```
+
+## 文本与图片
+
+`Text` 用于单段文本，`RichText` / `TextSpan` 用于混合样式；`RawImage` 接受已有 Skia `Image`，`ProviderImage` 通过 provider 获取图片并在构造 Widget 时立即调用，`CachedNetworkImage` 提供网络图片缓存。
+
+图片加载是同步行为。如果在服务端使用网络图片，建议自行控制超时、缓存与线程模型。
+
+详细参数分别见[绘制、装饰与效果](/guides/painting/)和[图片、文本与富文本](/guides/media-text/)。

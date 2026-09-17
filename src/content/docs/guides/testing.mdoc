@@ -1,0 +1,122 @@
+---
+title: 测试与 Golden
+description: 为布局、像素和图片回归建立分层测试。
+---
+
+`testkit` 提供从结构到像素的四层验证能力，建议优先使用越靠前、越稳定的断言：
+
+1. **布局与数值断言**：检查尺寸、位置和 RenderBox 类型；
+2. **像素采样断言**：检查某个坐标或区域的颜色；
+3. **Golden 比对**：逐像素验证整张图片；
+4. **Artifact**：落盘输出，供人眼检视，不作为自动断言。
+
+选择原则是：能用布局断言证明的行为，不使用 Golden；只有跨节点绘制、裁剪、滤镜、渐变等无法由结构证明的视觉行为才升级到像素或 Golden。
+
+## 渲染桥
+
+testkit 提供从 Widget DSL 获得不同测试对象的入口：
+
+- `rootLayout {}`：获得布局后的 RenderBox；
+- `snapshotPixels {}`：获得可采样的像素结果；
+- `golden {}` / `goldenPixels {}`：和基准图片比较；
+- `drawWidget {}` / `drawPainter {}`：只输出人工检查用 artifact。
+
+## 布局测试示例
+
+```kotlin
+val root = rootLayout {
+    Container(width = 200f, height = 200f, alignment = BoxAlignment.CENTER) {
+        SizedBox(width = 100f, height = 100f)
+    }
+}
+
+root.assertSize(200f, 200f)
+```
+
+常用布局断言包括尺寸、局部或全局矩形、节点类型查找和子树遍历。浮点值使用测试工具提供的容差比较。
+
+```kotlin
+val target = root.findType<RenderColoredBox> { it.color == Color.RED }
+    ?: error("red box not found")
+
+target.assertGlobalRect(x = 50f, y = 50f, width = 100f, height = 100f)
+```
+
+## 像素采样
+
+像素测试适合验证纯色填充、边界内外、透明度与少量关键点：
+
+```kotlin
+val pixels = snapshotPixels {
+    Container(width = 100f, height = 100f, color = Color.RED)
+}
+
+pixels.expectColorAt(50, 50, Color.RED)
+pixels.expectRegionUniform(10, 10, 20, 20, Color.RED)
+```
+
+采样点不要恰好放在抗锯齿边缘。圆角、斜线和文字边缘应使用容差或选择稳定的内部区域。
+
+## 何时使用 Golden
+
+Golden 适合验证完整绘制效果：渐变、复杂裁剪、多层阴影、BlendMode、滤镜或多个绘制操作的组合。Golden 是逐像素契约，对平台、字体和图形后端敏感。
+
+保持稳定的建议：
+
+- 固定 Surface 类型和颜色空间；
+- 固定字体文件；
+- 网络图片先转为本地测试资源；
+- 不把时间、随机数和机器路径写入图像；
+- 一个 Golden 只验证一个清晰行为；
+- 更新基准前人工检查 actual 输出。
+
+## Golden 三态
+
+Golden 测试支持三种模式：
+
+```bash
+./gradlew :core:test -PsnapshotTest.mode=record --tests '*MyWidgetTest'
+./gradlew :core:test -PsnapshotTest.mode=verify --tests '*MyWidgetTest'
+./gradlew :core:test -PsnapshotTest.mode=update --tests '*MyWidgetTest'
+```
+
+日常提交建议使用 `verify`，只有在有意改变视觉结果时才使用 `update`。样例和联网测试默认排除，可分别用 `-PincludeSamples` 与 `-PincludeNetwork` 运行。
+
+## 文本测试
+
+文本在不同系统上的抗锯齿结果容易变化。推荐依次验证：
+
+1. 段落布局宽高和行数；
+2. 基线、占位符尺寸和位置；
+3. 文字实际绘制区域是否包含非背景像素；
+4. 只有在字体和执行环境完全固定时才使用整图 Golden。
+
+testkit 内置 Noto Sans SC 测试字体，用它可以减少 CI 与本机之间的差异。
+
+## Artifact 不是断言
+
+{% aside type="caution" title="生成图片不代表测试通过" %}
+Artifact 适合开发新效果时快速观察结果，但测试即使生成了错误图片也可能通过。稳定后应补充布局、像素或 Golden 断言，不能只保留落盘代码。
+{% /aside %}
+
+## 新功能测试清单
+
+{% steps %}
+
+1. 先写纯逻辑或参数校验测试；
+2. 用布局断言覆盖尺寸、偏移和 parentData；
+3. 用少量像素点覆盖绘制关键区域；
+4. 必要时增加单一职责 Golden；
+5. 失败时保留 expected、actual 和 diff 供审阅；
+6. 把联网场景标注为 `network`，样例生成标注为 `sample`。
+
+{% /steps %}
+
+## 常见误区
+
+- 为每个 Widget 都建立 Golden，导致维护成本和误报过高；
+- 在抗锯齿边缘断言精确颜色；
+- 更新 Golden 后不查看差异；
+- 使用系统默认字体；
+- 测试中访问外网；
+- 把 artifact 文件存在仓库根目录并由默认测试改写。

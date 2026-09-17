@@ -1,0 +1,69 @@
+---
+title: 常见问题
+description: 尺寸、布局、Parser、网络图片、文本和调试的常见问题。
+---
+
+## 为什么 `Container()` 报尺寸无限？
+
+空 Container 在无界根约束下会尝试尽可能大，最终根尺寸是 Infinity。给它 `width`、`height`、有限 constraints，或让子节点产生有限尺寸。
+
+## 为什么空 `Row {}` 报尺寸为空？
+
+没有子节点的 Flex 在主轴上收缩到 0，最终无法创建有效 Surface。添加内容或外层固定尺寸。
+
+## 如何得到固定画布？
+
+使用固定尺寸的根 `Container` / `SizedBox`。Snapshot 没有独立 canvasWidth 参数，Surface 尺寸来自根布局。
+
+## 如何生成 2× 图片？
+
+把布局中的尺寸、间距、字号等整体放大两倍。只让 `initSurface` 返回更大 Surface 不会缩放内容。
+
+## 为什么 color 和 decoration 不能同时使用？
+
+Container 会检查两者互斥。需要颜色和边框、圆角、渐变一起使用时：
+
+```kotlin
+decoration = BoxDecoration(
+    color = 0xFFFFFFFF.toInt(),
+    border = Border.all(...),
+)
+```
+
+Parser 的 Container 已自动做这层转换。
+
+## Stack 中的阴影为什么被切掉？
+
+Stack 默认 `clipBehavior = HARD_EDGE`。把它改为 `ClipBehavior.NONE`，同时确认更外层没有其他 Clip。
+
+## Parser 能使用 Expanded、Opacity 或 Transform 吗？
+
+默认不能。内置管理器只注册文档列出的 11 个标签。需要这些能力时使用 Kotlin DSL，或注册自定义标签。
+
+## 为什么 Parser 的属性没有生效也没有报错？
+
+未知属性会被静默忽略。检查拼写、大小写和属性格式；布尔值要显式写 `"true"`。某些属性错误直到 `createWidget()` 或 `snapshot()` 才会出现。
+
+## 文本中怎样写 `<` 和 `>`？
+
+使用 CDATA。解析器不实现 HTML 实体解码，因此 `&lt;` 不会变成 `<`。
+
+## 为什么不能复用 Parser？
+
+Parser 会保留已经解析出的根元素，重复 parse 可能出现 duplicate root。每个文档创建一个新 `Parser()`。
+
+## 网络图片是异步的吗？
+
+不是。`CachedNetworkImage`、`Image` 标签和 Emoji 在渲染链路内同步加载。服务端必须配置超时、大小限制和安全策略。
+
+## 怎样调试布局？
+
+先用 `layoutWidget` 获取 RenderBox，再用 `toLayoutNode()` 查看尺寸与全局偏移；需要视觉辅助时启用 `debug = true`。测试中优先用 testkit 的布局断言。
+
+## 为什么文本 Golden 在不同系统不一致？
+
+字体选择、字体版本、Hinting 和抗锯齿都可能不同。固定字体文件，并优先测试文本度量、基线和区域采样；只有环境稳定时才对整段文字做像素级 Golden。
+
+## 如何输出到窗口而不是文件？
+
+先 `layoutWidget`，再在已有 Skia Canvas 上调用 `drawRenderBox`。仓库的 `DrawToDevice.kt` 包含接入 Skiko 渲染回调的示例。

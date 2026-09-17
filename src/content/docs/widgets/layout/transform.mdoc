@@ -1,0 +1,62 @@
+---
+title: Transform
+description: 在绘制阶段对单个子节点应用矩阵变换。
+sidebar:
+  order: 17
+---
+
+`Transform` 对子树应用 `Matrix44CMO`，支持旋转、平移、缩放和组合变换。它只影响绘制坐标，不重新参与布局。
+
+## 函数签名
+
+```kotlin
+fun ChildSlot.Transform(
+    transform: Matrix44CMO,
+    origin: Offset? = null,
+    alignment: BoxAlignment?,
+    content: Transform.() -> Unit = {},
+)
+```
+
+## 参数
+
+| 参数 | 默认值 | 说明 |
+| --- | --- | --- |
+| `transform` | 必填 | 4×4 列主序变换矩阵 |
+| `origin` | `null` | 在 alignment 之外附加的变换原点偏移 |
+| `alignment` | 必填，可为 null | 相对自身尺寸计算的变换中心 |
+| `content` | 空 | 最多一个子 Widget |
+
+## 旋转示例
+
+```kotlin
+Transform(
+    transform = computeRotation(0.15f),
+    alignment = BoxAlignment.CENTER,
+) {
+    Container(width = 240f, height = 120f, color = 0xFF38BDF8.toInt())
+}
+```
+
+## 平移示例
+
+```kotlin
+Transform(
+    transform = Matrix44CMO.translationValues(24f, 12f, 0f),
+    alignment = null,
+) {
+    Text("translated")
+}
+```
+
+`Transform.rotate()` 和 `Transform.translate()` 也可以创建 Widget 实例，但在 DSL 中直接传矩阵通常更清晰。
+
+## 注意事项
+
+- 父节点仍按变换前的尺寸布局，因此旋转或平移后的内容可能与其他节点重叠。
+- 越界内容是否可见取决于祖先的裁剪策略。
+- 角度使用弧度。
+
+{% aside type="danger" title="不要调用未实现的矩阵接口" %}
+`Matrix44CMO.transform(x, y, z)` 当前仍是未实现接口。请使用已经验证的矩阵构造与组合方法。
+{% /aside %}

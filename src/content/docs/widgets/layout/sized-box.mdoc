@@ -1,0 +1,50 @@
+---
+title: SizedBox
+description: 为一个或两个维度施加紧约束，也可作为固定间距。
+sidebar:
+  order: 2
+---
+
+`SizedBox` 使用 `BoxConstraints.tightFor()` 收紧指定维度。它既可限制子节点尺寸，也可以在没有子节点时创建固定间距。
+
+## 函数签名
+
+```kotlin
+fun ChildSlot.SizedBox(
+    width: Float? = null,
+    height: Float? = null,
+    content: SizedBox.() -> Unit = {},
+)
+```
+
+## 参数
+
+| 参数 | 默认值 | 说明 |
+| --- | --- | --- |
+| `width` | `null` | 指定宽度；null 表示不额外限制宽度 |
+| `height` | `null` | 指定高度；null 表示不额外限制高度 |
+| `content` | 空 | 最多一个子 Widget |
+
+## 行为
+
+额外约束仍会与父约束合并。如果父节点只允许最大宽度 100，而 `SizedBox(width = 200f)` 请求 200，最终仍必须服从父约束。
+
+```kotlin
+Column {
+    Text("第一行")
+    SizedBox(height = 16f)
+    Text("第二行")
+}
+```
+
+```kotlin
+SizedBox(width = 240f, height = 80f) {
+    ColoredBox(color = 0xFF38BDF8.toInt())
+}
+```
+
+## 注意事项
+
+- 宽高都为 null 时不会施加额外尺寸限制。
+- 只有一个维度时，另一个维度由父约束和子节点决定。
+- 需要范围约束时使用 [ConstrainedBox](/widgets/layout/constrained-box/)。

@@ -1,0 +1,43 @@
+---
+title: Padding
+description: 在单个子节点四周加入不可为负的内边距。
+sidebar:
+  order: 7
+---
+
+`Padding` 从传给子节点的约束中扣除边距，布局子节点后再把边距加回自身尺寸。
+
+## 函数签名
+
+```kotlin
+fun ChildSlot.Padding(
+    padding: EdgeInsets,
+    content: Padding.() -> Unit = {},
+)
+```
+
+## 参数
+
+| 参数 | 说明 |
+| --- | --- |
+| `padding` | `EdgeInsets`，表示 left、top、right、bottom |
+| `content` | 最多一个子 Widget |
+
+## EdgeInsets 构造
+
+```kotlin
+EdgeInsets.all(16f)
+EdgeInsets.symmetric(vertical = 8f, horizontal = 16f)
+EdgeInsets.only(left = 12f, top = 8f)
+EdgeInsets.fromLTRB(8f, 12f, 16f, 20f)
+```
+
+## 示例
+
+```kotlin
+Padding(padding = EdgeInsets.symmetric(horizontal = 24f, vertical = 16f)) {
+    ColoredBox(color = 0xFF38BDF8.toInt())
+}
+```
+
+Padding 会扩大自身所需尺寸，但最终仍受父约束限制。外边距在 Snapshot 中没有独立 Widget，`Container.margin` 内部也是使用 Padding 实现。

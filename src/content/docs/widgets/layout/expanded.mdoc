@@ -1,0 +1,49 @@
+---
+title: Expanded
+description: 强制 Flex 子节点占满按 flex 比例分配的剩余主轴空间。
+sidebar:
+  order: 13
+---
+
+`Expanded` 是 `Flexible(fit = FlexFit.TIGHT)` 的便捷形式。它不创建额外 RenderBox，而是把 flex 与 fit 写入子 RenderBox 的 `FlexParentData`。
+
+## 函数签名
+
+```kotlin
+fun Flex.Expanded(
+    flex: Int = 1,
+    content: Expanded.() -> Unit = {},
+)
+```
+
+## 参数
+
+| 参数 | 默认值 | 说明 |
+| --- | --- | --- |
+| `flex` | `1` | 剩余主轴空间的分配权重 |
+| `content` | 空 | 一个子 Widget |
+
+## 示例
+
+```kotlin
+SizedBox(width = 600f, height = 120f) {
+    Row {
+        Expanded(flex = 2) { ColoredBox(color = 0xFF38BDF8.toInt()) }
+        Expanded(flex = 1) { ColoredBox(color = 0xFFA78BFA.toInt()) }
+    }
+}
+```
+
+第一个子节点得到剩余宽度的 2/3，第二个得到 1/3，并且两者必须占满分配到的宽度。
+
+## 限制
+
+{% aside type="caution" title="Expanded 依赖 Flex 父节点和有限主轴" %}
+
+- 只能直接写在 `Flex`、`Row` 或 `Column` 的 DSL 作用域中。
+- 主轴必须有有限最大尺寸，否则没有可计算的“剩余空间”。
+- `flex` 应为正数。
+
+{% /aside %}
+
+允许子节点小于分配空间时使用 [Flexible](/widgets/layout/flexible/)。

@@ -1,0 +1,34 @@
+---
+title: SizedOverflowBox
+description: 自身使用指定尺寸，同时让子节点按传入约束布局并允许溢出。
+sidebar:
+  order: 6
+---
+
+`SizedOverflowBox` 把自己的布局尺寸设为 `size`，但子节点仍根据父约束布局，因此子节点可以超出该尺寸。
+
+## 函数签名
+
+```kotlin
+fun ChildSlot.SizedOverflowBox(
+    size: Size,
+    alignment: BoxAlignment = BoxAlignment.CENTER,
+    content: SizedOverflowBox.() -> Unit = {},
+)
+```
+
+## 参数
+
+| 参数 | 默认值 | 说明 |
+| --- | --- | --- |
+| `size` | 必填 | Widget 请求的自身尺寸 |
+| `alignment` | `CENTER` | 子节点相对自身盒子的对齐 |
+| `content` | 空 | 最多一个子 Widget |
+
+```kotlin
+SizedOverflowBox(size = Size(120f, 80f), alignment = BoxAlignment.TOP_LEFT) {
+    Container(width = 240f, height = 160f, color = 0x5538BDF8)
+}
+```
+
+`size` 仍然会被父约束约束。它控制的是本节点尺寸，不代表创建独立裁剪区域。

@@ -1,0 +1,26 @@
+{
+  "name": "snapshot-web",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/markdoc": "^2.0.8",
+    "@astrojs/react": "^6.0.6",
+    "@astrojs/starlight": "^0.42.1",
+    "@astrojs/starlight-markdoc": "^0.7.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "astro": "^7.2.10",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "sharp": "^0.35.3",
+    "tailwindcss": "^4.3.3"
+  }
+}

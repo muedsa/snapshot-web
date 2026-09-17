@@ -1,0 +1,36 @@
+---
+title: Center
+description: Align 的居中特化版本。
+sidebar:
+  order: 9
+---
+
+`Center` 等价于 `Align(alignment = BoxAlignment.CENTER)`，用于把单个子节点放在可用空间中央。
+
+## 函数签名
+
+```kotlin
+fun ChildSlot.Center(
+    widthFactor: Float? = null,
+    heightFactor: Float? = null,
+    content: Center.() -> Unit = {},
+)
+```
+
+## 参数
+
+| 参数 | 默认值 | 说明 |
+| --- | --- | --- |
+| `widthFactor` | `null` | 非空时，自身宽度尝试取子宽度 × factor |
+| `heightFactor` | `null` | 非空时，自身高度尝试取子高度 × factor |
+| `content` | 空 | 最多一个子 Widget |
+
+```kotlin
+SizedBox(width = 320f, height = 180f) {
+    Center {
+        Text("居中内容")
+    }
+}
+```
+
+需要其他对齐位置时使用 [Align](/widgets/layout/align/)。

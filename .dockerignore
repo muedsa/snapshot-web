@@ -1,0 +1,15 @@
+.git
+.gitignore
+.astro
+dist
+node_modules
+.vscode
+.idea
+
+*.log
+.env
+.env.*
+
+AGENTS.md
+CLAUDE.md
+design-system

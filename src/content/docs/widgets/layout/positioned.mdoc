@@ -1,0 +1,50 @@
+---
+title: Positioned
+description: 在 Stack 中按边距与尺寸定位一个子节点。
+sidebar:
+  order: 16
+---
+
+`Positioned` 是 Stack 专用的 ParentDataWidget，不创建独立 RenderBox。它把定位参数写入子节点的 `StackParentData`。
+
+## 函数签名
+
+```kotlin
+fun Stack.Positioned(
+    left: Float? = null,
+    top: Float? = null,
+    right: Float? = null,
+    bottom: Float? = null,
+    width: Float? = null,
+    height: Float? = null,
+    content: Positioned.() -> Unit = {},
+)
+```
+
+## 参数
+
+| 参数 | 说明 |
+| --- | --- |
+| `left` / `right` | 子节点到 Stack 左右边的距离 |
+| `top` / `bottom` | 子节点到 Stack 上下边的距离 |
+| `width` / `height` | 显式子节点尺寸 |
+| `content` | 一个子 Widget |
+
+每个轴最多指定三项中的两项：`left`、`right`、`width` 最多两个；垂直轴相同。给出两边时尺寸由边距推导；给出一边和尺寸时位置明确；只给尺寸时按 Stack alignment 放置。
+
+```kotlin
+Stack {
+    Container(width = 400f, height = 240f)
+    Positioned(left = 20f, right = 20f, bottom = 16f, height = 48f) {
+        ColoredBox(color = 0xFF38BDF8.toInt())
+    }
+}
+```
+
+## 其他构造方式
+
+类还提供 `fromRect()`、`fromRelativeRect()`、`fill()` 与 `directional()` 工厂，适合直接构造 Widget 对象。DSL 中最常用的是上面的 Stack 扩展函数。
+
+{% aside type="caution" title="Positioned 只能放在 Stack 中" %}
+`Positioned` 只能作为 `Stack` 的直接子节点。放在 `Row`、`Column` 或其他父节点中会因 parentData 类型不匹配而失败。
+{% /aside %}

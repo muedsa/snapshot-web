@@ -1,0 +1,58 @@
+---
+title: Flex
+description: 沿水平或垂直主轴排列多个子节点的通用弹性布局。
+sidebar:
+  order: 10
+---
+
+`Flex` 是 `Row` 与 `Column` 的通用实现。它沿 `direction` 指定的主轴排列多个子节点，并可使用 `Flexible` / `Expanded` 分配剩余空间。
+
+## 函数签名
+
+```kotlin
+fun ChildSlot.Flex(
+    direction: Axis,
+    mainAxisAlignment: MainAxisAlignment = MainAxisAlignment.START,
+    mainAxisSize: MainAxisSize = MainAxisSize.MAX,
+    crossAxisAlignment: CrossAxisAlignment = CrossAxisAlignment.CENTER,
+    textDirection: Direction? = null,
+    verticalDirection: VerticalDirection = VerticalDirection.DOWN,
+    textBaseline: BaselineMode? = null,
+    clipBehavior: ClipBehavior = ClipBehavior.NONE,
+    content: Flex.() -> Unit = {},
+)
+```
+
+## 参数
+
+| 参数 | 默认值 | 说明 |
+| --- | --- | --- |
+| `direction` | 必填 | `HORIZONTAL` 或 `VERTICAL` |
+| `mainAxisAlignment` | `START` | 子节点在主轴上的整体分布 |
+| `mainAxisSize` | `MAX` | 自身在主轴上尽量占满或包裹内容 |
+| `crossAxisAlignment` | `CENTER` | 子节点在交叉轴上的对齐 |
+| `textDirection` | `null` | 水平 start/end 的方向；RenderFlex 默认解析为 LTR |
+| `verticalDirection` | `DOWN` | 垂直 start/end 与排列方向 |
+| `textBaseline` | `null` | 使用 `BASELINE` 对齐时的基线类型 |
+| `clipBehavior` | `NONE` | Flex 内容溢出时的裁剪方式 |
+| `content` | 空 | 任意多个子 Widget |
+
+## 主轴分布
+
+`START`、`END`、`CENTER` 将剩余空间放在一侧或两侧；`SPACE_BETWEEN` 只在子节点之间分配；`SPACE_AROUND` 在两端放一半间距；`SPACE_EVENLY` 在所有空隙平均分配。
+
+```kotlin
+Flex(
+    direction = Axis.HORIZONTAL,
+    mainAxisAlignment = MainAxisAlignment.SPACE_BETWEEN,
+) {
+    Text("Left")
+    Text("Right")
+}
+```
+
+## 约束要求
+
+当主轴最大约束无限时，不能合理计算 `Expanded` 的剩余空间。应先用 SizedBox、Container 或 ConstrainedBox 提供有限主轴尺寸，或者避免使用紧 Flex 子项。
+
+基线对齐通常只用于水平 Flex，并且必须同时设置 `textBaseline`。

@@ -1,0 +1,46 @@
+---
+title: OverflowBox
+description: 让子节点使用不同于自身的约束并允许内容溢出。
+sidebar:
+  order: 5
+---
+
+`OverflowBox` 自身服从父约束，但可以给子节点一套替代的最小/最大尺寸，使子节点大于父盒。
+
+## 函数签名
+
+```kotlin
+fun ChildSlot.OverflowBox(
+    alignment: BoxAlignment = BoxAlignment.CENTER,
+    minWidth: Float? = null,
+    maxWidth: Float? = null,
+    minHeight: Float? = null,
+    maxHeight: Float? = null,
+    content: OverflowBox.() -> Unit = {},
+)
+```
+
+## 参数
+
+| 参数 | 默认值 | 说明 |
+| --- | --- | --- |
+| `alignment` | `CENTER` | 子节点在 OverflowBox 中的对齐方式 |
+| `minWidth` / `maxWidth` | `null` | 替代的宽度范围；null 时沿用对应父约束 |
+| `minHeight` / `maxHeight` | `null` | 替代的高度范围 |
+| `content` | 空 | 最多一个子 Widget |
+
+## 示例
+
+```kotlin
+SizedBox(width = 120f, height = 80f) {
+    OverflowBox(maxWidth = 240f, maxHeight = 160f) {
+        Container(width = 240f, height = 160f, color = 0x5538BDF8)
+    }
+}
+```
+
+## 注意事项
+
+OverflowBox 不会自动关闭祖先节点的裁剪。若外层 `Stack`、`ClipRect` 或 Container 启用裁剪，溢出内容仍可能不可见。
+
+如果自身需要固定为某个尺寸而子节点继续按父约束布局，使用 [SizedOverflowBox](/widgets/layout/sized-overflow-box/)。

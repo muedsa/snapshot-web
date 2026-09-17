@@ -1,0 +1,36 @@
+---
+title: ClipRRect
+description: 使用圆角矩形裁剪子树。
+sidebar:
+  order: 8
+---
+
+`ClipRRect` 适合头像卡片、圆角图片和圆角容器。可以直接提供 BorderRadius，也可以由 clipper 完全自定义 RRect。
+
+## 函数签名
+
+```kotlin
+fun ChildSlot.ClipRRect(
+    borderRadius: BorderRadius = BorderRadius.ZERO,
+    clipper: ((Size) -> RRect)? = null,
+    clipBehavior: ClipBehavior = ClipBehavior.ANTI_ALIAS,
+    content: ClipRRect.() -> Unit = {},
+)
+```
+
+## 参数
+
+| 参数 | 默认值 | 说明 |
+| --- | --- | --- |
+| `borderRadius` | `ZERO` | clipper 为空时使用的四角半径 |
+| `clipper` | `null` | 根据当前 Size 返回自定义 RRect |
+| `clipBehavior` | `ANTI_ALIAS` | 裁剪策略 |
+| `content` | 空 | 最多一个子 Widget |
+
+```kotlin
+ClipRRect(borderRadius = BorderRadius.circular(24f)) {
+    RawImage(image = sourceImage, width = 320f, height = 180f, fit = BoxFit.COVER)
+}
+```
+
+ClipRRect 只负责裁剪，不负责绘制圆角背景或边框；需要视觉装饰时再配合 DecoratedBox。

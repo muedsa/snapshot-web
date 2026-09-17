@@ -1,0 +1,59 @@
+---
+title: Row
+description: 水平方向排列多个子节点的 Flex 特化。
+sidebar:
+  order: 11
+---
+
+`Row` 等价于 `Flex(direction = Axis.HORIZONTAL)`，主轴为水平，交叉轴为垂直。
+
+## 函数签名
+
+```kotlin
+fun ChildSlot.Row(
+    mainAxisAlignment: MainAxisAlignment = MainAxisAlignment.START,
+    mainAxisSize: MainAxisSize = MainAxisSize.MAX,
+    crossAxisAlignment: CrossAxisAlignment = CrossAxisAlignment.CENTER,
+    textDirection: Direction? = null,
+    verticalDirection: VerticalDirection = VerticalDirection.DOWN,
+    textBaseline: BaselineMode? = null,
+    clipBehavior: ClipBehavior = ClipBehavior.NONE,
+    content: Row.() -> Unit = {},
+)
+```
+
+## 参数
+
+参数语义与 [Flex](/widgets/layout/flex/) 相同。对于 Row：
+
+- `mainAxisAlignment` 控制水平方向分布；
+- `crossAxisAlignment` 控制垂直方向对齐；
+- `textDirection` 决定 START 是左还是右；
+- `verticalDirection` 影响交叉轴 start/end；
+- `textBaseline` 用于文字基线对齐。
+
+## 示例
+
+```kotlin
+Row(
+    mainAxisAlignment = MainAxisAlignment.SPACE_BETWEEN,
+    crossAxisAlignment = CrossAxisAlignment.CENTER,
+) {
+    Text("Snapshot")
+    SizedBox(width = 12f)
+    Text("PNG · JPEG · WebP")
+}
+```
+
+## 与 Expanded 配合
+
+```kotlin
+SizedBox(width = 480f) {
+    Row {
+        Expanded(flex = 2) { ColoredBox(color = 0xFF38BDF8.toInt()) }
+        Expanded(flex = 1) { ColoredBox(color = 0xFFA78BFA.toInt()) }
+    }
+}
+```
+
+Row 在根部无界宽度下默认无法“占满”一个有限区域；需要空间分配时先提供有限宽度。

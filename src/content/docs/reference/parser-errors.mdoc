@@ -1,0 +1,130 @@
+---
+title: 错误处理与扩展
+description: Parser 的文本规则、异常分类、服务端映射和自定义标签方式。
+---
+
+## 文本与空白规则
+
+- `<Text>` 中的普通文本会 trim；`<Raw>` 原样保留；
+- 非文本标签内只能出现缩进、换行等纯空白；
+- `&` 不会进行 HTML 实体解码；`&amp;` 会保留为字面量；
+- 文本中需要 `<` 或 `>` 时使用 CDATA；
+- 不支持 `<!-- comment -->` 和 `<!DOCTYPE ...>`；
+- 标签可以在 EOF 时自动闭合，但不建议依赖此行为；
+- 不匹配的结束标签可能被忽略，因此应在输入前做格式校验或依赖测试覆盖。
+
+```xml
+<Text fontSize="20">
+  <Raw><![CDATA[保留空白与 <tag> 字符]]></Raw>
+</Text>
+```
+
+## ParseException
+
+结构和属性解析错误统一包装为 `ParseException`，包含行、列和字符偏移，`cause` 保留底层异常。典型字符串类似：
+
+```text
+Pos[3:18]~72: Attr [color] value must start with #
+```
+
+### 解析阶段错误
+
+| 条件 | 典型错误 |
+| --- | --- |
+| 首标签不是 Snapshot | `First tag must be 'Snapshot'` |
+| 第二次出现 Snapshot | `Tag 'Snapshot' only be used as the first` |
+| 未知标签 | `Unknown element tag` |
+| 重复属性 | `exist duplicate attr` |
+| 叶子标签出现子节点 | `can not have child element` |
+| 单子节点标签出现第二个子节点 | `only can have one child` |
+| 普通容器内出现文本 | `Not Support RAWTEXT` |
+| 不支持的标记声明 | `Unexpected character '<'` |
+
+### 构建 Widget 阶段错误
+
+| 条件 | 表现 |
+| --- | --- |
+| 必填 URL 缺失 | `Attr [url] must not be null` |
+| 颜色或 Insets 格式错误 | 对应 AttrDefine 的格式异常 |
+| 枚举名无效 | `IllegalArgumentException` 被包装 |
+| Text 中出现非行内标签 | `Unknown inline span type` |
+| Raw / Emoji 用在 Text 外 | `can only be used in the Text` |
+
+### 渲染阶段错误
+
+渲染错误不一定是 `ParseException`：
+
+| 条件 | 异常 |
+| --- | --- |
+| Snapshot 没有根 Widget | `IllegalStateException` |
+| 根布局尺寸为 0 | `IllegalArgumentException: layout size is empty` |
+| 根布局尺寸无限 | `IllegalArgumentException: layout size is infinite` |
+
+## HTTP 服务错误映射
+
+建议将错误分层映射：
+
+```kotlin
+try {
+    val output = Parser().parse(StringReader(body)).snapshot()
+    call.respondBytes(output, ContentType.Image.PNG)
+} catch (e: ParseException) {
+    call.respond(HttpStatusCode.BadRequest, e.message ?: "Invalid document")
+} catch (e: IllegalArgumentException) {
+    call.respond(HttpStatusCode.UnprocessableEntity, e.message ?: "Invalid layout")
+} catch (e: IllegalStateException) {
+    call.respond(HttpStatusCode.UnprocessableEntity, e.message ?: "Invalid widget tree")
+}
+```
+
+{% aside type="danger" title="异常映射不能替代安全限制" %}
+对公网服务还必须增加请求体上限、标签深度限制、URL 与解析后 IP 校验、网络超时、图片大小限制、总体渲染超时及并发限制。网络图片应使用自行实现的安全 `NetworkImageCache`，不要直接依赖默认实现。
+{% /aside %}
+
+## Parser 实例生命周期
+
+{% aside type="caution" title="Parser 实例不可复用" %}
+`Parser.parse()` 会保存根元素状态，同一个 Parser 实例不应重复用于多个文档。每个请求都应创建新实例。
+{% /aside %}
+
+例如：
+
+```kotlin
+fun render(source: String): ByteArray =
+    Parser().parse(StringReader(source)).snapshot()
+```
+
+每次请求创建一个新实例。
+
+## 自定义标签
+
+不要直接修改全局 `DEFAULT_MANAGER`。复制默认标签后再注册自己的实现：
+
+```kotlin
+val manager = WidgetParserManager().also { target ->
+    WidgetParserManager.DEFAULT_MANAGER.tags.values.forEach(target::register)
+    target.register(MyCardParser())
+}
+
+class MyParser : Parser(manager)
+```
+
+一个标签解析器需要声明标签名、容器模式和 Widget 构建逻辑：
+
+```kotlin
+class MyCardParser : WidgetParser {
+    override val id: String = "MyCard"
+    override val containerMode = ContainerMode.SINGLE
+
+    override fun buildWidget(element: Element): Widget {
+        return Container(
+            width = 320f,
+            padding = EdgeInsets.all(16f),
+        ).also { WidgetParser.createWidgetForChildElement(it, element.children) }
+    }
+}
+```
+
+`ContainerMode.NONE` 禁止子节点，`SINGLE` 最多一个，`MULTIPLE` 允许多个。属性应通过 `AttrDefine` 和 `WidgetParser.parseAttrValue` 解析，以保留位置跟踪和统一异常格式。
+
+新增普通 Widget 标签只需注册 Parser；新增 Text 内的行内 Span 类型还需要扩展 `Element.parseInlineSpan()` 的分支。

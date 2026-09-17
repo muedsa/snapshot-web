@@ -1,0 +1,47 @@
+---
+title: ConstrainedBox
+description: 向子节点施加额外的最小与最大宽高约束。
+sidebar:
+  order: 3
+---
+
+`ConstrainedBox` 把一组额外 `BoxConstraints` 与父节点传入的约束合并，再传给子节点。
+
+## 函数签名
+
+```kotlin
+fun ChildSlot.ConstrainedBox(
+    constraints: BoxConstraints,
+    content: ConstrainedBox.() -> Unit = {},
+)
+```
+
+## 参数
+
+| 参数 | 说明 |
+| --- | --- |
+| `constraints` | 额外的 `minWidth`、`maxWidth`、`minHeight`、`maxHeight` |
+| `content` | 最多一个子 Widget |
+
+## 示例
+
+```kotlin
+ConstrainedBox(
+    constraints = BoxConstraints(
+        minWidth = 160f,
+        maxWidth = 320f,
+        minHeight = 80f,
+        maxHeight = 200f,
+    ),
+) {
+    Text("宽度会被限制在 160 到 320 之间")
+}
+```
+
+## 约束合并
+
+额外约束不能突破父约束。例如父节点要求宽度恰好 200，子级的 `minWidth = 300` 不会让布局合法地扩张到 300，而会被父约束限制或暴露冲突。
+
+常用工厂包括 `BoxConstraints.tight()`、`tightFor()`、`loose()` 与 `expand()`。
+
+需要只在父约束无限时限制尺寸，请使用 [LimitedBox](/widgets/layout/limited-box/)。

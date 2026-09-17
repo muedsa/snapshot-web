@@ -1,0 +1,32 @@
+---
+title: Opacity
+description: 把整个子树以指定透明度进行图层合成。
+sidebar:
+  order: 3
+---
+
+`Opacity` 对完整子树应用统一透明度，而不是只改变某一种颜色。
+
+## 函数签名
+
+```kotlin
+fun ChildSlot.Opacity(
+    opacity: Float = 1f,
+    content: Opacity.() -> Unit = {},
+)
+```
+
+## 参数
+
+| 参数 | 范围 | 说明 |
+| --- | --- | --- |
+| `opacity` | `0f..1f` | 0 完全透明，1 完全不透明 |
+| `content` | — | 最多一个子 Widget |
+
+```kotlin
+Opacity(opacity = 0.5f) {
+    Container(width = 200f, height = 100f, color = 0xFF38BDF8.toInt())
+}
+```
+
+构造时会校验透明度范围。对子树做整体透明度通常需要离屏图层，复杂大图上频繁嵌套会增加内存和合成成本。只需半透明纯色时，优先直接使用带 Alpha 的颜色。

@@ -1,0 +1,45 @@
+---
+title: ProviderImage
+description: 通过函数获取 Skia Image，并使用 RawImage 的参数绘制。
+sidebar:
+  order: 2
+---
+
+`ProviderImage` 接收 `() -> Image`。当前实现会在 Widget 构造时立即调用 provider，并把结果传给 RawImage；它不是异步或绘制阶段懒加载组件。
+
+## 函数签名
+
+```kotlin
+fun ChildSlot.ProviderImage(
+    width: Float? = null,
+    height: Float? = null,
+    fit: BoxFit? = null,
+    alignment: BoxAlignment = BoxAlignment.CENTER,
+    repeat: ImageRepeat = ImageRepeat.NO_REPEAT,
+    scale: Float = 1f,
+    opacity: Float = 1f,
+    color: Int? = null,
+    colorBlendMode: BlendMode? = null,
+    provider: () -> Image,
+)
+```
+
+## 参数
+
+除 `provider` 外，其余参数与 [RawImage](/widgets/image/raw-image/) 相同。
+
+| 参数 | 说明 |
+| --- | --- |
+| `provider` | 返回非空 Skia Image；构造 ProviderImage 时执行 |
+
+```kotlin
+ProviderImage(
+    width = 320f,
+    height = 180f,
+    fit = BoxFit.COVER,
+) {
+    Image.makeFromEncoded(Files.readAllBytes(Path.of("cover.png")))
+}
+```
+
+provider 中的异常会直接中止 Widget 构造。重复渲染相同图片时，应在外部复用解码结果或实现缓存，避免每次重新读取与解码。

@@ -1,0 +1,114 @@
+---
+title: 约束、布局与调试
+description: 深入理解 BoxConstraints、Flex、Stack、溢出和布局自省。
+---
+
+## 父节点给约束，子节点报尺寸
+
+Snapshot 采用与 Flutter 相同的 Box 布局协议：父节点向子节点传递 `BoxConstraints`，子节点必须在范围内选择尺寸，父节点再决定子节点的位置。
+
+```kotlin
+data class BoxConstraints(
+    val minWidth: Float = 0f,
+    val maxWidth: Float = Float.POSITIVE_INFINITY,
+    val minHeight: Float = 0f,
+    val maxHeight: Float = Float.POSITIVE_INFINITY,
+)
+```
+
+常用工厂：
+
+| 工厂 | 结果 |
+| --- | --- |
+| `tight(size)` | 宽高都固定 |
+| `tightFor(width, height)` | 只固定指定的维度 |
+| `loose(size)` | 最小为 0，最大为给定尺寸 |
+| `expand(width, height)` | 尽可能扩张，未指定维度默认为无限 |
+
+## Container 的组合顺序
+
+`Container` 不是单一 RenderBox，而是按属性组合多个 Widget。大致顺序为：子节点 → 对齐 → padding → 颜色/裁剪/装饰 → 约束 → margin → transform。
+
+这带来几个重要规则：
+
+- `width` / `height` 会收紧 `constraints`；
+- `margin` 实际是最外层 Padding；
+- `color` 与 `decoration` 不能同时传入；需要同时使用时把颜色放进 `BoxDecoration`；
+- `clipBehavior != NONE` 时必须提供可生成裁剪路径的 `decoration`；
+- 没有子节点且没有紧约束的空 Container 可能得到无限尺寸。
+
+## Flex 布局
+
+`Row` 与 `Column` 都是 `Flex` 的特化：
+
+| 参数 | 作用 |
+| --- | --- |
+| `mainAxisAlignment` | 子节点在主轴上的分布方式 |
+| `mainAxisSize` | Flex 自身在主轴上取最大或最小尺寸 |
+| `crossAxisAlignment` | 子节点在交叉轴上的对齐方式 |
+| `textDirection` | 水平方向的 start/end 解释 |
+| `verticalDirection` | 垂直方向排列顺序 |
+| `textBaseline` | 基线对齐时使用的基线类型 |
+| `clipBehavior` | 溢出时的裁剪策略 |
+
+`Expanded` 相当于 `Flexible(fit = TIGHT)`，强制占满分配到的空间；`Flexible(fit = LOOSE)` 允许子节点更小。两者只能是 Flex 的直接子节点。
+
+```kotlin
+SizedBox(width = 600f, height = 160f) {
+    Row(crossAxisAlignment = CrossAxisAlignment.STRETCH) {
+        Expanded(flex = 2) { Container(color = 0xFF38BDF8.toInt()) }
+        Flexible(flex = 1) { Container(width = 120f, color = 0xFFA78BFA.toInt()) }
+    }
+}
+```
+
+{% aside type="caution" title="Flex 子项需要有限的主轴空间" %}
+当 Flex 主轴约束无限时，无法计算可分配的“剩余空间”。请先通过外层 `SizedBox`、`Container` 或 `ConstrainedBox` 提供有限主轴尺寸，再使用 `Expanded` 或紧约束的 `Flexible`。
+{% /aside %}
+
+## Stack 与 Positioned
+
+`Stack` 先布局非 Positioned 子节点，再按 `left` / `top` / `right` / `bottom` / `width` / `height` 放置 Positioned 子节点。
+
+```kotlin
+Stack(
+    alignment = BoxAlignment.CENTER,
+    fit = StackFit.LOOSE,
+    clipBehavior = ClipBehavior.NONE,
+) {
+    Container(width = 400f, height = 240f)
+    Positioned(right = 16f, bottom = 16f) {
+        Container(width = 80f, height = 32f)
+    }
+}
+```
+
+同一轴上 `left`、`right`、`width` 最多只能给两个，垂直轴规则相同。
+
+{% aside type="note" title="Stack 默认会裁剪" %}
+`Stack` 默认使用 `HARD_EDGE`。阴影或装饰需要绘制到边界之外时，应显式设置 `clipBehavior = ClipBehavior.NONE`。
+{% /aside %}
+
+## 溢出相关 Widget
+
+| Widget | 行为 |
+| --- | --- |
+| `OverflowBox` | 给子节点一套不同的约束，允许子节点超出父盒 |
+| `SizedOverflowBox` | 自身使用指定尺寸，子节点仍按父约束布局 |
+| `LimitedBox` | 仅在收到无限约束时施加最大宽高 |
+| `ClipRect` / `ClipRRect` / `ClipOval` / `ClipPath` | 显式裁剪绘制结果 |
+
+布局溢出和绘制裁剪是两个不同问题：子节点可以布局得更大，但最终是否显示取决于父级和裁剪 Widget。
+
+## 布局自省
+
+```kotlin
+val root = layoutWidget {
+    Container(width = 320f, height = 180f) { /* ... */ }
+}
+val tree: LayoutNode = root.toLayoutNode()
+```
+
+`LayoutNode` 是只读快照，包含 RenderBox 类型、尺寸、局部偏移、全局偏移和子节点。它适合打印调试信息或写结构断言，不需要先生成 PNG。
+
+定位问题时建议按顺序检查：根约束是否有限 → 子节点尺寸是否满足约束 → parentData 是否放在正确父节点下 → 是否被裁剪 → 是否只是绘制透明。

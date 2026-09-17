@@ -1,0 +1,106 @@
+---
+title: 核心概念
+description: 理解 Widget、约束布局与 Skia 渲染流程。
+---
+
+## 一条清晰的渲染管线
+
+```text
+Widget 树 → RenderBox 树 → 布局尺寸 → Skia Canvas → PNG / JPEG / WebP
+```
+
+`Widget` 是描述配置，`RenderBox` 是布局与绘制的执行体。调用 `SnapshotPNG` 时，Snapshot 会先创建 RenderBox 树，再从根节点开始传递约束，最后根据布局结果创建 Surface 并绘制。
+
+## Widget 树
+
+| 类型 | 子节点 | 典型组件 |
+| --- | --- | --- |
+| 单子节点 | 1 个 | `Container`、`Padding`、`Align` |
+| 多子节点 | 任意个 | `Row`、`Column`、`Stack` |
+| 叶子节点 | 0 个 | `Text`、`RawImage`、`CachedNetworkImage` |
+| 父布局参数 | 1 个 | `Expanded`、`Flexible`、`Positioned` |
+
+{% aside type="caution" title="父布局参数不能脱离对应父节点" %}
+`Positioned` 只能作为 `Stack` 的直接子级；`Expanded` 和 `Flexible` 只能作为 `Row`、`Column` 或 `Flex` 的直接子级。放错层级会导致 parentData 类型错误。
+{% /aside %}
+
+### ChildSlot 与挂载规则
+
+DSL 函数的接收者是 `ChildSlot`，只有能接受子节点的 Widget 才实现它。这样可以在编译期阻止把子节点挂到 `RawImage` 等叶子节点上。
+
+单子节点和多子节点都通过 `attach(child)` 建树。重复占用单子槽位会抛出异常；自定义组合函数应声明为：
+
+```kotlin
+fun ChildSlot.profileCard() {
+    Container { /* ... */ }
+}
+```
+
+{% aside type="tip" title="编写自定义组合函数" %}
+接收者应使用 `ChildSlot`，不要写成普通 `Widget`，否则函数内部无法调用 DSL 挂载函数。
+{% /aside %}
+
+### ParentDataWidget
+
+`Expanded`、`Flexible`、`Positioned` 不创建独立 RenderBox，而是把数据写入子 RenderBox 的 parentData。父级 Flex 或 Stack 在布局时读取这些数据。这就是它们必须作为对应父节点直接子级的原因。
+
+## 约束模型
+
+父节点向子节点下发 `BoxConstraints`，子节点在约束允许的范围内决定尺寸，父节点再决定它的位置。常用约束包括：
+
+- `BoxConstraints.tight(size)`：宽高都锁定；
+- `BoxConstraints.loose(size)`：最大尺寸确定，最小尺寸为 0；
+- `BoxConstraints.expand(width, height)`：尽可能填满；
+- `BoxConstraints()`：完全放开，根节点使用时要确保最终尺寸有限。
+
+这也是图片尺寸由内容决定的原因：Surface 会使用根 RenderBox 的布局尺寸，并向上取整为像素。
+
+## 布局、绘制和图层
+
+布局只计算几何信息，不产生像素。绘制阶段由 RenderBox 把指令记录到 PaintingContext；透明度、滤镜、变换和裁剪等效果可能形成 Layer，最后统一合成到 Canvas。
+
+这种分层意味着：
+
+- `layoutWidget` 可以脱离图片编码单独测试；
+- Transform 可以改变绘制位置，但不会重新改变父布局尺寸；
+- Opacity 和 Filter 可能触发离屏合成；
+- 裁剪发生在绘制阶段，不会让子节点重新布局。
+
+## 颜色、尺寸与坐标
+
+- 颜色使用 ARGB Int：`0xAARRGGBB`；
+- 尺寸与坐标使用 Float 逻辑像素；
+- 最终 Surface 宽高向上取整；
+- `EdgeInsets` 表示四边空间；
+- `Offset`、`Size`、`Rect`、`Radius` 和 `Matrix44CMO` 位于 `com.muedsa.geometry`；
+- 浮点测试应使用容差，不应直接比较复杂计算后的精确值。
+
+## 对齐与方向
+
+`BoxAlignment(x, y)` 中，`(-1,-1)` 为左上，`(0,0)` 为中心，`(1,1)` 为右下。`AlignmentDirectional` 使用 start/end，需要结合 LTR 或 RTL 方向解析。
+
+方向会同时影响 Flex 排列、Stack 的 directional alignment 和文本段落，因此服务端渲染多语言内容时应显式传递方向。
+
+## DSL 与解析器共用一套模型
+
+Kotlin DSL 和类 DOM 解析器只是两种输入方式，最终都会得到同一套 Widget 树：
+
+```kotlin
+SnapshotPNG {
+    Column {
+        Text("Snapshot")
+        Row { /* ... */ }
+    }
+}
+```
+
+```xml
+<Snapshot>
+  <Column>
+    <Text>Snapshot</Text>
+    <Row />
+  </Column>
+</Snapshot>
+```
+
+Parser 只负责把文本变成同一套 Widget 配置；约束规则、布局算法、绘制顺序和异常仍由 core 决定。

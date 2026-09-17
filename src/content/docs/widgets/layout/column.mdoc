@@ -1,0 +1,48 @@
+---
+title: Column
+description: 垂直方向排列多个子节点的 Flex 特化。
+sidebar:
+  order: 12
+---
+
+`Column` 等价于 `Flex(direction = Axis.VERTICAL)`，主轴为垂直，交叉轴为水平。
+
+## 函数签名
+
+```kotlin
+fun ChildSlot.Column(
+    mainAxisAlignment: MainAxisAlignment = MainAxisAlignment.START,
+    mainAxisSize: MainAxisSize = MainAxisSize.MAX,
+    crossAxisAlignment: CrossAxisAlignment = CrossAxisAlignment.CENTER,
+    textDirection: Direction? = null,
+    verticalDirection: VerticalDirection = VerticalDirection.DOWN,
+    textBaseline: BaselineMode? = null,
+    clipBehavior: ClipBehavior = ClipBehavior.NONE,
+    content: Column.() -> Unit = {},
+)
+```
+
+## 参数
+
+对于 Column：
+
+- `mainAxisAlignment` 控制垂直方向分布；
+- `mainAxisSize` 决定高度尽量大还是包裹内容；
+- `crossAxisAlignment` 控制水平方向对齐；
+- `textDirection` 影响水平 start/end；
+- `verticalDirection` 决定从上到下或从下到上排列。
+
+## 示例
+
+```kotlin
+Column(
+    mainAxisSize = MainAxisSize.MIN,
+    crossAxisAlignment = CrossAxisAlignment.START,
+) {
+    Text("标题")
+    SizedBox(height = 8f)
+    Text("说明文字")
+}
+```
+
+在无界高度中使用 Expanded 会导致无法计算剩余高度。若要创建占满固定高度的列，先用 `SizedBox(height = ...)` 或 Container 提供边界。

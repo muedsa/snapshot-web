@@ -1,0 +1,123 @@
+---
+title: 渲染入口与输出
+description: Snapshot、SnapshotImage、编码函数以及自定义 Surface 的完整说明。
+---
+
+## 渲染入口总览
+
+所有入口位于 `com.muedsa.snapshot`：
+
+| 函数 | 返回值 | 适用场景 |
+| --- | --- | --- |
+| `Snapshot` | `Surface` | 需要继续操作 Skia Surface |
+| `SnapshotImage` | `Image` | 需要复用结果、二次绘制或自行编码 |
+| `SnapshotPNG` | `ByteArray` | 无损输出、透明背景、HTTP 响应 |
+| `SnapshotJPEG` | `ByteArray` | 照片类内容或更小体积 |
+| `SnapshotWEBP` | `ByteArray` | Web 场景的现代图片格式 |
+| `layoutWidget` | `RenderBox` | 只布局不绘制，用于调试和测试 |
+| `Canvas.drawRenderBox` | `Unit` | 把已有 RenderBox 绘制到任意 Canvas |
+
+## 共同参数
+
+`Snapshot*` 的参数一致：
+
+| 参数 | 类型 | 默认值 | 含义 |
+| --- | --- | --- | --- |
+| `background` | `Int` | `0xFFFFFFFF` | Surface 绘制前的 ARGB 背景色 |
+| `debug` | `Boolean` | `false` | 绘制调试辅助信息 |
+| `initSurface` | `(Int, Int) -> Surface` | CPU 光栅 Surface | 根据布局宽高创建目标 Surface |
+| `content` | `ChildSlot.() -> Unit` | 必填 | 构建根 Widget 树 |
+
+```kotlin
+val png: ByteArray = SnapshotPNG(
+    background = 0x00000000,
+    debug = false,
+) {
+    Container(width = 320f, height = 180f, color = 0xFF0F172A.toInt())
+}
+```
+
+颜色使用 `0xAARRGGBB`。Kotlin 中超过有符号 Int 上限的字面量需要调用 `.toInt()`。
+
+## 尺寸是如何决定的
+
+Snapshot 不接受单独的画布宽高。流程如下：
+
+{% steps %}
+
+1. `layoutWidget` 使用无界根约束 `BoxConstraints()` 布局 Widget 树；
+2. 读取根 RenderBox 的 `definiteSize`；
+3. 宽高分别 `ceil()` 向上取整；
+4. 用得到的像素尺寸创建 Surface；
+5. 清除背景色并从原点按 1:1 绘制。
+
+{% /steps %}
+
+因此，固定画布应通过根 `Container` 或 `SizedBox` 表达：
+
+```kotlin
+SnapshotPNG {
+    Container(width = 1200f, height = 630f) {
+        // 1200 × 630 的内容
+    }
+}
+```
+
+常见异常：
+
+```kotlin
+SnapshotPNG { Container() } // layout size is infinite
+SnapshotPNG { Row {} }      // layout size is empty
+```
+
+空 `Container` 会尝试尽可能大；空 `Row` 会收缩到零。给根节点或内容明确尺寸即可。
+
+## 自定义 Surface
+
+默认实现是 CPU 光栅化：
+
+```kotlin
+initSurface = { width, height ->
+    Surface.makeRasterN32Premul(width, height)
+}
+```
+
+你可以替换为其他 Surface 实现，但回调收到的尺寸已经是布局结果。
+
+{% aside type="tip" title="更大的 Surface 不等于高倍图" %}
+仅仅返回更大的 Surface 不会把内容放大，只会让右侧和底部多出背景区域。需要 2× 输出时，应将 Widget 树中的尺寸、字号和间距整体按比例放大。
+{% /aside %}
+
+## 接入 HTTP 服务
+
+解析器返回的字节数组可直接作为响应体：
+
+```kotlin
+post("/snapshot") {
+    val source = call.receiveText()
+    val image = Parser().parse(StringReader(source)).snapshot()
+    call.respondBytes(image, ContentType.Image.PNG)
+}
+```
+
+根 `Snapshot` 标签的 `type` 决定输出 `png`、`jpg` 或 `webp`。
+
+{% aside type="caution" title="HTTP 接口需要完整的资源与错误边界" %}
+示例只展示最小调用链。生产服务还应限制请求体、渲染时长、并发量和网络图片访问，并区分解析错误、布局错误与内部错误。详见[错误处理与扩展](/reference/parser-errors/)。
+{% /aside %}
+
+## 只布局或绘制到已有 Canvas
+
+```kotlin
+val root: RenderBox = layoutWidget {
+    Container(width = 200f, height = 100f)
+}
+
+canvas.drawRenderBox(
+    renderBox = root,
+    background = Color.WHITE,
+    debug = true,
+)
+```
+
+这条路径适合测试、布局自省以及把 Snapshot 接到已有 Skia 渲染循环中。

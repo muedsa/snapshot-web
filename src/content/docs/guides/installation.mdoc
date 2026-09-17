@@ -1,0 +1,127 @@
+---
+title: 安装与构建
+description: Snapshot 的运行环境、模块、依赖方式和常用 Gradle 命令。
+---
+
+## 环境要求
+
+Snapshot 是 JVM 项目，图形能力来自 JetBrains Skiko。当前仓库的实际构建配置如下：
+
+| 项目 | 当前值 | 说明 |
+| --- | --- | --- |
+| Gradle Wrapper | 9.7.1 | 请优先使用仓库内的 `gradlew` / `gradlew.bat` |
+| Java toolchain | 11 | Kotlin 编译目标由根构建脚本统一配置 |
+| CI JDK | 17 | GitHub Actions 使用 Temurin 17 |
+| Kotlin | 2.4.20 | 定义于 `gradle/libs.versions.toml` |
+| Skiko | `0.0.0-SNAPSHOT` | 来自 JetBrains Compose dev 仓库 |
+| Snapshot | `0.0.0-SNAPSHOT` | 当前持续发布的快照版本 |
+
+{% aside type="caution" title="快照依赖会变化" %}
+Skiko 使用滚动快照版本，因此同一个坐标在不同时间可能对应不同 API。需要可复现构建时，请在自己的分支中固定一个已经验证的 Skiko 版本。
+{% /aside %}
+
+## 模块结构
+
+| Gradle 模块 | Artifact | 主要职责 |
+| --- | --- | --- |
+| `:core` | `snapshot-core` | Widget、约束布局、绘制、文本、图片缓存与编码 |
+| `:parser` | `snapshot-parser` | 类 DOM 文本解析；传递依赖 `core` |
+| `:testkit` | `snapshot-testkit` | 布局、像素和 Golden 测试工具；主要服务仓库内部测试 |
+
+`core` 将 `skiko-awt` 作为 `api` 依赖，因此 `Color`、`BlendMode`、`ImageFilter` 等 Skia 类型会出现在公开 API 中。
+
+## 从 GitHub Packages 引入
+
+GitHub Packages 即使存放公开包，Maven 下载也需要 GitHub 用户名和具备 `read:packages` 权限的 classic personal access token。把凭据放到用户级 `~/.gradle/gradle.properties`：
+
+```properties
+gpr.user=YOUR_GITHUB_USERNAME
+gpr.key=YOUR_CLASSIC_PAT
+```
+
+{% aside type="danger" title="保护 GitHub Token" %}
+不要把 token 写入 `build.gradle.kts` 或提交到项目仓库。应将凭据保存在用户级 `~/.gradle/gradle.properties`，并只授予读取包所需的最小权限。
+{% /aside %}
+
+在使用方的 `build.gradle.kts` 中配置：
+
+```kotlin
+repositories {
+    mavenCentral()
+    maven { url = uri("https://maven.pkg.jetbrains.space/public/p/compose/dev") }
+    maven {
+        url = uri("https://maven.pkg.github.com/muedsa/snapshot")
+        credentials {
+            username = providers.gradleProperty("gpr.user").orNull
+            password = providers.gradleProperty("gpr.key").orNull
+        }
+    }
+}
+
+dependencies {
+    implementation("com.muedsa.snapshot:snapshot-core:0.0.0-SNAPSHOT")
+    // 使用类 DOM 解析器时改用下面这一项；它会自动带入 core。
+    // implementation("com.muedsa.snapshot:snapshot-parser:0.0.0-SNAPSHOT")
+}
+```
+
+快照版本会持续更新。需要忽略本地缓存并重新获取时运行：
+
+```bash
+./gradlew --refresh-dependencies
+```
+
+## 其他接入方式
+
+{% tabs %}
+
+{% tabitem label="Composite build" icon="code-branch" %}
+
+当使用方和 Snapshot 源码在同一台机器开发时，可在 `settings.gradle.kts` 中加入：
+
+```kotlin
+includeBuild("../snapshot")
+```
+
+之后仍然使用 `com.muedsa.snapshot:snapshot-core` 坐标，Gradle 会将其替换为本地构建。
+
+{% /tabitem %}
+
+{% tabitem label="本地 JAR" icon="document" %}
+
+```bash
+./gradlew releaseJars
+```
+
+产物位于 `core/build/libs/` 与 `parser/build/libs/`。手动使用 JAR 时，还需要在运行时 classpath 中提供对应平台的 Skiko runtime。
+
+| 平台 | Runtime artifact |
+| --- | --- |
+| Windows x64 / arm64 | `skiko-awt-runtime-windows-x64` / `-windows-arm64` |
+| Linux x64 / arm64 | `skiko-awt-runtime-linux-x64` / `-linux-arm64` |
+| macOS x64 / arm64 | `skiko-awt-runtime-macos-x64` / `-macos-arm64` |
+
+{% /tabitem %}
+
+{% /tabs %}
+
+## 仓库开发命令
+
+```bash
+./gradlew build
+./gradlew test
+./gradlew :core:test
+./gradlew :parser:test
+./gradlew :core:compileKotlin
+./gradlew releaseJars
+./gradlew projects
+```
+
+默认测试不会运行带 `sample` 或 `network` 标签的用例，避免改写样例图片或访问外网。需要时显式执行：
+
+```bash
+./gradlew :core:test -PincludeSamples
+./gradlew :core:test -PincludeNetwork
+```
+
+完成依赖配置后，继续阅读[快速开始](/guides/quickstart/)。
