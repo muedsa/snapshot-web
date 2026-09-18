@@ -1,0 +1,62 @@
+---
+import { Icon } from '@astrojs/starlight/components';
+---
+
+<!--
+  Starlight 在服务端输出时默认把页面标记为深色，再由客户端脚本读取主题。
+  这里在主题确定前隐藏正文，并让空白底色跟随系统主题，避免首屏出现深色闪烁。
+-->
+<style is:inline>
+  html:not([data-theme-ready]) {
+    color-scheme: light dark;
+    background-color: Canvas;
+  }
+
+  html:not([data-theme-ready]) body {
+    visibility: hidden;
+  }
+</style>
+
+<script is:inline>
+  window.StarlightThemeProvider = (() => {
+    let storedTheme = null;
+
+    try {
+      storedTheme = localStorage.getItem('starlight-theme');
+    } catch {
+      // 浏览器禁用存储时，继续使用系统主题。
+    }
+
+    const preferredTheme =
+      storedTheme === 'light' || storedTheme === 'dark'
+        ? storedTheme
+        : window.matchMedia('(prefers-color-scheme: light)').matches
+          ? 'light'
+          : 'dark';
+
+    document.documentElement.dataset.theme = preferredTheme;
+    document.documentElement.dataset.themeReady = '';
+
+    return {
+      updatePickers(theme = storedTheme || 'auto') {
+        document.querySelectorAll('starlight-theme-select').forEach((picker) => {
+          const select = picker.querySelector('select');
+          if (select) select.value = theme;
+
+          const template = document.querySelector('#theme-icons');
+          const newIcon = template?.content.querySelector(`.${theme}`);
+          if (!newIcon) return;
+
+          const oldIcon = picker.querySelector('svg.label-icon');
+          oldIcon?.replaceChildren(...newIcon.cloneNode(true).childNodes);
+        });
+      },
+    };
+  })();
+</script>
+
+<template id="theme-icons">
+  <Icon name="sun" class="light" />
+  <Icon name="moon" class="dark" />
+  <Icon name="laptop" class="auto" />
+</template>

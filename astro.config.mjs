@@ -18,6 +18,9 @@ export default defineConfig({
           root: { label: '简体中文', lang: 'zh-CN' },
       },
       customCss: ['./src/styles/global.css'],
+      components: {
+          ThemeProvider: './src/components/ThemeProvider.astro',
+      },
       social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/muedsa/snapshot' }],
       sidebar: [
           {
