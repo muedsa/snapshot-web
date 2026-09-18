@@ -6,6 +6,7 @@ import markdoc from '@astrojs/markdoc';
 import tailwindcss from '@tailwindcss/vite';
 
 import react from '@astrojs/react';
+import cloudflareScriptCompat from './integrations/cloudflare-script-compat.mjs';
 
 // https://astro.build/config
 export default defineConfig({
@@ -87,7 +88,7 @@ export default defineConfig({
               ],
           },
       ],
-  }), react()],
+  }), react(), cloudflareScriptCompat()],
 
   vite: {
     plugins: [tailwindcss()],
