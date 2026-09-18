@@ -13,6 +13,7 @@ export default defineConfig({
   integrations: [markdoc(), starlight({
       title: 'Snapshot',
       description: '用 Kotlin Widget 树和 Skia 构建结构化图片。',
+      favicon: '/logo_mark_mono.png',
       defaultLocale: 'root',
       locales: {
           root: { label: '简体中文', lang: 'zh-CN' },

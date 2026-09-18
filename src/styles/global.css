@@ -30,3 +30,18 @@
 }
 
 .hero .tagline { max-width: 42rem; font-size: 1.15rem; }
+
+.hero > .hero-html {
+  justify-content: center;
+}
+
+.hero > .hero-html img {
+  display: block;
+  width: 100%;
+  height: auto;
+  padding: clamp(0.75rem, 2vw, 1.25rem);
+  border: 1px solid rgb(148 163 184 / 22%);
+  border-radius: 1.5rem;
+  background: rgb(255 255 255 / 96%);
+  box-shadow: 0 1.25rem 3rem rgb(2 6 23 / 18%);
+}
