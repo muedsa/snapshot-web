@@ -144,7 +144,7 @@ val image = Parser().parse(StringReader(source)).snapshot()
 ```
 
 {% aside type="note" title="Parser 是受控子集" %}
-Parser 支持的标签少于 Kotlin DSL；例如 `Expanded`、`Transform`、`Opacity` 需要在 DSL 中使用或自行扩展标签。
+Parser 已内置 `Expanded`、`Flexible`、`Opacity`、`Transform`、约束布局和基础裁剪等 26 个标签，但仍少于完整 Kotlin DSL。请以[标签与属性参考](/reference/parser-tags/)为准，未覆盖的能力可以注册自定义标签。
 {% /aside %}
 
 ## 选择下一篇

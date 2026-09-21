@@ -49,6 +49,11 @@ Pos[3:18]~72: Attr [color] value must start with #
 | 枚举名无效 | `IllegalArgumentException` 被包装 |
 | Text 中出现非行内标签 | `Unknown inline span type` |
 | Raw / Emoji 用在 Text 外 | `can only be used in the Text` |
+| Expanded / Flexible 不在 Row 或 Column 直属层级 | `must be a direct child of Row or Column` |
+| Expanded 使用 `fit` 属性 | `does not support attr [fit]` |
+| Opacity 超出 0 到 1 | 参数范围异常 |
+| Transform 缺少矩阵或矩阵格式错误 | `Attr [matrix]` 对应格式异常 |
+| 约束的最小值大于最大值 | `BoxConstraints` 参数异常 |
 
 ### 渲染阶段错误
 
@@ -83,18 +88,20 @@ try {
 
 ## Parser 实例生命周期
 
-{% aside type="caution" title="Parser 实例不可复用" %}
-`Parser.parse()` 会保存根元素状态，同一个 Parser 实例不应重复用于多个文档。每个请求都应创建新实例。
+{% aside type="note" title="Parser 实例可以复用" %}
+`Parser.parse()` 会先清空元素栈和根元素并创建新的 Tokenizer，因此同一实例可以重复解析多个文档；一次调用抛出异常也不会污染下一次调用。
 {% /aside %}
 
 例如：
 
 ```kotlin
+val parser = Parser()
+
 fun render(source: String): ByteArray =
-    Parser().parse(StringReader(source)).snapshot()
+    parser.parse(StringReader(source)).snapshot()
 ```
 
-每次请求创建一个新实例。
+`parse()` 使用 `@Synchronized`，所以共享实例是串行入口。同一个 Parser 可安全接收并发调用，但这些调用不会并行执行。高并发服务应使用多个实例或实例池；复用期间不要并发修改 `WidgetParserManager`。
 
 ## 自定义标签
 

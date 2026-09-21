@@ -38,7 +38,7 @@ Stack 默认 `clipBehavior = HARD_EDGE`。把它改为 `ClipBehavior.NONE`，同
 
 ## Parser 能使用 Expanded、Opacity 或 Transform 吗？
 
-默认不能。内置管理器只注册文档列出的 11 个标签。需要这些能力时使用 Kotlin DSL，或注册自定义标签。
+可以。默认管理器已注册 `Expanded`、`Flexible`、`Opacity` 和 `Transform`，也支持常用约束、溢出和基础裁剪标签。完整集合和属性见[标签与属性参考](/reference/parser-tags/)。
 
 ## 为什么 Parser 的属性没有生效也没有报错？
 
@@ -48,9 +48,9 @@ Stack 默认 `clipBehavior = HARD_EDGE`。把它改为 `ClipBehavior.NONE`，同
 
 使用 CDATA。解析器不实现 HTML 实体解码，因此 `&lt;` 不会变成 `<`。
 
-## 为什么不能复用 Parser？
+## Parser 可以复用吗？
 
-Parser 会保留已经解析出的根元素，重复 parse 可能出现 duplicate root。每个文档创建一个新 `Parser()`。
+可以。`parse()` 会在每次调用前重置内部状态，解析失败后也能继续处理下一个文档。该方法使用 `@Synchronized`，所以同一实例的并发调用会串行执行；需要并行解析时使用多个实例或实例池。
 
 ## 网络图片是异步的吗？
 

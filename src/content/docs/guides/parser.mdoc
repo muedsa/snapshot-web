@@ -31,15 +31,37 @@ val bytes = Parser().parse(StringReader(text)).snapshot()
 
 `snapshot()` 根据根标签的 `type` 返回编码后的字节。
 
-{% aside type="caution" title="每个文档使用新的 Parser" %}
-`Parser` 实例会保存解析状态，不能安全地复用于多个文档。每次解析或每个请求都应创建新的 `Parser()`。
+{% aside type="note" title="Parser 实例可以复用" %}
+`parse()` 会在每次调用前重置元素栈、根元素和 Tokenizer，因此同一个 `Parser` 可以连续解析多个文档，也可以在一次解析失败后继续使用。该方法使用 `@Synchronized`：同一实例的并发调用会串行执行；需要并行吞吐时应使用多个实例或实例池。
 {% /aside %}
 
 ## 常用标签
 
-`Snapshot`、`Container`、`Row`、`Column`、`Stack`、`Positioned`、`Image`、`Text` 和 `Raw` 是最常用的标签。`Container` 可以通过 `padding`、`border`、`borderRadius`、`boxShadow` 等属性表达常见卡片样式。
+`Snapshot`、`Container`、`SizedBox`、`Row`、`Column`、`Stack`、`Positioned`、`Image`、`Text` 和 `Raw` 是最常用的标签。`Container` 可以通过 `padding`、`border`、`borderRadius`、`boxShadow` 等属性表达常见卡片样式。
 
-完整内置集合还包括 `Border` 与 `Emoji`。详见[标签与属性参考](/reference/parser-tags/)。
+默认管理器目前注册 26 个标签，还包括：
+
+- 基础布局：`Padding`、`Align`、`Center`；
+- Flex 子项：`Expanded`、`Flexible`；
+- 约束与溢出：`ConstrainedBox`、`LimitedBox`、`OverflowBox`、`SizedOverflowBox`；
+- 绘制效果：`Opacity`、`Transform`；
+- 裁剪：`ClipRect`、`ClipOval`、`ClipRRect`；
+- 装饰与行内内容：`Border`、`Emoji`。
+
+详见[标签与属性参考](/reference/parser-tags/)。
+
+## 复用 Parser
+
+当标签管理器配置相同，可以长期持有一个 Parser：
+
+```kotlin
+val parser = Parser()
+
+val first = parser.parse(StringReader(firstSource)).snapshot()
+val second = parser.parse(StringReader(secondSource)).snapshot()
+```
+
+即使 `firstSource` 解析失败，下一次 `parse()` 仍会从干净状态开始。注意同一实例会串行处理并发调用；在高并发服务中，可按请求创建实例或建立 Parser 池，避免单实例成为吞吐瓶颈。复用期间不要修改它所使用的 `WidgetParserManager`。
 
 ## 一个更完整的模板
 
@@ -68,7 +90,7 @@ val bytes = Parser().parse(StringReader(text)).snapshot()
 ```
 
 {% aside type="note" title="Parser 能力与 Kotlin DSL 不完全相同" %}
-Parser 的 `Stack` 固定使用 `LOOSE` 和 `HARD_EDGE`，并且没有 `Expanded` 标签。模板设计应在这些能力范围内完成，或注册自定义标签扩展。
+Parser 已覆盖常用布局、Flex、约束、变换和裁剪能力，但仍不是全部 Kotlin DSL 的一一映射。例如 Parser 的 `Stack` 固定使用 `StackFit.LOOSE` 和 `ClipBehavior.HARD_EDGE`。模板设计应以标签参考为准，缺失能力可通过自定义标签扩展。
 {% /aside %}
 
 ## 文本中的特殊字符
