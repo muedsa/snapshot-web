@@ -426,6 +426,18 @@ const examples = [
     border: 1px solid var(--pg-border);
   }
 
+  /* 隔离 Starlight 正文区为相邻元素添加的垂直间距，避免工具栏和面板错位。 */
+  .playground-toolbar > *,
+  .example-picker > *,
+  .toolbar-actions > *,
+  .playground-grid,
+  .playground-grid > *,
+  .pane > *,
+  .pane-header > *,
+  .preview-actions > * {
+    margin-block: 0;
+  }
+
   .playground-toolbar {
     display: flex;
     align-items: center;
@@ -510,7 +522,7 @@ const examples = [
   }
 
   .button {
-    min-height: 2.35rem;
+    height: 2.35rem;
     gap: 0.4rem;
     border-radius: 0.55rem;
     padding: 0 0.8rem;
