@@ -1,0 +1,48 @@
+---
+// Keep this as the first import so Starlight's cascade layers load in the expected order.
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import SnapshotPlayground from '../components/SnapshotPlayground.astro';
+---
+
+<StarlightPage
+  frontmatter={{
+    title: 'Playground',
+    description: '在线编写 Snapshot DSL，并通过 Open Snapshot 服务实时生成图片。',
+    pagefind: false,
+    tableOfContents: false,
+  }}
+  hasSidebar={false}
+>
+  <SnapshotPlayground />
+</StarlightPage>
+
+<style is:global>
+  html:has([data-snapshot-playground]) {
+    --sl-content-width: 88rem;
+  }
+
+  html:has([data-snapshot-playground]) main {
+    padding-bottom: 0;
+  }
+
+  html:has([data-snapshot-playground]) main > .content-panel:first-of-type {
+    padding-bottom: 1rem;
+  }
+
+  html:has([data-snapshot-playground]) main > .content-panel:nth-of-type(2) {
+    border-top: 0;
+    padding-top: 0;
+  }
+
+  html:has([data-snapshot-playground]) main > .content-panel:nth-of-type(2) > .sl-container {
+    max-width: 88rem;
+  }
+
+  html:has([data-snapshot-playground]) .sl-markdown-content > [data-snapshot-playground] {
+    margin-top: 0;
+  }
+
+  html:has([data-snapshot-playground]) footer {
+    margin-top: 2rem;
+  }
+</style>

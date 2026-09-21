@@ -29,6 +29,7 @@ export default defineConfig({
               label: '开始使用',
               items: [
                   { label: '概览', slug: 'index' },
+                  { label: '在线 Playground', link: '/playground/' },
                   { label: '安装与构建', slug: 'guides/installation' },
                   { label: '快速开始', slug: 'guides/quickstart' },
               ],
