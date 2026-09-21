@@ -273,7 +273,7 @@ const examples = [
 
       try {
         const startedAt = performance.now();
-        const requestOptions: RequestInit = {
+        const requestOptions = {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain; charset=utf-8', Accept: 'image/*, application/json' },
           body: editor.value,
