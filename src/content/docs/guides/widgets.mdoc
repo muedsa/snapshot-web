@@ -9,22 +9,26 @@ description: Snapshot 常用组件、布局和装饰能力速查。
 | --- | --- |
 | [`Container`](/widgets/layout/container/) | 尺寸、内外边距、底色、装饰、对齐与裁剪的组合组件 |
 | [`SizedBox`](/widgets/layout/sized-box/) | 强制宽度或高度 |
+| [`AspectRatio`](/widgets/layout/aspect-ratio/) / [`FractionallySizedBox`](/widgets/layout/fractionally-sized-box/) | 按宽高比或父约束比例确定尺寸 |
+| [`UnconstrainedBox`](/widgets/layout/unconstrained-box/) | 解除传给子节点的约束 |
 | [`Padding`](/widgets/layout/padding/) | 为单个子节点增加内边距 |
 | [`Align`](/widgets/layout/align/) / [`Center`](/widgets/layout/center/) | 控制子节点在盒子内的位置 |
 | [`Row`](/widgets/layout/row/) / [`Column`](/widgets/layout/column/) | 一维横向或纵向布局 |
 | [`Stack`](/widgets/layout/stack/) | 多个子节点层叠布局 |
+| [`IndexedStack`](/widgets/layout/indexed-stack/) | 只绘制指定索引的子节点 |
 | [`Positioned`](/widgets/layout/positioned/) | 在 `Stack` 中按边距或尺寸定位 |
 | [`Expanded`](/widgets/layout/expanded/) / [`Flexible`](/widgets/layout/flexible/) | 在 Flex 主轴上分配剩余空间 |
+| [`Spacer`](/widgets/layout/spacer/) | 以权重填充 Flex 剩余空间 |
 
 ## 完整 Widget 分类
 
 | 分类 | Widget |
 | --- | --- |
-| 约束 | [`SizedBox`](/widgets/layout/sized-box/)、[`ConstrainedBox`](/widgets/layout/constrained-box/)、[`LimitedBox`](/widgets/layout/limited-box/) |
+| 约束 | [`SizedBox`](/widgets/layout/sized-box/)、[`AspectRatio`](/widgets/layout/aspect-ratio/)、[`FractionallySizedBox`](/widgets/layout/fractionally-sized-box/)、[`UnconstrainedBox`](/widgets/layout/unconstrained-box/)、[`ConstrainedBox`](/widgets/layout/constrained-box/)、[`LimitedBox`](/widgets/layout/limited-box/) |
 | 溢出 | [`OverflowBox`](/widgets/layout/overflow-box/)、[`SizedOverflowBox`](/widgets/layout/sized-overflow-box/) |
 | 间距与对齐 | [`Padding`](/widgets/layout/padding/)、[`Align`](/widgets/layout/align/)、[`Center`](/widgets/layout/center/) |
-| Flex | [`Flex`](/widgets/layout/flex/)、[`Row`](/widgets/layout/row/)、[`Column`](/widgets/layout/column/)、[`Expanded`](/widgets/layout/expanded/)、[`Flexible`](/widgets/layout/flexible/) |
-| 层叠 | [`Stack`](/widgets/layout/stack/)、[`Positioned`](/widgets/layout/positioned/) |
+| Flex | [`Flex`](/widgets/layout/flex/)、[`Row`](/widgets/layout/row/)、[`Column`](/widgets/layout/column/)、[`Expanded`](/widgets/layout/expanded/)、[`Flexible`](/widgets/layout/flexible/)、[`Spacer`](/widgets/layout/spacer/) |
+| 层叠 | [`Stack`](/widgets/layout/stack/)、[`IndexedStack`](/widgets/layout/indexed-stack/)、[`Positioned`](/widgets/layout/positioned/) |
 | 变换 | [`Transform`](/widgets/layout/transform/) |
 | 颜色与装饰 | [`ColoredBox`](/widgets/painting/colored-box/)、[`DecoratedBox`](/widgets/painting/decorated-box/)、[`Container`](/widgets/layout/container/) |
 | 合成效果 | [`Opacity`](/widgets/painting/opacity/)、[`ColorFiltered`](/widgets/painting/color-filtered/)、[`ImageFiltered`](/widgets/painting/image-filtered/)、[`BackdropFilter`](/widgets/painting/backdrop-filter/) |

@@ -1,11 +1,11 @@
 ---
 title: Positioned
-description: 在 Stack 中按边距与尺寸定位一个子节点。
+description: 在 Stack 或 IndexedStack 中按边距与尺寸定位一个子节点。
 sidebar:
   order: 16
 ---
 
-`Positioned` 是 Stack 专用的 ParentDataWidget，不创建独立 RenderBox。它把定位参数写入子节点的 `StackParentData`。
+`Positioned` 是 Stack / IndexedStack 专用的 ParentDataWidget，不创建独立 RenderBox。它把定位参数写入子节点的 `StackParentData`。
 
 ## 函数签名
 
@@ -43,8 +43,8 @@ Stack {
 
 ## 其他构造方式
 
-类还提供 `fromRect()`、`fromRelativeRect()`、`fill()` 与 `directional()` 工厂，适合直接构造 Widget 对象。DSL 中最常用的是上面的 Stack 扩展函数。
+类还提供 `fromRect()`、`fromRelativeRect()`、`fill()` 与 `directional()` 工厂，适合直接构造 Widget 对象。DSL 同时提供 `Stack.Positioned()` 与 `IndexedStack.Positioned()` 扩展函数。
 
-{% aside type="caution" title="Positioned 只能放在 Stack 中" %}
-`Positioned` 只能作为 `Stack` 的直接子节点。放在 `Row`、`Column` 或其他父节点中会因 parentData 类型不匹配而失败。
+{% aside type="caution" title="Positioned 的父节点" %}
+`Positioned` 只能作为 `Stack` 或 `IndexedStack` 的直接子节点。放在 `Row`、`Column` 或其他父节点中会因 parentData 类型不匹配而失败。
 {% /aside %}

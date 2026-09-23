@@ -43,3 +43,5 @@ ProviderImage(
 ```
 
 provider 中的异常会直接中止 Widget 构造。重复渲染相同图片时，应在外部复用解码结果或实现缓存，避免每次重新读取与解码。
+
+`scale` 与 RawImage 一样必须是有限正数；provider 在构造 Widget 时立即执行，不会等到布局或绘制阶段。

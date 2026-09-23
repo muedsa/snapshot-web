@@ -91,6 +91,8 @@ Stack(
 
 ## 溢出相关 Widget
 
+`AspectRatio` 用有限宽高比确定尺寸，父约束至少一轴有界；`FractionallySizedBox` 按父约束最大宽高的倍数设置子节点尺寸，设置比例的轴必须有界。`UnconstrainedBox` 可以解除传给子节点的轴约束，但自身仍遵守父约束。`Spacer` 可作为 Flex 的直属子项填满剩余空间。`IndexedStack` 会布局全部子项，只绘制指定索引。
+
 | Widget | 行为 |
 | --- | --- |
 | `OverflowBox` | 给子节点一套不同的约束，允许子节点超出父盒 |

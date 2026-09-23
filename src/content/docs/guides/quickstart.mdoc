@@ -144,7 +144,7 @@ val image = Parser().parse(StringReader(source)).snapshot()
 ```
 
 {% aside type="note" title="Parser 是受控子集" %}
-Parser 已内置 `Expanded`、`Flexible`、`Opacity`、`Transform`、约束布局和基础裁剪等 26 个标签，但仍少于完整 Kotlin DSL。请以[标签与属性参考](/reference/parser-tags/)为准，未覆盖的能力可以注册自定义标签。
+Parser 已内置 Flex、比例布局、基础滤镜、富文本行内 Widget、Data URI 图片等共 38 个标签，但仍少于完整 Kotlin DSL。请以[标签与属性参考](/reference/parser-tags/)为准，未覆盖的能力可以注册自定义标签。
 {% /aside %}
 
 ## 选择下一篇

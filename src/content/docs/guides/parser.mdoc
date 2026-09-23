@@ -39,14 +39,14 @@ val bytes = Parser().parse(StringReader(text)).snapshot()
 
 `Snapshot`、`Container`、`SizedBox`、`Row`、`Column`、`Stack`、`Positioned`、`Image`、`Text` 和 `Raw` 是最常用的标签。`Container` 可以通过 `padding`、`border`、`borderRadius`、`boxShadow` 等属性表达常见卡片样式。
 
-默认管理器目前注册 26 个标签，还包括：
+默认管理器目前注册 38 个标签，还包括：
 
-- 基础布局：`Padding`、`Align`、`Center`；
-- Flex 子项：`Expanded`、`Flexible`；
-- 约束与溢出：`ConstrainedBox`、`LimitedBox`、`OverflowBox`、`SizedOverflowBox`；
-- 绘制效果：`Opacity`、`Transform`；
+- 基础布局：`Padding`、`Align`、`Center`、`AspectRatio`、`FractionallySizedBox`、`UnconstrainedBox`；
+- Flex 与子项：`Flex`、`Expanded`、`Flexible`、`Spacer`；
+- 约束与溢出：`ConstrainedBox`、`LimitedBox`、`OverflowBox`、`SizedOverflowBox`、`IndexedStack`；
+- 绘制效果：`Opacity`、`Transform`、`ColoredBox`、`DecoratedBox`、`ColorFiltered`、`ImageFiltered`、`BackdropFilter`；
 - 裁剪：`ClipRect`、`ClipOval`、`ClipRRect`；
-- 装饰与行内内容：`Border`、`Emoji`。
+- 装饰与行内内容：`Border`、`Emoji`、`WidgetSpan`。
 
 详见[标签与属性参考](/reference/parser-tags/)。
 
@@ -90,8 +90,12 @@ val second = parser.parse(StringReader(secondSource)).snapshot()
 ```
 
 {% aside type="note" title="Parser 能力与 Kotlin DSL 不完全相同" %}
-Parser 已覆盖常用布局、Flex、约束、变换和裁剪能力，但仍不是全部 Kotlin DSL 的一一映射。例如 Parser 的 `Stack` 固定使用 `StackFit.LOOSE` 和 `ClipBehavior.HARD_EDGE`。模板设计应以标签参考为准，缺失能力可通过自定义标签扩展。
+Parser 已覆盖常用布局、Flex、约束、变换、裁剪与基础滤镜能力，但仍不是全部 Kotlin DSL 的一一映射。`Stack` / `IndexedStack` 现支持 `fit` 和 `clipBehavior`；任意路径的 `ClipPath`、复杂滤镜等仍需 Kotlin DSL。模板设计应以标签参考为准。
 {% /aside %}
+
+## 图片来源与扩展
+
+`Image` 和文本内的 `Emoji` 必须且只能设置 `url` 或 `dataUri`。前者同步访问网络；默认 Data URI 解码器只支持 PNG、JPEG、WebP 的 Base64 内容，可通过 `Parser(dataUriImageDecoder = ...)` 注入自定义实现。`noCache` 仅适用于 URL。默认每个 `Parser` 拥有独立的标签注册表；自定义标签可基于 `WidgetParserManager.withDefaults()` 注册。
 
 ## 文本中的特殊字符
 
@@ -105,7 +109,7 @@ Parser 已覆盖常用布局、Flex、约束、变换和裁剪能力，但仍不
 
 ## 错误处理
 
-结构错误和属性错误会包装为 `ParseException`，错误信息带有行、列和偏移。HTTP 服务可以把它作为 400 Bad Request；布局尺寸为空或无限则更适合作为 422 Unprocessable Content。
+结构错误和属性错误会包装为 `ParseException`，错误信息带有行、列和偏移。根标签属性在 `parse()` 时校验，其他标签属性在 `createWidget()` / `snapshot()` 时校验；空文档也会抛 `ParseException`。HTTP 服务可以把它作为 400 Bad Request；布局尺寸为空或无限则更适合作为 422 Unprocessable Content。
 
 ## 安全边界
 

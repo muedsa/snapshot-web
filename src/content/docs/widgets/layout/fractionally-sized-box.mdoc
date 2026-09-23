@@ -1,0 +1,25 @@
+---
+title: FractionallySizedBox
+description: 按父约束最大宽高的比例设置子节点尺寸。
+---
+
+```kotlin
+fun ChildSlot.FractionallySizedBox(
+    widthFactor: Float? = null,
+    heightFactor: Float? = null,
+    alignment: BoxAlignment = BoxAlignment.CENTER,
+    content: FractionallySizedBox.() -> Unit = {},
+)
+```
+
+`widthFactor` 和 `heightFactor` 分别乘以父约束的最大宽、高；可只设置一个轴。比例必须是有限非负数，设置比例的轴必须有界。未设置比例的轴沿用父约束。组件自身仍遵守父约束，因此大于 `1` 的比例可能让子节点溢出；`alignment` 决定子节点在组件中的位置。
+
+```kotlin
+ConstrainedBox(constraints = BoxConstraints(maxWidth = 240f, maxHeight = 160f)) {
+    FractionallySizedBox(widthFactor = 0.5f, heightFactor = 0.5f) {
+        ColoredBox(color = 0xFF2196F3.toInt())
+    }
+}
+```
+
+Parser 对应 `<FractionallySizedBox widthFactor="0.5" heightFactor="0.5">…</FractionallySizedBox>`。

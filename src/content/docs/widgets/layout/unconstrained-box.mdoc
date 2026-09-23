@@ -1,0 +1,24 @@
+---
+title: UnconstrainedBox
+description: 解除传给子节点的单轴或双轴约束。
+---
+
+```kotlin
+fun ChildSlot.UnconstrainedBox(
+    constrainedAxis: Axis? = null,
+    alignment: BoxAlignment = BoxAlignment.CENTER,
+    content: UnconstrainedBox.() -> Unit = {},
+)
+```
+
+默认解除子节点双轴约束；`constrainedAxis = Axis.HORIZONTAL` 表示保留水平约束，`Axis.VERTICAL` 表示保留垂直约束。组件自身仍服从父约束，子节点可以超出组件范围，且组件不会主动裁剪。解除约束后，子节点仍须能确定有限尺寸。
+
+```kotlin
+SizedBox(width = 100f, height = 80f) {
+    UnconstrainedBox(alignment = BoxAlignment.BOTTOM_RIGHT) {
+        SizedBox(width = 150f, height = 120f)
+    }
+}
+```
+
+此例组件自身为 100×80，子节点为 150×120。Parser 支持 `constrainedAxis="HORIZONTAL"` 或 `"VERTICAL"`。

@@ -32,6 +32,7 @@ Pos[3:18]~72: Attr [color] value must start with #
 | 条件 | 典型错误 |
 | --- | --- |
 | 首标签不是 Snapshot | `First tag must be 'Snapshot'` |
+| 输入为空或全是空白 | `Document must contain root element [Snapshot]` |
 | 第二次出现 Snapshot | `Tag 'Snapshot' only be used as the first` |
 | 未知标签 | `Unknown element tag` |
 | 重复属性 | `exist duplicate attr` |
@@ -44,16 +45,23 @@ Pos[3:18]~72: Attr [color] value must start with #
 
 | 条件 | 表现 |
 | --- | --- |
-| 必填 URL 缺失 | `Attr [url] must not be null` |
+| Image / Emoji 未指定来源或同时指定两种来源 | 必须且只能设置 `url` 或 `dataUri` |
+| Data URI 格式或图片数据错误 | 指向 `dataUri` 属性值 |
 | 颜色或 Insets 格式错误 | 对应 AttrDefine 的格式异常 |
 | 枚举名无效 | `IllegalArgumentException` 被包装 |
 | Text 中出现非行内标签 | `Unknown inline span type` |
-| Raw / Emoji 用在 Text 外 | `can only be used in the Text` |
-| Expanded / Flexible 不在 Row 或 Column 直属层级 | `must be a direct child of Row or Column` |
+| Raw / Emoji / WidgetSpan 用在 Text 外 | `can only be used in the Text` |
+| WidgetSpan 缺少子标签 | `must have exactly one child element` |
+| Expanded / Flexible / Spacer 不在 Flex、Row 或 Column 直属层级 | `must be a direct child of Flex, Row or Column` |
 | Expanded 使用 `fit` 属性 | `does not support attr [fit]` |
 | Opacity 超出 0 到 1 | 参数范围异常 |
 | Transform 缺少矩阵或矩阵格式错误 | `Attr [matrix]` 对应格式异常 |
 | 约束的最小值大于最大值 | `BoxConstraints` 参数异常 |
+| 装饰线修饰参数缺少 `decoration` | `Attr [decoration] is required` |
+| 前景画笔修饰参数缺少 `foregroundColor` | `Attr [foregroundColor] is required` |
+| `fontFeatures`、`textShadow` 或 `strut*` 格式错误 | 对应属性名及属性值起始位置 |
+
+根标签 `Snapshot` 的属性在 `parse()` 时校验；其余标签属性在建树阶段校验。属性错误通常指向属性值的起始位置；缺少必填属性时指向标签起始位置。
 
 ### 渲染阶段错误
 
@@ -105,13 +113,10 @@ fun render(source: String): ByteArray =
 
 ## 自定义标签
 
-不要直接修改全局 `DEFAULT_MANAGER`。复制默认标签后再注册自己的实现：
+`WidgetParserManager.withDefaults()` 每次返回独立的默认注册表；也可通过 `copy()` 复制已有配置。不要使用已弃用的全局 `DEFAULT_MANAGER`：
 
 ```kotlin
-val manager = WidgetParserManager().also { target ->
-    WidgetParserManager.DEFAULT_MANAGER.tags.values.forEach(target::register)
-    target.register(MyCardParser())
-}
+val manager = WidgetParserManager.withDefaults().also { it.register(MyCardParser()) }
 
 class MyParser : Parser(manager)
 ```

@@ -40,6 +40,8 @@ Stack 默认 `clipBehavior = HARD_EDGE`。把它改为 `ClipBehavior.NONE`，同
 
 可以。默认管理器已注册 `Expanded`、`Flexible`、`Opacity` 和 `Transform`，也支持常用约束、溢出和基础裁剪标签。完整集合和属性见[标签与属性参考](/reference/parser-tags/)。
 
+新增的 `Flex`、`Spacer`、`IndexedStack`、比例布局、基础滤镜和 `WidgetSpan` 也已可用。
+
 ## 为什么 Parser 的属性没有生效也没有报错？
 
 未知属性会被静默忽略。检查拼写、大小写和属性格式；布尔值要显式写 `"true"`。某些属性错误直到 `createWidget()` 或 `snapshot()` 才会出现。
@@ -54,7 +56,7 @@ Stack 默认 `clipBehavior = HARD_EDGE`。把它改为 `ClipBehavior.NONE`，同
 
 ## 网络图片是异步的吗？
 
-不是。`CachedNetworkImage`、`Image` 标签和 Emoji 在渲染链路内同步加载。服务端必须配置超时、大小限制和安全策略。
+不是。`CachedNetworkImage` 以及使用 `url` 的 `Image`、`Emoji` 会同步获取网络图片。若使用 `dataUri`，则在建树阶段由解码器本地处理；默认仅支持 PNG、JPEG、WebP Base64 Data URI。服务端仍需为不可信输入设置大小、时间和网络访问限制。
 
 ## 怎样调试布局？
 

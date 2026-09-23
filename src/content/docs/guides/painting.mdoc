@@ -87,6 +87,8 @@ ImageFiltered(
 
 `BackdropFilter` 只有在其背后已经有内容时才有可见效果，常用于毛玻璃样式。
 
+Parser 现提供 `<ColorFiltered color="…" blendMode="…">`、`<ImageFiltered sigmaX="…" sigmaY="…">` 和 `<BackdropFilter sigmaX="…" sigmaY="…">`。后两者只支持高斯模糊，复杂 Skia 滤镜仍需 Kotlin DSL。`Container`、`Border`、`DecoratedBox` 也可通过 `gradientType`、`gradientColors` 等属性表达基础渐变。
+
 ## Transform
 
 `Transform` 支持传入 `Matrix44CMO`，也提供旋转、平移等便捷方式。旋转角度使用弧度，`alignment` 决定变换中心。

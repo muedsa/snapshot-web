@@ -3,7 +3,7 @@ title: 标签与属性参考
 description: 类 DOM 解析器支持的全部内置标签、属性格式和默认值。
 ---
 
-解析器默认注册 26 个标签。标签名和属性名区分大小写，未知属性会被忽略。
+解析器默认注册 38 个标签。标签名和属性名区分大小写，未知属性会被忽略；除根标签外，属性通常在建树阶段校验。
 
 ## 标签总表
 
@@ -12,13 +12,21 @@ description: 类 DOM 解析器支持的全部内置标签、属性格式和默�
 | `Snapshot` | 单个 | 根节点、背景色、调试和图片格式 |
 | `Container` | 单个 | 尺寸、约束、间距、颜色、边框和对齐 |
 | `Border` | 单个 | 边框、圆角与阴影装饰 |
+| `ColoredBox` | 单个 | 纯色填充 |
+| `DecoratedBox` | 单个 | 背景或前景装饰 |
+| `Flex` | 多个 | 水平或垂直 Flex |
 | `Row` | 多个 | 横向 Flex |
 | `Column` | 多个 | 纵向 Flex |
 | `Expanded` | 单个 | 以紧约束占用 Flex 剩余空间 |
 | `Flexible` | 单个 | 可配置份额和松紧约束的 Flex 子项 |
+| `Spacer` | 无 | 占用 Flex 剩余空间 |
 | `Stack` | 多个 | 层叠布局 |
-| `Positioned` | 单个 | Stack 子节点定位 |
+| `IndexedStack` | 多个 | 仅绘制选中子节点 |
+| `Positioned` | 单个 | Stack / IndexedStack 子节点定位 |
 | `SizedBox` | 单个 | 指定宽高 |
+| `AspectRatio` | 单个 | 按宽高比确定尺寸 |
+| `FractionallySizedBox` | 单个 | 按父约束比例确定尺寸 |
+| `UnconstrainedBox` | 单个 | 解除子节点轴约束 |
 | `ConstrainedBox` | 单个 | 对子节点附加最小/最大约束 |
 | `LimitedBox` | 单个 | 在无界轴上限制最大尺寸 |
 | `OverflowBox` | 单个 | 允许子节点突破父约束 |
@@ -31,10 +39,14 @@ description: 类 DOM 解析器支持的全部内置标签、属性格式和默�
 | `ClipRect` | 单个 | 矩形裁剪 |
 | `ClipOval` | 单个 | 椭圆裁剪 |
 | `ClipRRect` | 单个 | 圆角矩形裁剪 |
-| `Image` | 无 | 网络图片 |
+| `ColorFiltered` | 单个 | 颜色混合滤镜 |
+| `ImageFiltered` | 单个 | 子树高斯模糊 |
+| `BackdropFilter` | 单个 | 背景高斯模糊 |
+| `Image` | 无 | 网络或 Data URI 图片 |
 | `Text` | 行内 | 文本与嵌套 Span |
 | `Raw` | 无 | 保留空白的原始文本 Span |
-| `Emoji` | 无 | 文本内的网络图片占位符 |
+| `Emoji` | 无 | 文本内的网络或 Data URI 图片占位符 |
+| `WidgetSpan` | 单个 | 文本内嵌普通 Widget |
 
 ## 通用属性格式
 
@@ -73,7 +85,7 @@ description: 类 DOM 解析器支持的全部内置标签、属性格式和默�
 
 ### 对齐
 
-对齐值使用常量名：`TOP_LEFT`、`TOP_CENTER`、`TOP_RIGHT`、`CENTER_LEFT`、`CENTER`、`CENTER_RIGHT`、`BOTTOM_LEFT`、`BOTTOM_CENTER`、`BOTTOM_RIGHT`。
+对齐值使用常量名：`TOP_LEFT`、`TOP_CENTER`、`TOP_RIGHT`、`CENTER_LEFT`、`CENTER`、`CENTER_RIGHT`、`BOTTOM_LEFT`、`BOTTOM_CENTER`、`BOTTOM_RIGHT`；也支持无空格的 `"(x,y)"`。
 
 ### 坐标与矩阵
 
@@ -113,7 +125,7 @@ description: 类 DOM 解析器支持的全部内置标签、属性格式和默�
 
 | 属性 | 类型 | 默认值 | 说明 |
 | --- | --- | --- | --- |
-| `background` | color | `#FFFFFFFF` | 画布背景 |
+| `background` | color | `#00000000` | 透明画布背景；白底需显式设置 |
 | `debug` | bool | `false` | 是否绘制调试信息 |
 | `type` | string | `png` | `png`、`jpg` 或 `webp` |
 
@@ -132,8 +144,36 @@ description: 类 DOM 解析器支持的全部内置标签、属性格式和默�
 | `border` 与四边边框 | border? | 未设置 |
 | `borderRadius` 与四角圆角 | radius? | 未设置 |
 | `boxShadow` | shadow? | 未设置 |
+| `shape` / `backgroundBlendMode` | enum? | `RECTANGLE` / 未设置 |
+| `gradient*` | 渐变属性 | 未设置 |
+| `foregroundColor` / `foregroundBorder*` / `foregroundBorderRadius*` / `foregroundBoxShadow` | 前景装饰 | 未设置 |
+| `foregroundShape` / `foregroundBackgroundBlendMode` / `foregroundGradient*` | 前景装饰 | 未设置 |
+| `transform` / `transformAlignment` | matrix / alignment? | 未设置 |
+| `clipBehavior` | enum | `NONE` |
 
 出现任何边框或装饰属性时，解析器会构造 `BoxDecoration`，并把 `color` 合并进去，避免 DSL 中 `color` 与 `decoration` 互斥的问题。
+
+`gradientType` 为 `LINEAR`、`RADIAL` 或 `SWEEP`，设置渐变时 `gradientColors` 至少两色；可配 `gradientStops`、`gradientTileMode`、`gradientRotation`，以及对应类型的 `gradientBegin` / `gradientEnd`、`gradientCenter` / `gradientRadius` / `gradientFocal` / `gradientFocalRadius`、`gradientStartAngle` / `gradientEndAngle`。前景渐变在属性名前加 `foreground`。`clipBehavior` 非 `NONE` 时需提供背景装饰作为裁剪路径；仅设置纯色不够。
+
+| 渐变属性 | 格式 / 默认值 |
+| --- | --- |
+| `gradientColors` | 逗号分隔的至少两种颜色，逗号两侧可有空白 |
+| `gradientStops` | 与颜色等长、位于 0～1 且升序的浮点列表；默认等距 |
+| `gradientTileMode` | `CLAMP`（默认）、`REPEAT`、`MIRROR`、`DECAL` |
+| `gradientBegin` / `gradientEnd` | 线性渐变起止对齐，默认 `CENTER_LEFT` / `CENTER_RIGHT` |
+| `gradientCenter` / `gradientRadius` | 径向渐变中心与半径，默认 `CENTER` / `0.5`；半径须大于 0 |
+| `gradientFocal` / `gradientFocalRadius` | 径向渐变焦点与焦点半径；显式设置半径时必须指定焦点 |
+| `gradientStartAngle` / `gradientEndAngle` | 扫描渐变起止弧度，默认 `0` / `2π`，起点必须小于终点 |
+
+不同渐变类型的专用参数不可混用。例如：
+
+```xml
+<Container width="320" height="120"
+  gradientType="LINEAR"
+  gradientColors="#FF6750A4,#FF03DAC6,#FFFFC107"
+  gradientStops="0,0.55,1"
+  gradientBegin="TOP_LEFT" gradientEnd="BOTTOM_RIGHT" />
+```
 
 ```xml
 <Container
@@ -150,7 +190,7 @@ description: 类 DOM 解析器支持的全部内置标签、属性格式和默�
 
 ## Border
 
-`Border` 是纯装饰包装器，支持 `border`、四边边框、圆角和 `boxShadow`，且只能有一个子节点。需要同时控制尺寸和 padding 时使用 `Container`。
+`Border` 支持 `color`、边框、圆角、阴影、形状、背景混合模式和整组 `gradient*` 属性。`ColoredBox` 要求 `color`；`DecoratedBox` 支持相同的装饰属性，另可用 `position="BACKGROUND"` 或 `"FOREGROUND"` 控制绘制顺序。三者最多一个子节点；需要控制尺寸和 padding 时使用 `Container`。
 
 ## SizedBox、Padding、Align 与 Center
 
@@ -172,6 +212,8 @@ description: 类 DOM 解析器支持的全部内置标签、属性格式和默�
 
 ## Row 与 Column
 
+`Flex` 使用相同属性，但必须额外指定 `direction="HORIZONTAL"` 或 `"VERTICAL"`。
+
 | 属性 | 默认值 | 可选值 |
 | --- | --- | --- |
 | `mainAxisAlignment` | `START` | `START`、`END`、`CENTER`、`SPACE_BETWEEN`、`SPACE_AROUND`、`SPACE_EVENLY` |
@@ -180,6 +222,7 @@ description: 类 DOM 解析器支持的全部内置标签、属性格式和默�
 | `textDirection` | `LTR` | `LTR`、`RTL` |
 | `verticalDirection` | `DOWN` | `UP`、`DOWN` |
 | `textBaseline` | 未设置 | `ALPHABETIC`、`IDEOGRAPHIC`；基线对齐时使用 |
+| `clipBehavior` | `NONE` | `NONE`、`HARD_EDGE`、`ANTI_ALIAS`、`ANTI_ALIAS_WITH_SAVE_LAYER` |
 
 ### Expanded 与 Flexible
 
@@ -188,8 +231,9 @@ description: 类 DOM 解析器支持的全部内置标签、属性格式和默�
 | `Expanded` | `flex` | `1` | 整数份额；固定使用 `TIGHT`，不接受 `fit` 属性 |
 | `Flexible` | `flex` | `1` | 整数份额 |
 | `Flexible` | `fit` | `LOOSE` | `LOOSE` 或 `TIGHT` |
+| `Spacer` | `flex` | `1` | 正整数，无子节点 |
 
-二者必须是 `Row` 或 `Column` 的直接子节点。`Expanded` 强制填满分配到的主轴空间；`Flexible fit="LOOSE"` 允许子节点小于分配份额。
+三者必须是 `Flex`、`Row` 或 `Column` 的直接子节点。`Expanded` 强制填满分配到的主轴空间；`Flexible fit="LOOSE"` 允许子节点小于分配份额。`Spacer` 不绘制内容。
 
 ```xml
 <SizedBox width="480" height="120">
@@ -206,8 +250,10 @@ description: 类 DOM 解析器支持的全部内置标签、属性格式和默�
 | --- | --- | --- |
 | `alignment` | `TOP_LEFT` | 非 Positioned 子节点对齐 |
 | `textDirection` | `LTR` | 方向 |
+| `fit` | `LOOSE` | `LOOSE`、`EXPAND`、`PASSTHROUGH` |
+| `clipBehavior` | `HARD_EDGE` | 溢出时的裁剪策略 |
 
-解析器当前不暴露 DSL 中的 `fit` 和 `clipBehavior`，使用固定 `StackFit.LOOSE` 与 `ClipBehavior.HARD_EDGE`。
+`IndexedStack` 使用相同属性，另支持 `index`（默认 `0`，从零起）。裸写 `index` 表示 `null`，不绘制子节点，但全部子节点仍参与布局。
 
 ## Positioned
 
@@ -219,7 +265,17 @@ description: 类 DOM 解析器支持的全部内置标签、属性格式和默�
 </Positioned>
 ```
 
-`Positioned` 必须是 `Stack` 的直接子节点。
+`Positioned` 必须是 `Stack` 或 `IndexedStack` 的直接子节点。
+
+## 比例与约束布局
+
+| 标签 | 属性 | 默认值 | 约束要求 |
+| --- | --- | --- | --- |
+| `AspectRatio` | `aspectRatio` | 必填，有限正数 | 父约束至少一轴有界 |
+| `FractionallySizedBox` | `widthFactor` / `heightFactor`、`alignment` | 未设置、`CENTER` | 设置比例的轴必须有界；比例须有限且非负 |
+| `UnconstrainedBox` | `constrainedAxis`、`alignment` | 未设置、`CENTER` | `HORIZONTAL` / `VERTICAL` 保留对应轴约束；未设置则解除双轴子约束 |
+
+三者自身仍受父约束限制。`UnconstrainedBox` 中的子节点须能在解除约束后确定有限尺寸。
 
 ## 约束与溢出
 
@@ -257,6 +313,8 @@ description: 类 DOM 解析器支持的全部内置标签、属性格式和默�
 ```
 
 ## Opacity 与 Transform
+
+`ColorFiltered` 要求 `color` 和 Skia `blendMode`；`ImageFiltered` 与 `BackdropFilter` 要求有限非负的 `sigmaX`、`sigmaY`，可设置 `tileMode`（默认 `CLAMP`），后者还支持 `blendMode`（默认 `SRC_OVER`）。这两个图片滤镜标签只构造高斯模糊；其他滤镜仍需 Kotlin DSL。
 
 ### Opacity
 
@@ -299,16 +357,18 @@ description: 类 DOM 解析器支持的全部内置标签、属性格式和默�
 
 | 属性 | 必填 | 默认值 / 说明 |
 | --- | --- | --- |
-| `url` | 是 | 网络图片 URL |
+| `url` / `dataUri` | 二选一 | 网络 URL 或内嵌 Data URI，不能同时指定 |
 | `width` / `height` | 否 | 图片盒尺寸 |
 | `fit` | 否 | `FILL`、`CONTAIN`、`COVER`、`FIT_WIDTH`、`FIT_HEIGHT`、`NONE`、`SCALE_DOWN` |
 | `alignment` | 否 | `CENTER` |
 | `repeat` | 否 | `NO_REPEAT`、`REPEAT`、`REPEAT_X`、`REPEAT_Y` |
-| `scale` | 否 | `1` |
+| `scale` | 否 | `1`；必须有限且大于 0 |
 | `opacity` | 否 | `1` |
 | `color` | 否 | 叠加色 |
 | `colorBlendMode` | 否 | Skia `BlendMode` 常量名 |
-| `noCache` | 否 | `false` |
+| `noCache` | 否 | `false`，仅适用于 `url` |
+
+默认 `SimpleDataUriImageDecoder` 只处理 PNG、JPEG、WebP 的 Base64 Data URI；解码发生在建树阶段，不访问网络。可通过 `Parser(dataUriImageDecoder = ...)` 注入自定义解码器。网络 URL 则由同步图片缓存获取，服务端应自行施加访问限制。
 
 ## Text
 
@@ -319,23 +379,41 @@ description: 类 DOM 解析器支持的全部内置标签、属性格式和默�
 | `fontSize` | 未设置 | 字号 |
 | `fontFamily` | 未设置 | 多个字体用英文逗号分隔 |
 | `fontStyle` | 未设置 | `NORMAL`、`BOLD`、`ITALIC`、`BOLD_ITALIC` |
+| `height` / `topRatio` / `letterSpacing` / `wordSpacing` / `locale` | 未设置 | 行高、基线、间距和语言区域 |
+| `baselineMode` / `fontEdging` / `fontHinting` / `subpixel` | 未设置 | 字体栅格化设置 |
+| `foregroundColor` / `foreground*` / `backgroundColor` | 未设置 | 前景画笔与文本背景；其他 `foreground*` 参数要求 `foregroundColor` |
+| `decoration` / `decorationColor` / `decorationLineStyle` / `decorationThickness` / `decorationGaps` | 未设置 | 装饰线及样式；修饰参数要求 `decoration` |
+| `textShadow` / `fontFeatures` | 未设置 | 文本阴影与 OpenType 特性；`NONE` 可取消继承 |
+| `strut*` | 未设置 | 段落支撑样式，仅最外层 Text 生效 |
+| `textAlign` / `textDirection` / `softWrap` / `overflow` / `maxLines` | `START` / `LTR` / `true` / `CLIP` / 未设置 | 段落对齐、换行和溢出，仅最外层 Text 生效 |
+| `textWidthBasis` / `textHeightMode` | `PARENT` / 未设置 | 段落尺寸计算，仅最外层 Text 生效 |
 
-`Text` 可以嵌套 `Text`、`Raw` 和 `Emoji`。普通文本节点会被 trim；多字体字符串不会逐项 trim，因此 `"A, B"` 的第二个名称会保留前导空格，建议写成 `"A,B"`。
+`Text` 可以嵌套 `Text`、`Raw`、`Emoji` 和 `WidgetSpan`。普通文本节点会被 trim；多字体字符串不会逐项 trim，因此 `"A, B"` 的第二个名称会保留前导空格，建议写成 `"A,B"`。`decoration` 支持 `UNDERLINE`、`OVERLINE`、`LINE_THROUGH`；`textShadow` 格式为 `x y [blurSigma] [#color]`；`fontFeatures` 支持 `+liga -kern tnum=2 smcp[2:8]` 等形式。更完整的文本属性格式见[上游使用说明](https://github.com/muedsa/snapshot/blob/main/docs/usage/README.md)。
+
+`foregroundColor` 是其他前景画笔参数的前提；可搭配 `foregroundMode`（`FILL` / `STROKE` / `STROKE_AND_FILL`）、`foregroundStrokeWidth`、`foregroundStrokeMiter`、`foregroundStrokeCap`、`foregroundStrokeJoin`、`foregroundAntiAlias`。`backgroundColor` 提供纯色文本背景。
+
+`decorationColor`、`decorationLineStyle`、`decorationThickness`、`decorationGaps` 必须与 `decoration` 一起使用；可用 `decoration="NONE"` 取消继承的装饰。`textShadow` 用英文逗号分隔多条阴影，例如 `"3 4 1.5 #66000000,-2 0 #66E53935"`；`textShadow="NONE"` 可取消继承。`fontFeatures` 用空白分隔 OpenType 特性，标签为四个小写字母或数字，支持 `NONE` 取消继承。
+
+`strutEnabled`、`strutFontFamily`、`strutFontStyle`、`strutFontSize`、`strutHeight`、`strutLeading`、`strutHeightForced`、`strutHeightOverridden` 只作用于最外层 `Text`；指定任一 `strut*` 属性即创建支撑样式，`strutFontSize` / `strutHeight` 必须是有限正数。当前 Parser 不提供 `strutTopRatio`。段落属性同样只作用于最外层 `Text`，嵌套 `Text` 仅作为行内 Span。
 
 ## Raw
 
 属性与 `Text` 相同，但文本不做 trim，首尾空格和换行会保留。只能作为 `Text` 的子节点。
 
+## WidgetSpan
+
+只能作为 `Text` 子节点，且必须恰有一个普通 Widget 子节点。`alignment` 默认为 `BOTTOM`，可设 `BASELINE`、`ABOVE_BASELINE`、`BELOW_BASELINE`、`TOP`、`BOTTOM`、`MIDDLE`；`baseline` 可设 `ALPHABETIC` 或 `IDEOGRAPHIC`，并支持 Text 的文本样式属性。
+
 ## Emoji
 
 | 属性 | 必填 | 默认值 / 说明 |
 | --- | --- | --- |
-| `url` | 是 | Emoji 图片 URL |
+| `url` / `dataUri` | 二选一 | 网络 URL 或内嵌 Data URI，不能同时指定 |
 | `alignment` | 否 | `BASELINE`；PlaceholderAlignment |
 | `baseline` | 否 | `ALPHABETIC` 或 `IDEOGRAPHIC` |
 | `width` / `height` | 否 | 未设置时根据所在 Span 字号推导 |
 | `fit` / `imageAlignment` / `repeat` | 否 | 与 Image 类似 |
-| `scale` / `opacity` | 否 | 1 |
+| `scale` / `opacity` | 否 | 1；`scale` 必须有限且大于 0 |
 | `color` / `colorBlendMode` | 否 | 图片着色 |
 
-只能作为 `Text` 的子节点，并且获取网络图片时会同步阻塞。
+只能作为 `Text` 的子节点；使用 URL 获取网络图片时会同步阻塞，Data URI 则由解码器在本地处理。

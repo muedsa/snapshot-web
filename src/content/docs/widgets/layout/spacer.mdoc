@@ -1,0 +1,22 @@
+---
+title: Spacer
+description: 按权重填充 Flex 主轴剩余空间。
+---
+
+```kotlin
+fun Flex.Spacer(flex: Int = 1)
+```
+
+`Spacer` 必须是 `Flex`、`Row` 或 `Column` 的直接子节点，`flex` 为正整数。它使用紧约束占满分配到的主轴空间，不绘制内容，也不接收子节点。主轴必须有有限可分配空间。
+
+```kotlin
+SizedBox(width = 300f, height = 80f) {
+    Row {
+        SizedBox(width = 60f)
+        Spacer()
+        SizedBox(width = 60f)
+    }
+}
+```
+
+示例中间空白为 180。Parser 写作 `<Spacer flex="1" />`。

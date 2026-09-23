@@ -5,7 +5,7 @@ sidebar:
   order: 3
 ---
 
-`CachedNetworkImage` 使用 `NetworkImageCache` 获取 URL 对应的 Skia Image，再按 RawImage 的规则绘制。加载是同步的，会阻塞当前线程。
+`CachedNetworkImage` 使用 `NetworkImageCache` 获取 URL 对应的 Skia Image，再按 RawImage 的规则绘制。通过 `ProviderImage` 在构造 Widget 时立即同步取图；缓存未命中时可能阻塞当前线程等待 HTTP 请求，不会延迟到布局或绘制阶段。
 
 ## 生产环境安全说明
 
@@ -47,6 +47,8 @@ fun ChildSlot.CachedNetworkImage(
 | `color`、`colorBlendMode` | `null` | 图片着色 |
 | `noCache` | `false` | true 时绕过缓存读取和写入 |
 | `cache` | 全局默认缓存 | 自定义 NetworkImageCache |
+
+`scale` 必须是有限正数。默认缓存是无上限的 `SimpleNoLimitedNetworkImageCache`；`SimpleLimitedNetworkImageCache` 只限制缓存张数和单图下载字节数，不代表完整网络安全防护。
 
 ```kotlin
 CachedNetworkImage(

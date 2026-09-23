@@ -23,6 +23,10 @@ description: 图片来源、缓存、适配、TextStyle、TextSpan 和行内图�
 | `opacity` | 0 到 1 的透明度 |
 | `color` / `colorBlendMode` | 颜色叠加和混合模式 |
 
+`scale` 必须是有限正数。图片尺寸为零、缩放和平铺等边界情况由当前实现校验或安全处理；不要依赖零尺寸图片产生可见内容。
+
+Parser 的 `<Image>` 和 `<Emoji>` 还可使用 `dataUri` 代替 `url`；两者必须且只能指定其一。默认解码器只支持 PNG、JPEG、WebP 的 Base64 Data URI。需要额外格式、输入限额或安全检查时，可向 `Parser(dataUriImageDecoder = ...)` 注入自定义解码器。`noCache` 仅适用于 URL。
+
 ```kotlin
 RawImage(
     image = image,
@@ -91,7 +95,7 @@ RichText(maxLines = 2, overflow = TextOverflow.ELLIPSIS) {
 }
 ```
 
-子 `TextSpan` 会继承父 Span 未覆盖的样式。不要在 `RichText` Widget 中直接嵌套普通 Widget；只有 Span 体系可以参与段落布局。
+子 `TextSpan` 会继承父 Span 未覆盖的样式。不要在 `RichText` Widget 中直接嵌套普通 Widget；可通过 `WidgetSpan` 把一个 Widget 作为行内占位盒。Parser 的 `<Text>` 现支持嵌套 `<WidgetSpan>`，也支持装饰线、文本阴影、OpenType 特性、前景画笔、StrutStyle 等属性，详见[标签参考](/reference/parser-tags/)。
 
 ## 行内 Widget 与 Emoji
 

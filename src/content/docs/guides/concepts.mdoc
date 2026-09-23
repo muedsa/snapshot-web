@@ -16,12 +16,12 @@ Widget 树 → RenderBox 树 → 布局尺寸 → Skia Canvas → PNG / JPEG / W
 | 类型 | 子节点 | 典型组件 |
 | --- | --- | --- |
 | 单子节点 | 1 个 | `Container`、`Padding`、`Align` |
-| 多子节点 | 任意个 | `Row`、`Column`、`Stack` |
+| 多子节点 | 任意个 | `Row`、`Column`、`Stack`、`IndexedStack` |
 | 叶子节点 | 0 个 | `Text`、`RawImage`、`CachedNetworkImage` |
-| 父布局参数 | 1 个 | `Expanded`、`Flexible`、`Positioned` |
+| 父布局参数 | 0 或 1 个 | `Expanded`、`Flexible`、`Spacer`、`Positioned` |
 
 {% aside type="caution" title="父布局参数不能脱离对应父节点" %}
-`Positioned` 只能作为 `Stack` 的直接子级；`Expanded` 和 `Flexible` 只能作为 `Row`、`Column` 或 `Flex` 的直接子级。放错层级会导致 parentData 类型错误。
+`Positioned` 只能作为 `Stack` 或 `IndexedStack` 的直接子级；`Expanded`、`Flexible` 和 `Spacer` 只能作为 `Row`、`Column` 或 `Flex` 的直接子级。放错层级会导致 parentData 类型错误。
 {% /aside %}
 
 ### ChildSlot 与挂载规则
