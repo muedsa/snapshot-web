@@ -93,5 +93,9 @@ export default defineConfig({
 
   vite: {
     plugins: [tailwindcss()],
+    optimizeDeps: {
+      // snapshot-lsp worker 只在运行时加载，预构建它可避免 dev server 中途重新优化导致 504。
+      include: ['@muedsa/snapshot-lsp/browser'],
+    },
   },
 });

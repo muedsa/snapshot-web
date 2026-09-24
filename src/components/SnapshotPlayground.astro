@@ -75,13 +75,18 @@ const examples = [
 </Snapshot>`,
   },
 ];
+
+// 转义 "<" 以免 DSL 中的标签序列提前结束 script 标签。
+const examplesJson = JSON.stringify(examples).replace(/</g, '\\u003c');
 ---
 
 <section
-  class="playground-shell"
+  class="playground-shell not-content"
   data-snapshot-playground
   data-api-url={apiUrl}
 >
+  <script is:inline type="application/json" data-examples set:html={examplesJson} />
+
   <div class="playground-toolbar" aria-label="Playground 操作栏">
     <div class="example-picker">
       <label for="playground-example">示例</label>
@@ -113,17 +118,18 @@ const examples = [
           <span class="eyebrow">INPUT</span>
           <h2 id="editor-title">Snapshot DSL</h2>
         </div>
-        <span class="line-count" data-line-count>0 行</span>
+        <div class="editor-meta">
+          <span class="lsp-status" data-lsp-status data-state="connecting">语言服务连接中</span>
+          <span class="problems" data-problems hidden></span>
+          <span class="line-count" data-line-count>0 行</span>
+        </div>
       </header>
       <div class="editor-wrap">
-        <textarea
-          data-editor
-          aria-label="Snapshot DSL 编辑器"
-          autocomplete="off"
-          autocapitalize="off"
-          spellcheck="false"
-          wrap="off"
-        >{examples[0].source}</textarea>
+        <div class="editor-host" data-editor></div>
+        <div class="editor-placeholder" data-editor-placeholder>
+          <span class="spinner" aria-hidden="true"></span>
+          <span>正在加载编辑器与语言服务…</span>
+        </div>
       </div>
     </section>
 
@@ -177,287 +183,30 @@ const examples = [
   </div>
 
   <p class="playground-note">
-    请求会从浏览器直接发送到公开的 Open Snapshot 服务。匿名调用受频率限制，请避免连续快速运行；需要了解 DSL 时可查阅
+    Monaco 编辑器通过
+    <a href="https://github.com/muedsa/snapshot-lsp" target="_blank" rel="noreferrer">snapshot-lsp</a>
+    在浏览器内提供标签/属性补全、悬停说明与实时诊断；点击“运行”后，DSL 会从浏览器直接发送到公开的 Open Snapshot 服务。
+    匿名调用受频率限制，请避免连续快速运行；需要了解 DSL 时可查阅
     <a href="/reference/parser-tags/">标签与属性参考</a>。
   </p>
 </section>
 
-<script define:vars={{ examples }}>
+<script>
   const root = document.querySelector('[data-snapshot-playground]');
 
   if (root instanceof HTMLElement) {
-    const editor = root.querySelector('[data-editor]');
-    const exampleSelect = root.querySelector('[data-example-select]');
-    const renderButton = root.querySelector('[data-render]');
-    const renderLabel = root.querySelector('[data-render-label]');
-    const resetButton = root.querySelector('[data-reset]');
-    const copyButton = root.querySelector('[data-copy]');
-    const downloadButton = root.querySelector('[data-download]');
-    const lineCount = root.querySelector('[data-line-count]');
-    const status = root.querySelector('[data-status]');
-    const emptyState = root.querySelector('[data-empty-state]');
-    const loadingState = root.querySelector('[data-loading-state]');
-    const previewImage = root.querySelector('[data-preview-image]');
-    const errorState = root.querySelector('[data-error-state]');
-    const errorCode = root.querySelector('[data-error-code]');
-    const errorTitle = root.querySelector('[data-error-title]');
-    const errorMessage = root.querySelector('[data-error-message]');
-    const requestId = root.querySelector('[data-request-id]');
-    const resultMeta = root.querySelector('[data-result-meta]');
-    const imageSize = root.querySelector('[data-image-size]');
-    const fileSize = root.querySelector('[data-file-size]');
-    const renderDuration = root.querySelector('[data-render-duration]');
-    const serverDuration = root.querySelector('[data-server-duration]');
-    const queueDuration = root.querySelector('[data-queue-duration]');
-    const imageDuration = root.querySelector('[data-image-duration]');
-    const requestDuration = root.querySelector('[data-request-duration]');
-    const imageCount = root.querySelector('[data-image-count]');
-    const cache = root.querySelector('[data-cache]');
-    const apiUrl = root.dataset.apiUrl;
-    const storageKey = 'snapshot-playground-source';
-
-    let imageUrl = '';
-    let imageBlob;
-    let controller;
-
-    const setHidden = (element, hidden) => {
-      if (element instanceof HTMLElement) element.hidden = hidden;
-    };
-
-    const setStatus = (label, kind) => {
-      if (!(status instanceof HTMLElement)) return;
-      status.textContent = label;
-      status.className = `status status-${kind}`;
-    };
-
-    const updateLineCount = () => {
-      if (!(editor instanceof HTMLTextAreaElement) || !(lineCount instanceof HTMLElement)) return;
-      const count = editor.value.split('\n').length;
-      lineCount.textContent = `${count} 行`;
-    };
-
-    const formatBytes = (bytes) => {
-      if (bytes < 1024) return `${bytes} B`;
-      return `${(bytes / 1024).toFixed(bytes < 10240 ? 1 : 0)} KB`;
-    };
-
-    const parseServerTiming = (header) => {
-      const timings = {};
-      for (const entry of (header || '').split(',')) {
-        const [name, ...parameters] = entry.trim().split(';');
-        if (!['queue', 'render', 'image', 'total'].includes(name)) continue;
-        const duration = parameters.find((parameter) => /^\s*dur\s*=/.test(parameter));
-        const match = duration?.match(/^\s*dur\s*=\s*(\d+(?:\.\d+)?)\s*$/);
-        if (match && Number.isFinite(Number(match[1]))) timings[name] = Number(match[1]);
-      }
-      return timings;
-    };
-
-    const setMetaText = (element, value) => {
-      if (!(element instanceof HTMLElement)) return;
-      element.textContent = value;
-      element.hidden = !value;
-    };
-
-    const showResponseTiming = (response, requestMs) => {
-      const timings = parseServerTiming(response.headers.get('server-timing'));
-      const formatMs = (value) => `${value.toFixed(1)} ms`;
-      setMetaText(renderDuration, timings.render === undefined ? '' : `渲染 ${formatMs(timings.render)}`);
-      setMetaText(serverDuration, timings.total === undefined ? '' : `服务端 ${formatMs(timings.total)}`);
-      setMetaText(queueDuration, timings.queue === undefined ? '' : `排队 ${formatMs(timings.queue)}`);
-      setMetaText(imageDuration, timings.image === undefined ? '' : `图片获取 ${formatMs(timings.image)}`);
-      setMetaText(requestDuration, `请求 ${Math.round(requestMs)} ms`);
-
-      const downloads = response.headers.get('x-snapshot-image-count');
-      setMetaText(imageCount, downloads && /^\d+$/.test(downloads) && Number(downloads) > 0
-        ? `下载图片 ${downloads} 张` : '');
-
-      const cacheValue = response.headers.get('x-snapshot-cache');
-      setMetaText(cache, cacheValue === 'hit' ? '缓存命中' : cacheValue === 'miss' ? '实时渲染' : '');
-    };
-
-    const clearImage = () => {
-      if (imageUrl) URL.revokeObjectURL(imageUrl);
-      imageUrl = '';
-      imageBlob = undefined;
-      setMetaText(imageSize, '');
-      setMetaText(fileSize, '');
-      if (previewImage instanceof HTMLImageElement) {
-        previewImage.removeAttribute('src');
-        previewImage.hidden = true;
-      }
-      if (downloadButton instanceof HTMLButtonElement) downloadButton.disabled = true;
-    };
-
-    const showError = (payload, fallbackMessage) => {
-      clearImage();
-      setHidden(emptyState, true);
-      setHidden(loadingState, true);
-      setHidden(errorState, false);
-      setHidden(resultMeta, true);
-      if (errorCode instanceof HTMLElement) errorCode.textContent = payload?.code || 'REQUEST_FAILED';
-      if (errorTitle instanceof HTMLElement) errorTitle.textContent = '渲染失败';
-      if (errorMessage instanceof HTMLElement) errorMessage.textContent = payload?.message || fallbackMessage;
-      if (requestId instanceof HTMLElement) {
-        requestId.textContent = payload?.requestId ? `Request ID: ${payload.requestId}` : '';
-      }
-      setStatus('运行失败', 'error');
-    };
-
-    const render = async () => {
-      if (!(editor instanceof HTMLTextAreaElement) || !apiUrl || !editor.value.trim()) return;
-      controller?.abort();
-      const requestController = new AbortController();
-      controller = requestController;
-
-      if (renderButton instanceof HTMLButtonElement) renderButton.disabled = true;
-      if (renderLabel instanceof HTMLElement) renderLabel.textContent = '运行中';
-      setStatus('正在渲染', 'loading');
-      setHidden(emptyState, true);
-      setHidden(errorState, true);
-      setHidden(previewImage, true);
-      setHidden(resultMeta, true);
-      setHidden(loadingState, false);
-
-      try {
-        const startedAt = performance.now();
-        const requestOptions = {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain; charset=utf-8', Accept: 'image/*, application/json' },
-          body: editor.value,
-          mode: 'cors',
-          credentials: 'omit',
-          signal: requestController.signal,
-        };
-        const response = await fetch(apiUrl, requestOptions);
-        if (requestController.signal.aborted) return;
-        const contentType = response.headers.get('content-type') || '';
-
-        if (!response.ok || !contentType.startsWith('image/')) {
-          let payload;
-          try {
-            payload = await response.json();
-          } catch {
-            payload = undefined;
-          }
-          if (requestController.signal.aborted) return;
-          showError(payload, `服务返回 ${response.status} ${response.statusText || ''}`.trim());
-          showResponseTiming(response, performance.now() - startedAt);
-          setHidden(resultMeta, false);
-          return;
+    // Monaco 与 snapshot-lsp worker 体积较大，按需懒加载，避免影响首屏。
+    import('../playground/playground').then(
+      ({ startPlayground }) => startPlayground(root),
+      (error: unknown) => {
+        console.error('[snapshot-playground] 编辑器加载失败', error);
+        root.dataset.editorFailed = '';
+        const placeholder = root.querySelector('[data-editor-placeholder]');
+        if (placeholder instanceof HTMLElement) {
+          placeholder.textContent = '编辑器加载失败，请刷新页面重试。';
         }
-
-        const blob = await response.blob();
-        if (requestController.signal.aborted) return;
-        const requestMs = performance.now() - startedAt;
-        clearImage();
-        imageBlob = blob;
-        imageUrl = URL.createObjectURL(blob);
-
-        if (previewImage instanceof HTMLImageElement) {
-          previewImage.src = imageUrl;
-          await previewImage.decode();
-          if (requestController.signal.aborted) return;
-          previewImage.hidden = false;
-          setMetaText(imageSize, `${previewImage.naturalWidth} × ${previewImage.naturalHeight}`);
-        }
-
-        setMetaText(fileSize, formatBytes(blob.size));
-        showResponseTiming(response, requestMs);
-
-        setHidden(loadingState, true);
-        setHidden(errorState, true);
-        setHidden(resultMeta, false);
-        if (downloadButton instanceof HTMLButtonElement) downloadButton.disabled = false;
-        setStatus('渲染完成', 'success');
-      } catch (error) {
-        if (requestController.signal.aborted || (error instanceof DOMException && error.name === 'AbortError')) return;
-        const message = error instanceof Error && error.message !== 'Failed to fetch'
-          ? error.message
-          : '无法连接 Open Snapshot 服务，请稍后重试。';
-        showError(undefined, message);
-      } finally {
-        if (controller === requestController) {
-          if (renderButton instanceof HTMLButtonElement) renderButton.disabled = false;
-          if (renderLabel instanceof HTMLElement) renderLabel.textContent = '运行';
-        }
-      }
-    };
-
-    if (editor instanceof HTMLTextAreaElement) {
-      const saved = localStorage.getItem(storageKey);
-      if (saved) editor.value = saved;
-      updateLineCount();
-
-      editor.addEventListener('input', () => {
-        localStorage.setItem(storageKey, editor.value);
-        updateLineCount();
-      });
-
-      editor.addEventListener('keydown', (event) => {
-        if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
-          event.preventDefault();
-          render();
-          return;
-        }
-        if (event.key === 'Tab') {
-          event.preventDefault();
-          const start = editor.selectionStart;
-          const end = editor.selectionEnd;
-          editor.setRangeText('  ', start, end, 'end');
-          editor.dispatchEvent(new Event('input'));
-        }
-      });
-    }
-
-    exampleSelect?.addEventListener('change', () => {
-      if (!(exampleSelect instanceof HTMLSelectElement) || !(editor instanceof HTMLTextAreaElement)) return;
-      const example = examples.find((item) => item.id === exampleSelect.value);
-      if (!example) return;
-      editor.value = example.source;
-      localStorage.setItem(storageKey, editor.value);
-      updateLineCount();
-      setStatus('等待运行', 'idle');
-      clearImage();
-      setHidden(errorState, true);
-      setHidden(resultMeta, true);
-      setHidden(emptyState, false);
-    });
-
-    renderButton?.addEventListener('click', render);
-
-    resetButton?.addEventListener('click', () => {
-      if (!(editor instanceof HTMLTextAreaElement) || !(exampleSelect instanceof HTMLSelectElement)) return;
-      const selected = examples.find((item) => item.id === exampleSelect.value) || examples[0];
-      editor.value = selected.source;
-      localStorage.removeItem(storageKey);
-      updateLineCount();
-      setStatus('已重置', 'idle');
-      clearImage();
-      setHidden(loadingState, true);
-      setHidden(errorState, true);
-      setHidden(resultMeta, true);
-      setHidden(emptyState, false);
-    });
-
-    copyButton?.addEventListener('click', async () => {
-      if (!(editor instanceof HTMLTextAreaElement) || !(copyButton instanceof HTMLButtonElement)) return;
-      await navigator.clipboard.writeText(editor.value);
-      const original = copyButton.textContent;
-      copyButton.textContent = '已复制';
-      window.setTimeout(() => { copyButton.textContent = original; }, 1200);
-    });
-
-    downloadButton?.addEventListener('click', () => {
-      if (!imageBlob || !imageUrl) return;
-      const extension = imageBlob.type === 'image/jpeg' ? 'jpg' : imageBlob.type.split('/')[1] || 'png';
-      const anchor = document.createElement('a');
-      anchor.href = imageUrl;
-      anchor.download = `snapshot-${Date.now()}.${extension}`;
-      anchor.click();
-    });
-
-    window.addEventListener('pagehide', clearImage, { once: true });
+      },
+    );
   }
 </script>
 
@@ -468,6 +217,12 @@ const examples = [
     --pg-surface-raised: color-mix(in srgb, var(--sl-color-gray-6) 58%, var(--sl-color-black));
     margin-top: -0.5rem;
   }
+
+  /*
+    根节点带 not-content（见上面的 class），用于退出 Starlight 正文样式。
+    Starlight 会给正文里相邻的块级元素加 margin-top，而 Monaco 的行、行号、边栏
+    也是相邻 div，一旦被加上 margin，光标与字符的坐标就会错位。
+  */
 
   .playground-toolbar,
   .pane,
@@ -483,6 +238,7 @@ const examples = [
   .playground-grid > *,
   .pane > *,
   .pane-header > *,
+  .editor-meta > *,
   .preview-actions > * {
     margin-block: 0;
   }
@@ -551,10 +307,17 @@ const examples = [
   }
 
   .toolbar-actions,
-  .preview-actions {
+  .preview-actions,
+  .editor-meta {
     display: flex;
     align-items: center;
     gap: 0.45rem;
+  }
+
+  .editor-meta {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.5rem;
   }
 
   .button,
@@ -664,31 +427,77 @@ const examples = [
     font-size: 0.72rem;
   }
 
+  .lsp-status,
+  .problems {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border-radius: 999px;
+    padding: 0.22rem 0.5rem;
+    font-size: 0.68rem;
+    font-weight: 650;
+    white-space: nowrap;
+  }
+
+  .lsp-status {
+    color: var(--sl-color-gray-3);
+    background: color-mix(in srgb, var(--sl-color-gray-6) 70%, transparent);
+  }
+
+  .lsp-status::before {
+    content: '';
+    width: 0.38rem;
+    height: 0.38rem;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  .lsp-status[data-state='connected'] { color: #7dd3fc; background: rgb(14 165 233 / 13%); }
+  .lsp-status[data-state='error'] { color: #fda4af; background: rgb(244 63 94 / 13%); }
+
+  .problems[data-level='ok'] { color: var(--sl-color-gray-2); background: var(--sl-color-gray-6); }
+  .problems[data-level='warning'] { color: #fcd34d; background: rgb(245 158 11 / 14%); }
+  .problems[data-level='error'] { color: #fda4af; background: rgb(244 63 94 / 14%); }
+
   .editor-wrap {
+    position: relative;
     display: flex;
-    flex: 1;
-    background:
-      linear-gradient(90deg, color-mix(in srgb, var(--sl-color-gray-6) 76%, transparent) 3.2rem, transparent 3.2rem),
-      var(--sl-color-black);
-  }
-
-  textarea {
-    width: 100%;
     min-height: 30rem;
-    resize: none;
-    border: 0;
-    outline: 0;
-    padding: 1.15rem 1.2rem;
-    color: var(--sl-color-gray-1);
-    caret-color: #38bdf8;
-    background: transparent;
-    font-family: var(--__sl-font-mono);
-    font-size: 0.79rem;
-    line-height: 1.7;
-    tab-size: 2;
+    flex: 1;
+    background: var(--sl-color-black);
   }
 
-  textarea::selection { color: #fff; background: rgb(14 165 233 / 38%); }
+  .editor-host {
+    position: absolute;
+    inset: 0;
+  }
+
+  .editor-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 0.9rem;
+    color: var(--sl-color-gray-3);
+    background: var(--sl-color-black);
+    font-size: 0.82rem;
+    text-align: center;
+  }
+
+  .editor-placeholder .spinner {
+    width: 1.6rem;
+    height: 1.6rem;
+    border-width: 2px;
+  }
+
+  [data-editor-ready] .editor-placeholder { display: none; }
+
+  [data-editor-failed] .editor-placeholder {
+    color: #fda4af;
+    font-weight: 650;
+  }
 
   .status {
     display: inline-flex;
@@ -843,10 +652,15 @@ const examples = [
     --pg-surface-raised: #f8fafc;
   }
 
-  :global([data-theme='light']) .editor-wrap { background: #0f172a; }
-  :global([data-theme='light']) textarea { color: #e2e8f0; }
+  :global([data-theme='light']) .editor-wrap,
+  :global([data-theme='light']) .editor-placeholder { background: #fff; }
   :global([data-theme='light']) .preview-stage { background-color: #eef2f7; }
   :global([data-theme='light']) .button-primary { color: #fff; }
+  :global([data-theme='light']) .lsp-status[data-state='connected'] { color: #0369a1; background: rgb(3 105 161 / 10%); }
+  :global([data-theme='light']) .lsp-status[data-state='error'] { color: #be123c; background: rgb(190 18 60 / 10%); }
+  :global([data-theme='light']) .problems[data-level='ok'] { color: #475569; background: #f1f5f9; }
+  :global([data-theme='light']) .problems[data-level='warning'] { color: #b45309; background: rgb(180 83 9 / 10%); }
+  :global([data-theme='light']) .problems[data-level='error'] { color: #be123c; background: rgb(190 18 60 / 10%); }
 
   @media (max-width: 62rem) {
     .endpoint { display: none; }
@@ -863,7 +677,9 @@ const examples = [
     .playground-grid { grid-template-columns: 1fr; }
     .editor-pane { border-right: 1px solid var(--pg-border); border-radius: 0; }
     .preview-pane { border-top: 0; border-radius: 0 0 0.9rem 0.9rem; }
-    textarea, .preview-stage { min-height: 25rem; }
+    .editor-wrap, .preview-stage { min-height: 25rem; }
+    .pane-header { flex-wrap: wrap; }
+    .editor-meta { justify-content: flex-start; }
   }
 
   @media (max-width: 30rem) {

@@ -25,6 +25,8 @@ Widget API 按布局、绘制与效果、图片、文本四组自动生成侧边
 - [Starlight](https://starlight.astro.build/)
 - [Markdoc](https://markdoc.dev/)
 - Tailwind CSS 4
+- [Monaco Editor](https://github.com/microsoft/monaco-editor) 0.56，用于在线 Playground
+- [snapshot-lsp](https://github.com/muedsa/snapshot-lsp)，Playground 的 DSL 语言服务（LSP over Web Worker）
 - pnpm
 
 文档以 `.mdoc` 编写，并通过 `@astrojs/starlight-markdoc` 使用 Starlight 的 Aside、Tabs、Steps、Card、LinkCard 等组件。
@@ -42,6 +44,13 @@ Widget API 按布局、绘制与效果、图片、文本四组自动生成侧边
 
 ```bash
 pnpm install
+```
+
+`@muedsa/snapshot-lsp` 发布在 GitHub Packages。该 registry 即使对公开包也要求认证，所以需要先配置一个具有 `read:packages` 权限的令牌（写入 `~/.npmrc` 或 pnpm 全局配置）：
+
+```ini
+@muedsa:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=<令牌>
 ```
 
 启动开发服务器：
@@ -82,12 +91,15 @@ pnpm preview
 │   ├── favicon.svg
 │   └── showcase/                 # 首页展示图片
 ├── src/
+│   ├── components/               # Playground 与主题初始化组件
 │   ├── content/
 │   │   └── docs/
 │   │       ├── index.mdoc        # 首页
 │   │       ├── guides/           # 使用指南
 │   │       ├── reference/        # Parser、枚举、FAQ 与源码索引
 │   │       └── widgets/          # 独立 Widget API 页面
+│   ├── pages/playground.astro    # /playground/ 路由
+│   ├── playground/               # Monaco 编辑器与 snapshot-lsp 集成
 │   ├── content.config.ts         # Starlight 内容集合
 │   └── styles/global.css         # 主题和全局样式
 ├── astro.config.mjs              # 站点、导航和集成配置
@@ -95,6 +107,20 @@ pnpm preview
 ├── package.json
 └── pnpm-lock.yaml
 ```
+
+## 在线 Playground
+
+`/playground/` 使用 Monaco 编辑器，并通过 Web Worker 接入 snapshot-lsp，提供标签/属性/枚举补全、悬停说明与实时诊断；点击“运行”会把 DSL 发送到公开的 Open Snapshot 服务生成图片。
+
+```text
+src/playground/
+├── playground.ts             # 编辑器、示例、运行与诊断计数等主逻辑
+├── snapshot-language.ts      # snapshot 语言的 Monarch 词法、注释/括号配置与深浅两套主题
+├── snapshot-lsp-client.ts    # 用 Monaco 自带的 monaco.lsp 客户端连接语言服务
+└── snapshot-lsp.worker.ts    # 在 Worker 中启动 @muedsa/snapshot-lsp/browser
+```
+
+Monaco 与语言服务只在访问 `/playground/` 时懒加载；编辑器主题跟随站点的深色/浅色切换。
 
 ## 编写和维护文档
 
@@ -212,7 +238,9 @@ docker run --rm -p 8080:80 snapshot-web
 - 向 `main` 分支提交 Pull Request 时，仅验证镜像能够构建，不会推送；
 - 也可以在 GitHub 仓库的 Actions 页面手动运行。
 
-工作流使用 GitHub 自动提供的 `GITHUB_TOKEN`，不需要额外创建 Personal Access Token。仓库的 Actions 权限需要允许工作流写入 Packages；如果组织策略覆盖了仓库设置，还需要由组织管理员开放相应权限。
+工作流登录 GHCR 使用 GitHub 自动提供的 `GITHUB_TOKEN`。但镜像构建阶段会从 GitHub Packages 安装 `@muedsa/snapshot-lsp`，`GITHUB_TOKEN` 只能访问当前仓库的包，因此还需要在仓库 Secrets 中添加 `SNAPSHOT_LSP_TOKEN`：一个具有 `read:packages` 权限的 Personal Access Token。Dockerfile 通过 BuildKit secret 注入该令牌，不会留在镜像层中。
+
+仓库的 Actions 权限需要允许工作流写入 Packages；如果组织策略覆盖了仓库设置，还需要由组织管理员开放相应权限。
 
 首次推送 `main` 分支并等待工作流完成后，可以运行：
 

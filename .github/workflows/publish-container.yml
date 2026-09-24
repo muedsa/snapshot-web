@@ -67,3 +67,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
+          # @muedsa/snapshot-lsp 位于 GitHub Packages，安装时需要可读取该包的令牌
+          # （GITHUB_TOKEN 只覆盖当前仓库的包，读不到 muedsa/snapshot-lsp 的包）。
+          secrets: |
+            npm_token=${{ secrets.SNAPSHOT_LSP_TOKEN }}

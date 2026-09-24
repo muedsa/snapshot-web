@@ -11,7 +11,12 @@ RUN corepack enable \
 
 # 先复制依赖清单，使源码变化时可以复用依赖安装层。
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-RUN pnpm install --frozen-lockfile
+
+# @muedsa/snapshot-lsp 来自 GitHub Packages。该 registry 即使对公开包也要求令牌，
+# 因此通过 BuildKit secret 注入（见 .github/workflows/publish-container.yml 的 secrets）。
+RUN --mount=type=secret,id=npm_token \
+    sh -c 'printf "@muedsa:registry=https://npm.pkg.github.com\n//npm.pkg.github.com/:_authToken=%s\n" "$(cat /run/secrets/npm_token)" > .npmrc \
+      && pnpm install --frozen-lockfile'
 
 COPY . .
 RUN pnpm build
