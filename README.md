@@ -46,12 +46,14 @@ Widget API 按布局、绘制与效果、图片、文本四组自动生成侧边
 pnpm install
 ```
 
-`@muedsa/snapshot-lsp` 发布在 GitHub Packages。该 registry 即使对公开包也要求认证，所以需要先配置一个具有 `read:packages` 权限的令牌（写入 `~/.npmrc` 或 pnpm 全局配置）：
+`@muedsa/snapshot-lsp` 发布在 GitHub Packages。该 registry 即使对公开包也要求认证，所以需要先配置一个具有 `read:packages` 权限的令牌（写入用户级 `~/.npmrc` 或 pnpm 全局配置）：
 
 ```ini
 @muedsa:registry=https://npm.pkg.github.com
 //npm.pkg.github.com/:_authToken=<令牌>
 ```
+
+用户级配置里可以写成环境变量（例如 `_authToken=${GITHUB_TOKEN}`）。但不要把这些设置提交到仓库的项目级 `.npmrc`：从 pnpm 10.34.2 / 11.5.3 起，出于安全考虑（[GHSA-3qhv-2rgh-x77r](https://github.com/pnpm/pnpm/security/advisories/GHSA-3qhv-2rgh-x77r)），仓库内 `.npmrc` 的 `${...}` 变量不再展开，带占位符的设置会被整体忽略。
 
 启动开发服务器：
 
@@ -238,7 +240,11 @@ docker run --rm -p 8080:80 snapshot-web
 - 向 `main` 分支提交 Pull Request 时，仅验证镜像能够构建，不会推送；
 - 也可以在 GitHub 仓库的 Actions 页面手动运行。
 
-工作流登录 GHCR 使用 GitHub 自动提供的 `GITHUB_TOKEN`。但镜像构建阶段会从 GitHub Packages 安装 `@muedsa/snapshot-lsp`，`GITHUB_TOKEN` 只能访问当前仓库的包，因此还需要在仓库 Secrets 中添加 `SNAPSHOT_LSP_TOKEN`：一个具有 `read:packages` 权限的 Personal Access Token。Dockerfile 通过 BuildKit secret 注入该令牌，不会留在镜像层中。
+工作流登录 GHCR 使用 GitHub 自动提供的 `GITHUB_TOKEN`。但镜像构建阶段会从 GitHub Packages 安装 `@muedsa/snapshot-lsp`，而 `GITHUB_TOKEN` 只能访问当前仓库的包，因此还需要在仓库 **Settings → Secrets and variables → Actions** 中添加 `SNAPSHOT_LSP_TOKEN`：一个对该包有读取权限（classic token 的 `read:packages`）的 Personal Access Token。
+
+Dockerfile 通过 BuildKit secret 读取该令牌，写入用户级 `$HOME/.npmrc` 后执行安装，并在同一条 `RUN` 指令里删除。构建层只记录该指令前后的文件系统差异，所以令牌不会出现在镜像层、镜像历史或构建缓存中；它只用于安装依赖，不参与站点构建。
+
+需要注意：来自 fork 的 Pull Request 拿不到仓库 Secrets，这类 PR 的镜像构建会因缺少令牌而失败；同仓库分支的 PR 不受影响。
 
 仓库的 Actions 权限需要允许工作流写入 Packages；如果组织策略覆盖了仓库设置，还需要由组织管理员开放相应权限。
 
