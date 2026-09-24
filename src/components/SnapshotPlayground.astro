@@ -165,7 +165,12 @@ const examples = [
       <footer class="result-meta" data-result-meta hidden>
         <span data-image-size></span>
         <span data-file-size></span>
-        <span data-duration></span>
+        <span data-render-duration title="服务端解析、布局、光栅化和编码耗时"></span>
+        <span data-server-duration title="服务端处理总耗时，包含排队和渲染"></span>
+        <span data-queue-duration title="等待服务端渲染槽位的耗时"></span>
+        <span data-image-duration title="远程图片获取耗时，已计入渲染耗时"></span>
+        <span data-request-duration title="浏览器发起请求到响应体下载完毕的耗时"></span>
+        <span data-image-count title="本次请求实际发起的远程图片下载次数"></span>
         <span data-cache></span>
       </footer>
     </section>
@@ -201,7 +206,12 @@ const examples = [
     const resultMeta = root.querySelector('[data-result-meta]');
     const imageSize = root.querySelector('[data-image-size]');
     const fileSize = root.querySelector('[data-file-size]');
-    const duration = root.querySelector('[data-duration]');
+    const renderDuration = root.querySelector('[data-render-duration]');
+    const serverDuration = root.querySelector('[data-server-duration]');
+    const queueDuration = root.querySelector('[data-queue-duration]');
+    const imageDuration = root.querySelector('[data-image-duration]');
+    const requestDuration = root.querySelector('[data-request-duration]');
+    const imageCount = root.querySelector('[data-image-count]');
     const cache = root.querySelector('[data-cache]');
     const apiUrl = root.dataset.apiUrl;
     const storageKey = 'snapshot-playground-source';
@@ -231,10 +241,47 @@ const examples = [
       return `${(bytes / 1024).toFixed(bytes < 10240 ? 1 : 0)} KB`;
     };
 
+    const parseServerTiming = (header) => {
+      const timings = {};
+      for (const entry of (header || '').split(',')) {
+        const [name, ...parameters] = entry.trim().split(';');
+        if (!['queue', 'render', 'image', 'total'].includes(name)) continue;
+        const duration = parameters.find((parameter) => /^\s*dur\s*=/.test(parameter));
+        const match = duration?.match(/^\s*dur\s*=\s*(\d+(?:\.\d+)?)\s*$/);
+        if (match && Number.isFinite(Number(match[1]))) timings[name] = Number(match[1]);
+      }
+      return timings;
+    };
+
+    const setMetaText = (element, value) => {
+      if (!(element instanceof HTMLElement)) return;
+      element.textContent = value;
+      element.hidden = !value;
+    };
+
+    const showResponseTiming = (response, requestMs) => {
+      const timings = parseServerTiming(response.headers.get('server-timing'));
+      const formatMs = (value) => `${value.toFixed(1)} ms`;
+      setMetaText(renderDuration, timings.render === undefined ? '' : `渲染 ${formatMs(timings.render)}`);
+      setMetaText(serverDuration, timings.total === undefined ? '' : `服务端 ${formatMs(timings.total)}`);
+      setMetaText(queueDuration, timings.queue === undefined ? '' : `排队 ${formatMs(timings.queue)}`);
+      setMetaText(imageDuration, timings.image === undefined ? '' : `图片获取 ${formatMs(timings.image)}`);
+      setMetaText(requestDuration, `请求 ${Math.round(requestMs)} ms`);
+
+      const downloads = response.headers.get('x-snapshot-image-count');
+      setMetaText(imageCount, downloads && /^\d+$/.test(downloads) && Number(downloads) > 0
+        ? `下载图片 ${downloads} 张` : '');
+
+      const cacheValue = response.headers.get('x-snapshot-cache');
+      setMetaText(cache, cacheValue === 'hit' ? '缓存命中' : cacheValue === 'miss' ? '实时渲染' : '');
+    };
+
     const clearImage = () => {
       if (imageUrl) URL.revokeObjectURL(imageUrl);
       imageUrl = '';
       imageBlob = undefined;
+      setMetaText(imageSize, '');
+      setMetaText(fileSize, '');
       if (previewImage instanceof HTMLImageElement) {
         previewImage.removeAttribute('src');
         previewImage.hidden = true;
@@ -260,7 +307,8 @@ const examples = [
     const render = async () => {
       if (!(editor instanceof HTMLTextAreaElement) || !apiUrl || !editor.value.trim()) return;
       controller?.abort();
-      controller = new AbortController();
+      const requestController = new AbortController();
+      controller = requestController;
 
       if (renderButton instanceof HTMLButtonElement) renderButton.disabled = true;
       if (renderLabel instanceof HTMLElement) renderLabel.textContent = '运行中';
@@ -279,10 +327,10 @@ const examples = [
           body: editor.value,
           mode: 'cors',
           credentials: 'omit',
-          signal: controller.signal,
+          signal: requestController.signal,
         };
         const response = await fetch(apiUrl, requestOptions);
-        const elapsed = performance.now() - startedAt;
+        if (requestController.signal.aborted) return;
         const contentType = response.headers.get('content-type') || '';
 
         if (!response.ok || !contentType.startsWith('image/')) {
@@ -292,11 +340,16 @@ const examples = [
           } catch {
             payload = undefined;
           }
+          if (requestController.signal.aborted) return;
           showError(payload, `服务返回 ${response.status} ${response.statusText || ''}`.trim());
+          showResponseTiming(response, performance.now() - startedAt);
+          setHidden(resultMeta, false);
           return;
         }
 
         const blob = await response.blob();
+        if (requestController.signal.aborted) return;
+        const requestMs = performance.now() - startedAt;
         clearImage();
         imageBlob = blob;
         imageUrl = URL.createObjectURL(blob);
@@ -304,19 +357,13 @@ const examples = [
         if (previewImage instanceof HTMLImageElement) {
           previewImage.src = imageUrl;
           await previewImage.decode();
+          if (requestController.signal.aborted) return;
           previewImage.hidden = false;
-          if (imageSize instanceof HTMLElement) {
-            imageSize.textContent = `${previewImage.naturalWidth} × ${previewImage.naturalHeight}`;
-          }
+          setMetaText(imageSize, `${previewImage.naturalWidth} × ${previewImage.naturalHeight}`);
         }
 
-        if (fileSize instanceof HTMLElement) fileSize.textContent = formatBytes(blob.size);
-        if (duration instanceof HTMLElement) duration.textContent = `${Math.round(elapsed)} ms`;
-        if (cache instanceof HTMLElement) {
-          const cacheValue = response.headers.get('x-snapshot-cache');
-          cache.textContent = cacheValue === 'hit' ? '缓存命中' : cacheValue === 'miss' ? '实时渲染' : '';
-          cache.hidden = !cacheValue;
-        }
+        setMetaText(fileSize, formatBytes(blob.size));
+        showResponseTiming(response, requestMs);
 
         setHidden(loadingState, true);
         setHidden(errorState, true);
@@ -324,14 +371,16 @@ const examples = [
         if (downloadButton instanceof HTMLButtonElement) downloadButton.disabled = false;
         setStatus('渲染完成', 'success');
       } catch (error) {
-        if (error instanceof DOMException && error.name === 'AbortError') return;
+        if (requestController.signal.aborted || (error instanceof DOMException && error.name === 'AbortError')) return;
         const message = error instanceof Error && error.message !== 'Failed to fetch'
           ? error.message
           : '无法连接 Open Snapshot 服务，请稍后重试。';
         showError(undefined, message);
       } finally {
-        if (renderButton instanceof HTMLButtonElement) renderButton.disabled = false;
-        if (renderLabel instanceof HTMLElement) renderLabel.textContent = '运行';
+        if (controller === requestController) {
+          if (renderButton instanceof HTMLButtonElement) renderButton.disabled = false;
+          if (renderLabel instanceof HTMLElement) renderLabel.textContent = '运行';
+        }
       }
     };
 
@@ -751,6 +800,7 @@ const examples = [
 
   .result-meta {
     display: flex;
+    flex-wrap: wrap;
     min-height: 2.6rem;
     align-items: center;
     gap: 0.35rem 1rem;
@@ -772,6 +822,8 @@ const examples = [
     vertical-align: 0.08rem;
     background: var(--sl-color-gray-4);
   }
+
+  .result-meta [hidden] { display: none; }
 
   .playground-note {
     margin: 0.8rem 0 0;
