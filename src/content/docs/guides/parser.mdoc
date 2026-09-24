@@ -11,7 +11,7 @@ description: 用轻量标签文本描述一棵 Widget 树。
 Reader → Tokenizer → Element 树 → WidgetParser → Widget 树 → RenderBox → 图片字节
 ```
 
-Tokenizer 负责标签、属性、文本和 CDATA；Parser 维护元素栈；`WidgetParserManager` 根据标签名选择构建器；根 `SnapshotElement.snapshot()` 最终调用 core 的渲染入口。
+Tokenizer 负责标签、属性、文本、注释和 CDATA；Parser 维护元素栈；`WidgetParserManager` 根据标签名选择构建器；根 `SnapshotElement.snapshot()` 最终调用 core 的渲染入口。
 
 ```kotlin
 val text = """
@@ -106,6 +106,19 @@ Parser 已覆盖常用布局、Flex、约束、变换、裁剪与基础滤镜能
 ```
 
 `Text` 会裁剪首尾空白；需要保留原始空白时使用 `Raw`。非文本标签中不能出现非空白原始文本。
+
+`<!-- ... -->` 注释可位于根标签前后、标签之间和文本中，解析时会被忽略；空注释 `<!---->` 也有效：
+
+```xml
+<!-- 页面说明 -->
+<Snapshot>
+  <!---->
+  <Text>前<!-- 不显示 -->后<![CDATA[<!-- 原文 -->]]></Text>
+</Snapshot>
+<!-- 结束说明 -->
+```
+
+上例的文本内容为 `前后<!-- 原文 -->`：CDATA 内的注释样式字符仍按原文保留。注释必须以 `-->` 结束，否则在 EOF 处抛出 `ParseException`；CDATA 未闭合时则会将已读取内容作为文本输出，行为与注释不同。`<!DOCTYPE ...>` 仍不受支持。
 
 ## 错误处理
 

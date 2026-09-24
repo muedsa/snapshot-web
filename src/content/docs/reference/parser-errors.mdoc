@@ -9,7 +9,8 @@ description: Parser 的文本规则、异常分类、服务端映射和自定义
 - 非文本标签内只能出现缩进、换行等纯空白；
 - `&` 不会进行 HTML 实体解码；`&amp;` 会保留为字面量；
 - 文本中需要 `<` 或 `>` 时使用 CDATA；
-- 不支持 `<!-- comment -->` 和 `<!DOCTYPE ...>`；
+- 支持 `<!-- ... -->` 注释（包括 `<!---->` 空注释）；可放在根标签前后、标签之间或文本中，内容不会进入元素树或文本；
+- CDATA 内的 `<!-- ... -->` 是普通文本；`<!DOCTYPE ...>` 仍不支持；
 - 标签可以在 EOF 时自动闭合，但不建议依赖此行为；
 - 不匹配的结束标签可能被忽略，因此应在输入前做格式校验或依赖测试覆盖。
 
@@ -39,7 +40,8 @@ Pos[3:18]~72: Attr [color] value must start with #
 | 叶子标签出现子节点 | `can not have child element` |
 | 单子节点标签出现第二个子节点 | `only can have one child` |
 | 普通容器内出现文本 | `Not Support RAWTEXT` |
-| 不支持的标记声明 | `Unexpected character '<'` |
+| 注释直到 EOF 仍未遇到 `-->` | `Unexpectedly reached end of file (EOF) in input state [COMMENT]` |
+| `<!DOCTYPE ...>` 等不支持的标记声明 | `Unexpected character '<' in input state [MARKUP_DECLARATION_OPEN]` |
 
 ### 构建 Widget 阶段错误
 
