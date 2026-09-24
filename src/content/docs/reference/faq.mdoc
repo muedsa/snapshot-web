@@ -3,9 +3,9 @@ title: 常见问题
 description: 尺寸、布局、Parser、网络图片、文本和调试的常见问题。
 ---
 
-## 为什么 `Container()` 报尺寸无限？
+## 为什么空 `Container()` 报尺寸为空？
 
-空 Container 在无界根约束下会尝试尽可能大，最终根尺寸是 Infinity。给它 `width`、`height`、有限 constraints，或让子节点产生有限尺寸。
+无子节点、无约束的 Container 在无界根约束下会被限制为零尺寸，无法创建有效 Surface。给它非零的 `width` 和 `height`，或让子节点产生非零尺寸。其他布局仍可能因无界约束产生无限尺寸，两类异常应分别排查。
 
 ## 为什么空 `Row {}` 报尺寸为空？
 

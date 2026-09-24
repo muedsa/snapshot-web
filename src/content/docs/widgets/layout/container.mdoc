@@ -74,7 +74,7 @@ Container(
 
 - `color` 与 `decoration` 不能同时设置；需要“颜色 + 圆角/边框”时，把颜色放进 `BoxDecoration`。
 - `clipBehavior != NONE` 时必须提供 `decoration`，因为裁剪路径来自装饰对象。
-- 空 `Container()` 在无界根约束下可能得到无限尺寸；应提供宽高、有限约束或有尺寸的子节点。
+- 无子节点、无约束的 `Container()` 在无界根约束下会收缩为零尺寸；作为根节点出图时应提供非零宽高或有尺寸的子节点。
 - `transform` 只影响绘制，不会改变父节点看到的布局尺寸。
 
 相关页面：[BoxDecoration](/widgets/painting/decorated-box/)、[ConstrainedBox](/widgets/layout/constrained-box/)、[Transform](/widgets/layout/transform/)。

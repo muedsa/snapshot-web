@@ -35,7 +35,7 @@ data class BoxConstraints(
 - `margin` 实际是最外层 Padding；
 - `color` 与 `decoration` 不能同时传入；需要同时使用时把颜色放进 `BoxDecoration`；
 - `clipBehavior != NONE` 时必须提供可生成裁剪路径的 `decoration`；
-- 没有子节点且没有紧约束的空 Container 可能得到无限尺寸。
+- 没有子节点、没有约束的空 Container 在无界根约束下会收缩为零尺寸；根出图仍需非零宽高。
 
 ## Flex 布局
 

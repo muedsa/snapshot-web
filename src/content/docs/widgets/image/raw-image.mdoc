@@ -55,3 +55,5 @@ RawImage(
 RawImage 是叶子 Widget，不能再挂子节点。资源加载和解码应在调用前完成。
 
 `scale` 必须是有限正数。宽高为零的源图或目标区域不会产生可见绘制。
+
+若使用重复平铺，单次绘制默认最多生成 100,000 个矩形；超过 `ImageRepeatConfig.maxTileCount` 会在绘制前抛出 `IllegalArgumentException`。可在应用启动时设置这个全局正整数上限，详见[图片、文本与富文本](/guides/media-text/#重复平铺数量上限)。

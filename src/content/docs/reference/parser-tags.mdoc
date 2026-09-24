@@ -44,7 +44,7 @@ description: 类 DOM 解析器支持的全部内置标签、属性格式和默�
 | `BackdropFilter` | 单个 | 背景高斯模糊 |
 | `Image` | 无 | 网络或 Data URI 图片 |
 | `Text` | 行内 | 文本与嵌套 Span |
-| `Raw` | 无 | 保留空白的原始文本 Span |
+| `Raw` | 行内多个 | 保留空白的原始文本 Span，可嵌套行内 Span |
 | `Emoji` | 无 | 文本内的网络或 Data URI 图片占位符 |
 | `WidgetSpan` | 单个 | 文本内嵌普通 Widget |
 
@@ -370,6 +370,8 @@ description: 类 DOM 解析器支持的全部内置标签、属性格式和默�
 
 默认 `SimpleDataUriImageDecoder` 只处理 PNG、JPEG、WebP 的 Base64 Data URI；解码发生在建树阶段，不访问网络。可通过 `Parser(dataUriImageDecoder = ...)` 注入自定义解码器。网络 URL 则由同步图片缓存获取，服务端应自行施加访问限制。
 
+`repeat` 为 `REPEAT`、`REPEAT_X` 或 `REPEAT_Y` 时，单次绘制默认最多生成 100,000 个平铺矩形；超限会抛 `IllegalArgumentException`。服务端可通过 `ImageRepeatConfig.maxTileCount` 调整全局上限（必须大于 0），Parser 文本不能覆盖它。
+
 ## Text
 
 | 属性 | 默认值 | 说明 |
@@ -398,7 +400,7 @@ description: 类 DOM 解析器支持的全部内置标签、属性格式和默�
 
 ## Raw
 
-属性与 `Text` 相同，但文本不做 trim，首尾空格和换行会保留。只能作为 `Text` 的子节点。
+支持 `Text` 的文本样式属性，但 `textAlign`、`softWrap`、`overflow` 等段落布局属性不会在 `Raw` 上生效。文本不做 trim，首尾空格和换行会保留；可以嵌套行内 Span，但只能出现在由最外层 `Text` 创建的行内内容树中。
 
 ## WidgetSpan
 

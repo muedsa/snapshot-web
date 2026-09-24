@@ -11,7 +11,7 @@ description: Snapshot、SnapshotImage、编码函数以及自定义 Surface 的�
 | --- | --- | --- |
 | `Snapshot` | `Surface` | 需要继续操作 Skia Surface |
 | `SnapshotImage` | `Image` | 需要复用结果、二次绘制或自行编码 |
-| `SnapshotPNG` | `ByteArray` | 无损输出、透明背景、HTTP 响应 |
+| `SnapshotPNG` | `ByteArray` | 无损输出；显式设置透明背景时可保留 Alpha 通道 |
 | `SnapshotJPEG` | `ByteArray` | 照片类内容或更小体积 |
 | `SnapshotWEBP` | `ByteArray` | Web 场景的现代图片格式 |
 | `layoutWidget` | `RenderBox` | 只布局不绘制，用于调试和测试 |
@@ -38,6 +38,7 @@ val png: ByteArray = SnapshotPNG(
 ```
 
 颜色使用 `0xAARRGGBB`。Kotlin 中超过有符号 Int 上限的字面量需要调用 `.toInt()`。
+Kotlin `Snapshot*` 默认背景为白色；Parser 的 `<Snapshot>` 默认背景则为透明，两种入口需分别设置才能得到相同的背景。
 
 ## 尺寸是如何决定的
 
@@ -66,11 +67,11 @@ SnapshotPNG {
 常见异常：
 
 ```kotlin
-SnapshotPNG { Container() } // layout size is infinite
+SnapshotPNG { Container() } // layout size is empty
 SnapshotPNG { Row {} }      // layout size is empty
 ```
 
-空 `Container` 会尝试尽可能大；空 `Row` 会收缩到零。给根节点或内容明确尺寸即可。
+无子节点、无约束的 `Container` 会被限制为零尺寸；空 `Row` 也会收缩到零。给根节点或内容明确的非零尺寸即可。
 
 ## 自定义 Surface
 
@@ -95,12 +96,18 @@ initSurface = { width, height ->
 ```kotlin
 post("/snapshot") {
     val source = call.receiveText()
-    val image = Parser().parse(StringReader(source)).snapshot()
-    call.respondBytes(image, ContentType.Image.PNG)
+    val element = Parser().parse(StringReader(source))
+    val contentType = when (element.type) {
+        "png" -> ContentType.Image.PNG
+        "jpg" -> ContentType.Image.JPEG
+        "webp" -> ContentType.parse("image/webp")
+        else -> error("Unsupported image type")
+    }
+    call.respondBytes(element.snapshot(), contentType)
 }
 ```
 
-根 `Snapshot` 标签的 `type` 决定输出 `png`、`jpg` 或 `webp`。
+根 `Snapshot` 标签的 `type` 决定输出 `png`、`jpg` 或 `webp`；响应的 Content-Type 必须与编码格式一致。
 
 {% aside type="caution" title="HTTP 接口需要完整的资源与错误边界" %}
 示例只展示最小调用链。生产服务还应限制请求体、渲染时长、并发量和网络图片访问，并区分解析错误、布局错误与内部错误。详见[错误处理与扩展](/reference/parser-errors/)。

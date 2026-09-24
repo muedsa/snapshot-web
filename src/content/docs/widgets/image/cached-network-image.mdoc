@@ -50,6 +50,8 @@ fun ChildSlot.CachedNetworkImage(
 
 `scale` 必须是有限正数。默认缓存是无上限的 `SimpleNoLimitedNetworkImageCache`；`SimpleLimitedNetworkImageCache` 只限制缓存张数和单图下载字节数，不代表完整网络安全防护。
 
+`repeat` 平铺同样受全局 `ImageRepeatConfig.maxTileCount` 限制，默认单次绘制最多 100,000 个矩形；超限会抛出 `IllegalArgumentException`，与网络缓存限额是两回事。
+
 ```kotlin
 CachedNetworkImage(
     url = "https://example.com/cover.png",

@@ -25,6 +25,10 @@ description: 图片来源、缓存、适配、TextStyle、TextSpan 和行内图�
 
 `scale` 必须是有限正数。图片尺寸为零、缩放和平铺等边界情况由当前实现校验或安全处理；不要依赖零尺寸图片产生可见内容。
 
+### 重复平铺数量上限
+
+`REPEAT`、`REPEAT_X` 和 `REPEAT_Y` 每次绘制默认最多生成 100,000 个平铺矩形。超过上限时会在绘制前抛出 `IllegalArgumentException`，不会只绘制一部分；这也适用于 Parser 的 `<Image>` 和 `<Emoji>`。应用可在服务端设置全局配置 `ImageRepeatConfig.maxTileCount = 10_000`（必须大于 0），解析文本不能修改该上限。限制越低，越能避免极小图片在大画布上重复绘制耗尽内存。
+
 Parser 的 `<Image>` 和 `<Emoji>` 还可使用 `dataUri` 代替 `url`；两者必须且只能指定其一。默认解码器只支持 PNG、JPEG、WebP 的 Base64 Data URI。需要额外格式、输入限额或安全检查时，可向 `Parser(dataUriImageDecoder = ...)` 注入自定义解码器。`noCache` 仅适用于 URL。
 
 ```kotlin

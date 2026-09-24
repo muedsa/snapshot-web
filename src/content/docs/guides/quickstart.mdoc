@@ -29,10 +29,12 @@ gpr.user=YOUR_GITHUB_USERNAME
 gpr.key=YOUR_CLASSIC_PAT
 ```
 
-然后在 `build.gradle.kts` 中添加仓库和依赖：
+然后在 `build.gradle.kts` 中添加仓库和依赖。以下以 Windows x64 为例；其他平台请在[安装与构建](/guides/installation/#从-github-packages-引入)中选择对应的 Skiko runtime：
 
 ```kotlin
 repositories {
+    mavenCentral()
+    maven { url = uri("https://maven.pkg.jetbrains.space/public/p/compose/dev") }
     maven {
         url = uri("https://maven.pkg.github.com/muedsa/snapshot")
         credentials {
@@ -44,10 +46,11 @@ repositories {
 
 dependencies {
     implementation("com.muedsa.snapshot:snapshot-core:0.0.0-SNAPSHOT")
+    implementation("org.jetbrains.skiko:skiko-awt-runtime-windows-x64:0.0.0-SNAPSHOT")
 }
 ```
 
-如果要使用类 DOM 解析器，把依赖换为 `snapshot-parser`；它会传递 `core`。
+如果要使用类 DOM 解析器，把依赖换为 `snapshot-parser`；它会传递 `core`，但仍需保留平台 runtime。Linux、macOS 或 ARM64 不能直接照抄上述 Windows x64 坐标。
 
 ## 常见输出格式
 
@@ -58,7 +61,7 @@ SnapshotWEBP { /* Widget tree */ }
 ```
 
 {% aside type="caution" title="根节点必须有有限尺寸" %}
-空的 `Container()` 会得到无限尺寸；空的 `Row {}` 会得到空尺寸。请使用 `width`、`height` 或 `SizedBox` 为根布局建立明确边界。
+无子节点、无约束的 `Container()` 与空的 `Row {}` 都会得到空尺寸，无法创建有效 Surface。请使用 `width`、`height` 或 `SizedBox` 为根布局建立非零尺寸。
 {% /aside %}
 
 ## 构建一张完整卡片

@@ -43,7 +43,7 @@ gpr.key=YOUR_CLASSIC_PAT
 不要把 token 写入 `build.gradle.kts` 或提交到项目仓库。应将凭据保存在用户级 `~/.gradle/gradle.properties`，并只授予读取包所需的最小权限。
 {% /aside %}
 
-在使用方的 `build.gradle.kts` 中配置：
+在使用方的 `build.gradle.kts` 中配置仓库、Snapshot 和当前平台的 Skiko 原生运行时：
 
 ```kotlin
 repositories {
@@ -58,12 +58,29 @@ repositories {
     }
 }
 
+val snapshotVersion = "0.0.0-SNAPSHOT"
+val skikoVersion = "0.0.0-SNAPSHOT"
+val targetOs = when {
+    System.getProperty("os.name") == "Mac OS X" -> "macos"
+    System.getProperty("os.name").startsWith("Win") -> "windows"
+    System.getProperty("os.name").startsWith("Linux") -> "linux"
+    else -> error("Unsupported OS")
+}
+val targetArch = when (System.getProperty("os.arch")) {
+    "x86_64", "amd64" -> "x64"
+    "aarch64" -> "arm64"
+    else -> error("Unsupported architecture")
+}
+
 dependencies {
-    implementation("com.muedsa.snapshot:snapshot-core:0.0.0-SNAPSHOT")
+    implementation("com.muedsa.snapshot:snapshot-core:$snapshotVersion")
     // 使用类 DOM 解析器时改用下面这一项；它会自动带入 core。
-    // implementation("com.muedsa.snapshot:snapshot-parser:0.0.0-SNAPSHOT")
+    // implementation("com.muedsa.snapshot:snapshot-parser:$snapshotVersion")
+    implementation("org.jetbrains.skiko:skiko-awt-runtime-$targetOs-$targetArch:$skikoVersion")
 }
 ```
+
+`core` 仅传递 `skiko-awt` API，不会替应用选择 Windows、Linux 或 macOS 的原生运行时；使用 `parser` 也同样需要显式添加。部署到与构建机器不同的平台时，应按部署平台选择对应 artifact。
 
 快照版本会持续更新。需要忽略本地缓存并重新获取时运行：
 
@@ -93,7 +110,7 @@ includeBuild("../snapshot")
 ./gradlew releaseJars
 ```
 
-产物位于 `core/build/libs/` 与 `parser/build/libs/`。手动使用 JAR 时，还需要在运行时 classpath 中提供对应平台的 Skiko runtime。
+产物位于 `core/build/libs/` 与 `parser/build/libs/`。手动使用 JAR 时，还需要在 classpath 中提供 `skiko-awt` 和对应平台的 Skiko runtime。通过 GitHub Packages 或 Composite build 接入时也必须显式声明平台 runtime。
 
 | 平台 | Runtime artifact |
 | --- | --- |
