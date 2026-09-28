@@ -25,7 +25,7 @@ description: Parser 的文本规则、异常分类、服务端映射和自定义
 结构和属性解析错误统一包装为 `ParseException`，包含行、列和字符偏移，`cause` 保留底层异常。典型字符串类似：
 
 ```text
-Pos[3:18]~72: Attr [color] value must start with #
+Pos[3:18]~72: Attr [color] unsupported CSS color [not-a-color]
 ```
 
 ### 解析阶段错误
@@ -49,7 +49,7 @@ Pos[3:18]~72: Attr [color] value must start with #
 | --- | --- |
 | Image / Emoji 未指定来源或同时指定两种来源 | 必须且只能设置 `url` 或 `dataUri` |
 | Data URI 格式或图片数据错误 | 指向 `dataUri` 属性值 |
-| 颜色或 Insets 格式错误 | 对应 AttrDefine 的格式异常 |
+| 颜色或 Insets 格式错误 | 对应 AttrDefine 的格式异常；颜色支持的写法见[标签与属性参考](/reference/parser-tags/#颜色) |
 | 枚举名无效 | `IllegalArgumentException` 被包装 |
 | Text 中出现非行内标签 | `Unknown inline span type` |
 | Raw / Emoji / WidgetSpan 用在 Text 外 | `can only be used in the Text` |
