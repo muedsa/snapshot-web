@@ -50,6 +50,8 @@ val bytes = Parser().parse(StringReader(text)).snapshot()
 
 详见[标签与属性参考](/reference/parser-tags/)。
 
+编写类 DOM DSL 时，可以使用 [`snapshot-lsp`](/guides/language-server/) 获取标签、属性和枚举补全、悬停说明及实时诊断；[在线 Playground](/playground/) 已集成这项语言服务。
+
 ## 复用 Parser
 
 当标签管理器配置相同，可以长期持有一个 Parser：

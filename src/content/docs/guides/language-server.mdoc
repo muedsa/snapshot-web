@@ -1,0 +1,55 @@
+---
+title: Snapshot DSL 语言服务
+description: 使用 snapshot-lsp 为类 DOM DSL 提供补全、悬停与实时诊断。
+---
+
+[`snapshot-lsp`](https://github.com/muedsa/snapshot-lsp) 是 Snapshot 类 DOM DSL 的独立 TypeScript 语言服务。它通过标准 Language Server Protocol（LSP）连接编辑器，既可作为 Node.js 进程通过 stdio 运行，也可在浏览器 Web Worker 中运行。编写 DSL 不需要启动 JVM 渲染器。
+
+## 能提供什么
+
+- 覆盖 Parser 默认注册的 38 个标签及其属性，提供标签、属性、枚举值和闭合标签补全，以及悬停说明。
+- 对未知标签或属性、重复属性、缺少必填属性、根节点错误、父子关系、子节点数量和部分属性值进行实时诊断；颜色检查支持 Parser 的常用 CSS 颜色写法。
+- 容忍编辑过程中暂时未写完的标签，便于继续补全。
+
+标签和属性名区分大小写。Parser 可能静默忽略未知属性，而语言服务会发出警告，帮助发现拼写错误。
+
+## 在线体验
+
+打开[在线 Playground](/playground/)即可使用 Monaco 编辑器中的补全、悬停和问题提示。网站将 `@muedsa/snapshot-lsp/browser` 放在 Web Worker 中运行：编辑时的语言服务在浏览器内完成；点击“运行”才会将 DSL 发往 Open Snapshot 服务生成图片。
+
+## 接入本地编辑器
+
+包发布在 GitHub Packages，要求 Node.js 22 或更高版本。在项目的 `.npmrc` 中指定 registry，并通过环境变量提供具备 `read:packages` 权限的令牌：
+
+```ini
+@muedsa:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
+```
+
+不要把实际令牌写进仓库。配置好 `NODE_AUTH_TOKEN` 后安装：
+
+```bash
+pnpm add -D @muedsa/snapshot-lsp
+```
+
+在支持 LSP 的编辑器中，将 `.snapshot` 文件关联到语言 ID `snapshot`，并以 stdio 启动服务：
+
+```bash
+pnpm exec snapshot-lsp --stdio
+```
+
+服务实现了文档同步、补全、悬停和诊断发布。具体的服务启动配置由编辑器或其 LSP 客户端决定；这是一项语言服务，并非开箱即用的 VS Code 扩展。
+
+在浏览器应用中，也可将服务放进 Worker，并用支持 Web Worker 传输的 LSP 客户端连接：
+
+```ts
+import { startBrowserWorkerServer } from '@muedsa/snapshot-lsp/browser';
+
+startBrowserWorkerServer(self);
+```
+
+## 与 Parser 的分工
+
+语言服务只做静态检查，不会解码图片、执行布局或生成图片。复杂的属性组合约束和最终解析结果仍以 `snapshot-parser` 为准；语言服务的提示不能替代实际解析与渲染测试。
+
+如果为 Parser 注册了自定义标签，还需要单独扩展语言服务的标签目录；仅注册 `WidgetParserManager` 不会自动让编辑器认识新标签。扩展接口和最新接入说明见 [`snapshot-lsp` 项目](https://github.com/muedsa/snapshot-lsp)。
