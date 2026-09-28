@@ -3,4 +3,4 @@ allowBuilds:
   sharp: true
 
 minimumReleaseAgeExclude:
-  - "@muedsa/snapshot-lsp@0.1.0"
+  - "@muedsa/snapshot-lsp@0.1.1"
