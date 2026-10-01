@@ -41,3 +41,5 @@ Stack {
 ```
 
 BackdropFilter 只有背后已有内容时才有视觉效果。通常应配合 ClipRect 或 ClipRRect 限制滤镜区域，否则过滤范围和离屏成本可能过大。
+
+BackdropFilter 会读取子树之外的背景，无法仅凭子节点的绘制边界推断完整作用范围。即使嵌套在 ColorFiltered 内，仍应通过外层裁剪明确限定区域。

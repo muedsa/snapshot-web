@@ -75,6 +75,14 @@ fun ChildSlot.profileCard() {
 - `Offset`、`Size`、`Rect`、`Radius` 和 `Matrix44CMO` 位于 `com.muedsa.geometry`；
 - 浮点测试应使用容差，不应直接比较复杂计算后的精确值。
 
+`Offset`（以及继承它的 `Size`）不再实现 `Comparable`，不能直接使用 `<`、`<=`、`>`、`>=` 比较二维值。请使用逐分量比较方法 `lessThan`、`lessThanOrEqual`、`greaterThan`、`greaterThanOrEqual`：
+
+```kotlin
+val fits = Size(100f, 80f) lessThanOrEqual Size(100f, 120f) // true
+```
+
+这类比较要求两个分量都满足条件；一轴更大、另一轴更小时，两个方向的比较都可能为 `false`。如果只关心一个轴，应直接比较 `x` / `y` 或 `width` / `height`。
+
 ## 对齐与方向
 
 `BoxAlignment(x, y)` 中，`(-1,-1)` 为左上，`(0,0)` 为中心，`(1,1)` 为右下。`AlignmentDirectional` 使用 start/end，需要结合 LTR 或 RTL 方向解析。

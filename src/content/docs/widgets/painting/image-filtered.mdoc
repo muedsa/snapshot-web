@@ -12,6 +12,7 @@ sidebar:
 ```kotlin
 fun ChildSlot.ImageFiltered(
     imageFilter: ImageFilter,
+    outputBounds: ((Rect) -> Rect)? = null,
     content: ImageFiltered.() -> Unit = {},
 )
 ```
@@ -21,6 +22,7 @@ fun ChildSlot.ImageFiltered(
 | 参数 | 说明 |
 | --- | --- |
 | `imageFilter` | Skia ImageFilter 实例 |
+| `outputBounds` | 默认 `null`；将子树的输入绘制矩形映射为滤镜完整输出矩形，供外层 ColorFiltered 计算作用范围 |
 | `content` | 最多一个子 Widget |
 
 ```kotlin
@@ -32,3 +34,24 @@ ImageFiltered(
 ```
 
 它处理的是自身子树；要处理已经绘制在后方的内容，使用 [BackdropFilter](/widgets/painting/backdrop-filter/)。模糊会扩展可见像素范围，祖先裁剪可能截掉模糊边缘。
+
+## 与 ColorFiltered 嵌套
+
+Skiko 的通用 `ImageFilter` 不提供可查询的输出边界。将 ImageFiltered 放在 ColorFiltered 内时，可通过 `outputBounds` 提供滤镜的完整输出范围，避免外层颜色滤镜影响边界之外的背景。高斯模糊可使用 `com.muedsa.snapshot.widget.blurImageFilterBounds`：
+
+```kotlin
+ColorFiltered(colorFilter = ColorFilter.makeBlend(Color.RED, BlendMode.MULTIPLY)) {
+    ImageFiltered(
+        imageFilter = ImageFilter.makeBlur(2f, 2f, FilterTileMode.CLAMP),
+        outputBounds = blurImageFilterBounds(2f, 2f),
+    ) {
+        Container(width = 20f, height = 20f, color = Color.BLUE)
+    }
+}
+```
+
+`blurImageFilterBounds(sigmaX, sigmaY)` 要求两个 sigma 有限且非负，并分别按 `ceil(3 × sigma)` 向两侧扩张输入矩形。这里的 `Rect` 是 `org.jetbrains.skia.Rect`，坐标相对于 ImageFiltered 本地坐标系。
+
+其他滤镜可使用 `outputBounds = { input -> /* 返回完整输出矩形 */ }`。回调应无副作用，并返回覆盖滤镜全部输出的有限矩形；范围过小会截断效果，过大则可能让更多透明区域被外层颜色滤镜着色。未提供或无法确定有效边界时会保留不裁剪回退；需要固定作用区域时，可在外层添加 ClipRect 等裁剪组件。
+
+`outputBounds` 只用于外层颜色滤镜计算边界，不改变 ImageFiltered 单独使用时的裁剪行为。Parser 的 `<ImageFiltered>` 固定为高斯模糊，会根据 `sigmaX`、`sigmaY` 自动提供该边界，无需额外设置属性。

@@ -330,6 +330,18 @@ rgb(255 0 0 / 50%) / hsl(120deg 100% 50% / 50%)
 
 `ColorFiltered` 要求 `color` 和 Skia `blendMode`；`ImageFiltered` 与 `BackdropFilter` 要求有限非负的 `sigmaX`、`sigmaY`，可设置 `tileMode`（默认 `CLAMP`），后者还支持 `blendMode`（默认 `SRC_OVER`）。这两个图片滤镜标签只构造高斯模糊；其他滤镜仍需 Kotlin DSL。
 
+`ColorFiltered` 在子树绘制边界可确定时限制颜色作用范围，保留合法溢出和阴影；部分混合模式也会给边界内的透明间隙着色。`ImageFiltered` 会按 sigma 自动提供模糊输出边界，因此下面的嵌套无需配置额外边界属性：
+
+```xml
+<ColorFiltered color="red" blendMode="MULTIPLY">
+  <ImageFiltered sigmaX="2" sigmaY="2" tileMode="CLAMP">
+    <Container width="20" height="20" color="blue" />
+  </ImageFiltered>
+</ColorFiltered>
+```
+
+`BackdropFilter` 读取已有背景，仍建议配合 ClipRect、ClipOval 或 ClipRRect 限定区域。Kotlin DSL 的通用 ImageFiltered 边界配置见 [ImageFiltered](/widgets/painting/image-filtered/#与-colorfiltered-嵌套)。
+
 ### Opacity
 
 `opacity` 默认为 `1`，有效范围为 0 到 1。它对整个子树应用透明度。

@@ -69,7 +69,7 @@ Border.all(
 | Widget | 用途 |
 | --- | --- |
 | `Opacity` | 把整个子树作为一层合成透明度 |
-| `ColorFiltered` | 对子树应用 `ColorFilter` |
+| `ColorFiltered` | 对子树应用 `ColorFilter`，在绘制边界可确定时限制作用范围 |
 | `ImageFiltered` | 对子树结果应用 `ImageFilter` |
 | `BackdropFilter` | 对已经绘制在当前内容背后的区域应用滤镜 |
 
@@ -80,6 +80,7 @@ Border.all(
 ```kotlin
 ImageFiltered(
     imageFilter = ImageFilter.makeBlur(8f, 8f, FilterTileMode.CLAMP),
+    outputBounds = blurImageFilterBounds(8f, 8f),
 ) {
     RawImage(image = source)
 }
@@ -87,7 +88,11 @@ ImageFiltered(
 
 `BackdropFilter` 只有在其背后已经有内容时才有可见效果，常用于毛玻璃样式。
 
+ColorFiltered 根据子树的绘制范围限制颜色滤镜，合法溢出和阴影也包含在内。通用 ImageFiltered 的输出范围不能从 Skia 滤镜自动查询；上例通过 `outputBounds` 给外层颜色滤镜提供范围，参数不改变独立使用时的裁剪行为。具体边界规则见 [ColorFiltered](/widgets/painting/color-filtered/#绘制边界) 与 [ImageFiltered](/widgets/painting/image-filtered/#与-colorfiltered-嵌套)。BackdropFilter 读取已有背景，通常需要 ClipRect 或 ClipRRect 限定区域。
+
 Parser 现提供 `<ColorFiltered color="…" blendMode="…">`、`<ImageFiltered sigmaX="…" sigmaY="…">` 和 `<BackdropFilter sigmaX="…" sigmaY="…">`。后两者只支持高斯模糊，复杂 Skia 滤镜仍需 Kotlin DSL。`Container`、`Border`、`DecoratedBox` 也可通过 `gradientType`、`gradientColors` 等属性表达基础渐变。
+
+Parser 的 `<ImageFiltered>` 会自动按 sigma 提供模糊输出边界，嵌套在 `<ColorFiltered>` 内时无需手动配置 `outputBounds`。
 
 ## Transform
 

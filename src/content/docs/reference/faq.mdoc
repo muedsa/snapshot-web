@@ -36,6 +36,12 @@ Parser 的 Container 已自动做这层转换。
 
 Stack 默认 `clipBehavior = HARD_EDGE`。把它改为 `ClipBehavior.NONE`，同时确认更外层没有其他 Clip。
 
+## 为什么 ColorFiltered 仍可能给背景染色？
+
+ColorFiltered 会依据可确定的子树绘制边界限制作用范围；但通用 ImageFiltered 未提供 `outputBounds` 时，模糊、位移等效果的输出范围无法安全推断，会保留不裁剪回退。高斯模糊可传入 `outputBounds = blurImageFilterBounds(sigmaX, sigmaY)`；Parser 的 `<ImageFiltered>` 会自动提供这个边界。包含 BackdropFilter 或自定义绘制时，可用外层 ClipRect 等组件明确限定区域。
+
+`SRC`、`MULTIPLY` 等混合模式还可能给绘制边界内的透明间隙着色。参数和示例见 [ColorFiltered](/widgets/painting/color-filtered/#绘制边界) 与 [ImageFiltered](/widgets/painting/image-filtered/#与-colorfiltered-嵌套)。
+
 ## Parser 能使用 Expanded、Opacity 或 Transform 吗？
 
 可以。默认管理器已注册 `Expanded`、`Flexible`、`Opacity` 和 `Transform`，也支持常用约束、溢出和基础裁剪标签。完整集合和属性见[标签与属性参考](/reference/parser-tags/)。

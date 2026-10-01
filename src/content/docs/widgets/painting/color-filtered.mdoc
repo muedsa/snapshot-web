@@ -36,3 +36,13 @@ ColorFiltered(colorFilter = filter) {
 `MODULATE` 会逐通道相乘。不同 BlendMode 的语义由 Skia 定义，测试时应采样确定性区域，不要只依赖肉眼判断。
 
 ColorFiltered 改变的是最终颜色，不改变布局、尺寸和命中区域。
+
+## 绘制边界
+
+滤镜的输入来自子树；要过滤已经绘制在后方的内容，使用 [BackdropFilter](/widgets/painting/backdrop-filter/)。当子树的绘制边界可确定时，ColorFiltered 会将作用范围限制在该边界内，避免小组件给整个画布染色。
+
+绘制边界可以大于布局尺寸：合法的溢出、变换后的内容、装饰阴影和文字阴影仍会参与滤镜。`SRC`、`MULTIPLY` 等可能改变透明像素的混合模式，也可能给边界内原本透明的间隙着色；它们并非只作用于不透明像素。
+
+如果子树中有通用 `ImageFiltered`，需要提供适合图像滤镜的 `outputBounds`，让外层 ColorFiltered 知道输出范围。无法安全估算边界时会保留不裁剪回退，某些混合模式仍可能影响整个画布。高斯模糊的配置示例见 [ImageFiltered](/widgets/painting/image-filtered/#与-colorfiltered-嵌套)。
+
+内置组件会估算自身的绘制范围；自定义渲染对象若在尺寸外绘制，或子树包含读取背景的 BackdropFilter，应验证结果并在需要时用 ClipRect 等组件明确限定作用区域。
