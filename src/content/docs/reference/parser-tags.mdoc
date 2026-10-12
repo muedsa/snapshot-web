@@ -3,7 +3,7 @@ title: 标签与属性参考
 description: 类 DOM 解析器支持的全部内置标签、属性格式和默认值。
 ---
 
-解析器默认注册 38 个标签。标签名和属性名区分大小写，未知属性会被忽略；除根标签外，属性通常在建树阶段校验。
+解析器默认注册 39 个标签。标签名和属性名区分大小写，未知属性会被忽略；除根标签外，属性通常在建树阶段校验。
 
 ## 标签总表
 
@@ -39,6 +39,7 @@ description: 类 DOM 解析器支持的全部内置标签、属性格式和默�
 | `ClipRect` | 单个 | 矩形裁剪 |
 | `ClipOval` | 单个 | 椭圆裁剪 |
 | `ClipRRect` | 单个 | 圆角矩形裁剪 |
+| `ClipPath` | 单个 | SVG 路径裁剪、坐标缩放与多轮廓镂空 |
 | `ColorFiltered` | 单个 | 颜色混合滤镜 |
 | `ImageFiltered` | 单个 | 子树高斯模糊 |
 | `BackdropFilter` | 单个 | 背景高斯模糊 |
@@ -378,6 +379,50 @@ rgb(255 0 0 / 50%) / hsl(120deg 100% 50% / 50%)
   <Container width="320" height="180" color="#0F172A" />
 </ClipRRect>
 ```
+
+## ClipPath
+
+最多包含一个子节点。`path` 使用 SVG 的 `d` 属性语法，支持 `M/L/H/V/Z`、`Q/T`、`C/S`、`A` 命令及多轮廓；小写命令使用相对坐标。属性内容是路径数据，不是完整 SVG 文档，也不读取路径文件或 URL。
+
+| 属性 | 默认值 | 说明 |
+| --- | --- | --- |
+| `path` | 必填 | 非空 SVG 路径数据，坐标必须有限 |
+| `viewBox` | 未设置 | `minX minY width height`，允许空白或逗号分隔及科学计数法；四个值须有限，宽高须大于 0 |
+| `fit` | `FILL` | 有 `viewBox` 时生效；`FILL` 分别缩放宽高，`CONTAIN` 等比缩放并居中 |
+| `fillRule` | `NON_ZERO` | 非零环绕规则；`EVEN_ODD` 使用奇偶规则，可实现镂空 |
+| `clipBehavior` | `ANTI_ALIAS` | `NONE`、`HARD_EDGE`、`ANTI_ALIAS`、`ANTI_ALIAS_WITH_SAVE_LAYER` |
+
+路径坐标与布局：
+
+- 无 `viewBox` 时，路径直接使用组件本地坐标，原点在左上角，X 向右、Y 向下；`fit` 不改变路径。
+- 有 `viewBox` 时，先减去窗口原点，再映射到实际布局尺寸。`FILL` 可能拉伸形状，`CONTAIN` 保持比例并居中。
+- `viewBox` 和路径边界都不决定布局尺寸；通常用外层 `SizedBox` 或子节点的宽高指定尺寸。
+- `viewBox` 只用于坐标映射，不额外施加矩形裁剪；如需限制在组件矩形内，可再包一层 `ClipRect`。
+- 裁剪使用路径的填充区域，未闭合轮廓按填充语义闭合。`NON_ZERO` 下轮廓方向影响镂空；`EVEN_ODD` 不依赖轮廓方向。
+
+将曲线徽章映射到 `240 × 160`：
+
+```xml
+<SizedBox width="240" height="160">
+  <ClipPath path="M0 0 H100 V75 Q50 125 0 75 Z"
+            viewBox="0 0 100 100" fit="FILL">
+    <Container color="#3F51B5" />
+  </ClipPath>
+</SizedBox>
+```
+
+使用两个同方向轮廓与 `EVEN_ODD` 镂空，中心露出背景：
+
+```xml
+<SizedBox width="240" height="160">
+  <ClipPath path="M0 0 H100 V100 H0 Z M25 25 H75 V75 H25 Z"
+            viewBox="0 0 100 100" fit="CONTAIN" fillRule="EVEN_ODD">
+    <Container color="#00C853" />
+  </ClipPath>
+</SizedBox>
+```
+
+路径在创建 Widget 时解析一次，布局时只做坐标变换。非法路径、非有限坐标、无效 `viewBox` 或枚举值会在 `createWidget()` / `snapshot()` 阶段报告带位置的 `ParseException`。需要按布局尺寸动态计算几何时，使用 Kotlin DSL 的 [ClipPath 回调](/widgets/painting/clip-path/)，或注册自定义标签。
 
 ## Image
 

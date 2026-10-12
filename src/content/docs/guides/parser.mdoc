@@ -39,13 +39,13 @@ val bytes = Parser().parse(StringReader(text)).snapshot()
 
 `Snapshot`、`Container`、`SizedBox`、`Row`、`Column`、`Stack`、`Positioned`、`Image`、`Text` 和 `Raw` 是最常用的标签。`Container` 可以通过 `padding`、`border`、`borderRadius`、`boxShadow` 等属性表达常见卡片样式。
 
-默认管理器目前注册 38 个标签，还包括：
+默认管理器目前注册 39 个标签，还包括：
 
 - 基础布局：`Padding`、`Align`、`Center`、`AspectRatio`、`FractionallySizedBox`、`UnconstrainedBox`；
 - Flex 与子项：`Flex`、`Expanded`、`Flexible`、`Spacer`；
 - 约束与溢出：`ConstrainedBox`、`LimitedBox`、`OverflowBox`、`SizedOverflowBox`、`IndexedStack`；
 - 绘制效果：`Opacity`、`Transform`、`ColoredBox`、`DecoratedBox`、`ColorFiltered`、`ImageFiltered`、`BackdropFilter`；
-- 裁剪：`ClipRect`、`ClipOval`、`ClipRRect`；
+- 裁剪：`ClipRect`、`ClipOval`、`ClipRRect`、`ClipPath`（SVG 路径）；
 - 装饰与行内内容：`Border`、`Emoji`、`WidgetSpan`。
 
 详见[标签与属性参考](/reference/parser-tags/)。
@@ -92,7 +92,28 @@ val second = parser.parse(StringReader(secondSource)).snapshot()
 ```
 
 {% aside type="note" title="Parser 能力与 Kotlin DSL 不完全相同" %}
-Parser 已覆盖常用布局、Flex、约束、变换、裁剪与基础滤镜能力，但仍不是全部 Kotlin DSL 的一一映射。`Stack` / `IndexedStack` 现支持 `fit` 和 `clipBehavior`；任意路径的 `ClipPath`、复杂滤镜等仍需 Kotlin DSL。模板设计应以标签参考为准。
+Parser 已覆盖常用布局、Flex、约束、变换、裁剪与基础滤镜能力，但仍不是全部 Kotlin DSL 的一一映射。`Stack` / `IndexedStack` 支持 `fit` 和 `clipBehavior`；`ClipPath` 支持 SVG 路径裁剪，依赖布局尺寸动态计算路径或构造复杂滤镜时仍需 Kotlin DSL。模板设计应以标签参考为准。
+{% /aside %}
+
+## SVG 路径裁剪
+
+`<ClipPath>` 通过必填的 `path` 属性描述 SVG 路径；可使用 `viewBox` 和 `fit` 映射到组件尺寸，或通过 `fillRule="EVEN_ODD"` 实现多轮廓镂空。路径本身不决定布局尺寸：
+
+```xml
+<Snapshot>
+  <SizedBox width="240" height="160">
+    <ClipPath path="M0 0 H100 V100 H0 Z M25 25 H75 V75 H25 Z"
+              viewBox="0 0 100 100" fit="CONTAIN" fillRule="EVEN_ODD">
+      <Container color="#00C853" />
+    </ClipPath>
+  </SizedBox>
+</Snapshot>
+```
+
+属性与坐标规则见 [ClipPath 标签参考](/reference/parser-tags/#clippath)。[在线 Playground](/playground/) 支持对应的标签、属性和枚举补全，可以将上例复制到编辑器中。
+
+{% aside type="note" title="渲染服务也需要更新 Parser" %}
+编辑器的语言服务与服务端 Parser 独立更新。如果运行时出现 `Unknown element tag [ClipPath]`，需要将渲染服务的 `snapshot-parser` 依赖更新到支持该标签的版本。
 {% /aside %}
 
 ## 图片来源与扩展

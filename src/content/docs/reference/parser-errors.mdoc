@@ -58,6 +58,8 @@ Pos[3:18]~72: Attr [color] unsupported CSS color [not-a-color]
 | Expanded 使用 `fit` 属性 | `does not support attr [fit]` |
 | Opacity 超出 0 到 1 | 参数范围异常 |
 | Transform 缺少矩阵或矩阵格式错误 | `Attr [matrix]` 对应格式异常 |
+| ClipPath 缺少路径、路径语法或坐标无效 | `path` 属性错误；缺少属性时指向标签，有值时通常指向属性值起始位置 |
+| ClipPath 的 viewBox、fit 或 fillRule 无效 | 对应属性的格式或取值异常；viewBox 宽高须有限且大于 0，fit 仅支持 FILL / CONTAIN |
 | 约束的最小值大于最大值 | `BoxConstraints` 参数异常 |
 | 装饰线修饰参数缺少 `decoration` | `Attr [decoration] is required` |
 | 前景画笔修饰参数缺少 `foregroundColor` | `Attr [foregroundColor] is required` |

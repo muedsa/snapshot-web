@@ -43,3 +43,18 @@ ClipPath(
 ```
 
 复杂 Path 的抗锯齿和 saveLayer 成本高于矩形裁剪。能使用 ClipRect、ClipRRect 或 ClipOval 表达时优先使用专用 Widget。
+
+## Parser 中使用 SVG 路径
+
+类 DOM DSL 已支持 `<ClipPath>`，使用必填 `path` 属性传入 SVG 路径数据：
+
+```xml
+<ClipPath path="M50 0 L100 100 L0 100 Z"
+          viewBox="0 0 100 100" fit="FILL">
+  <Container width="240" height="180" color="#38BDF8" />
+</ClipPath>
+```
+
+`viewBox` 只定义路径的坐标映射，不决定布局尺寸或额外施加矩形裁剪；`fit="CONTAIN"` 可等比缩放并居中，`fillRule="EVEN_ODD"` 可实现多轮廓镂空。完整属性见 [ClipPath 标签参考](/reference/parser-tags/#clippath)。
+
+SVG 路径整体缩放不能代替所有动态几何：例如组件变宽但缺口半径固定的票券，仍适合用 Kotlin DSL 的 `clipper` 根据 `Size` 计算路径。

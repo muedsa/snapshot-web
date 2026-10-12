@@ -48,6 +48,8 @@ ColorFiltered 会依据可确定的子树绘制边界限制作用范围；但通
 
 新增的 `Flex`、`Spacer`、`IndexedStack`、比例布局、基础滤镜和 `WidgetSpan` 也已可用。
 
+`ClipPath` 也已内置，可通过 SVG 路径字符串、`viewBox` 和填充规则实现复杂裁剪与镂空，详见 [ClipPath 标签参考](/reference/parser-tags/#clippath)。需要按布局尺寸动态计算路径时，可以使用 Kotlin DSL 的 `clipper` 回调。
+
 ## 为什么 Parser 的属性没有生效也没有报错？
 
 未知属性会被静默忽略。检查拼写、大小写和属性格式；布尔值要显式写 `"true"`。某些属性错误直到 `createWidget()` 或 `snapshot()` 才会出现。

@@ -7,11 +7,13 @@ description: 使用 snapshot-lsp 为类 DOM DSL 提供补全、悬停与实时�
 
 ## 能提供什么
 
-- 覆盖 Parser 默认注册的 38 个标签及其属性，提供标签、属性、枚举值和闭合标签补全，以及悬停说明。
+- 覆盖 Parser 默认注册的 39 个标签及其属性，包含 SVG 路径裁剪的 `ClipPath`；提供标签、属性、枚举值和闭合标签补全，以及悬停说明。
 - 对未知标签或属性、重复属性、缺少必填属性、根节点错误、父子关系、子节点数量和部分属性值进行实时诊断；颜色检查支持 Parser 的常用 CSS 颜色写法。
 - 容忍编辑过程中暂时未写完的标签，便于继续补全。
 
 标签和属性名区分大小写。Parser 可能静默忽略未知属性，而语言服务会发出警告，帮助发现拼写错误。
+
+`@muedsa/snapshot-lsp` 从 `0.2.0` 起支持 `ClipPath`：提供必填 `path` 提示、`viewBox` 格式检查，以及 `fit`、`fillRule`、`clipBehavior` 枚举补全。SVG 路径命令的完整语法与坐标有效性由 Parser 校验。使用规则见 [ClipPath 标签参考](/reference/parser-tags/#clippath)。
 
 ## 在线体验
 
