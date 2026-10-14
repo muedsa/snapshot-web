@@ -26,7 +26,7 @@ fun ChildSlot.Stack(
 | `alignment` | `TOP_START` | 非 Positioned 及部分定位不完整子节点的对齐 |
 | `textDirection` | `LTR` | 解析 start/end 方向 |
 | `fit` | `LOOSE` | 给非 Positioned 子节点的约束方式 |
-| `clipBehavior` | `HARD_EDGE` | 超出 Stack 边界时的裁剪方式 |
+| `clipBehavior` | `HARD_EDGE` | 直接子节点布局矩形越界时的裁剪方式 |
 | `content` | 空 | 任意多个子 Widget |
 
 ## StackFit
@@ -46,4 +46,18 @@ Stack(clipBehavior = ClipBehavior.NONE) {
 }
 ```
 
-默认 `HARD_EDGE` 会裁掉阴影或变换后越界的内容。确实需要越界时改为 `NONE`，并确认祖先也未裁剪。
+## 布局越界与绘制越界
+
+默认 `HARD_EDGE` 并不意味着无条件裁剪。Stack 根据所有直接子节点的布局矩形累计越界状态：任一节点越界就启用裁剪，后续未越界节点不会取消它，也不会跳过后续节点的布局。
+
+若直接子节点的布局矩形没有越界，仅阴影、Transform 或更深子孙绘制到边界外，仍可能不裁剪。需要始终限定在 Stack 的矩形边界内，可在外层添加 `ClipRect`：
+
+```kotlin
+ClipRect {
+    SizedBox(width = 360f, height = 200f) {
+        Stack { /* ... */ }
+    }
+}
+```
+
+确实需要越界绘制时，设为 `clipBehavior = ClipBehavior.NONE`，并确认祖先也未裁剪。此规则同样适用于 [IndexedStack](/widgets/layout/indexed-stack/)。

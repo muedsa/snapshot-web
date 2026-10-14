@@ -53,6 +53,8 @@ data class BoxConstraints(
 
 `Expanded` 相当于 `Flexible(fit = TIGHT)`，强制占满分配到的空间；`Flexible(fit = LOOSE)` 允许子节点更小。两者只能是 Flex 的直接子节点。
 
+弹性分配只改变主轴约束，不解除交叉轴的最大尺寸限制。`Column` 中的弹性子节点仍受父级最大宽度约束，文本可据此换行；`Row` 中则保留最大高度约束。非 `STRETCH` 对齐允许子节点更窄或更矮，只有 `crossAxisAlignment = STRETCH` 才强制填满交叉轴。若父级交叉轴本来无界，Flex 不会凭空增加有限约束。
+
 ```kotlin
 SizedBox(width = 600f, height = 160f) {
     Row(crossAxisAlignment = CrossAxisAlignment.STRETCH) {
@@ -85,8 +87,8 @@ Stack(
 
 同一轴上 `left`、`right`、`width` 最多只能给两个，垂直轴规则相同。
 
-{% aside type="note" title="Stack 默认会裁剪" %}
-`Stack` 默认使用 `HARD_EDGE`。阴影或装饰需要绘制到边界之外时，应显式设置 `clipBehavior = ClipBehavior.NONE`。
+{% aside type="note" title="Stack 按布局越界决定是否裁剪" %}
+`Stack` 和 `IndexedStack` 默认使用 `HARD_EDGE`：任一直接子节点的布局矩形越界时启用裁剪，后续未越界子节点不会取消已有的裁剪需求。阴影、变换或更深子孙的绘制越界不一定触发裁剪。需要始终裁到容器边界时，在 Stack 外包一层 `ClipRect`；要允许越界绘制，设置 `clipBehavior = ClipBehavior.NONE`，并确认祖先未裁剪。
 {% /aside %}
 
 ## 溢出相关 Widget
@@ -111,6 +113,22 @@ val root = layoutWidget {
 val tree: LayoutNode = root.toLayoutNode()
 ```
 
-`LayoutNode` 是只读快照，包含 RenderBox 类型、尺寸、局部偏移、全局偏移和子节点。它适合打印调试信息或写结构断言，不需要先生成 PNG。
+`LayoutNode` 用于只读布局自省，包含 RenderBox 类型、尺寸、局部偏移、累计布局偏移和子节点。偏移与结构在调用时固化，尺寸仍读取 RenderBox；布局或树结构改变后应重新构建。它忽略 Transform 等画布矩阵，适合打印布局信息或写结构断言，但不代表变换后的可见边界。
+
+### 查询到祖先的绘制坐标变换
+
+在布局完成后，可通过 `RenderBox.getTransformTo(ancestor)` 获取当前节点局部绘制坐标到指定祖先局部坐标的矩阵：
+
+```kotlin
+// child 与 ancestor 来自同一棵已布局的 RenderBox 树。
+val transform = child.getTransformTo(ancestor)
+```
+
+- 目标只能是自身或祖先；自身返回单位矩阵，兄弟节点、子孙或另一棵树中的节点会触发 `IllegalArgumentException`。
+- 从祖先向当前节点累计每一级 `applyPaintTransform`，包含布局偏移及沿途的绘制变换；不包含目标祖先到其父节点的变换。
+- 缩放或旋转会作用于内层布局偏移，不能简单把所有偏移相加。例如外层偏移 `(5,7)`、中间缩放 `(2,3)`、内层偏移 `(11,13)`，内层原点映射到祖先后为 `(27,46)`。
+- 布局偏移和依赖组件尺寸的 `origin` / `alignment` 应在布局后查询；重新布局后需重新获取矩阵。
+
+`getTransformTo` 描述坐标映射，不计算裁剪后的可见区域，也不是任意两节点间的坐标转换 API。
 
 定位问题时建议按顺序检查：根约束是否有限 → 子节点尺寸是否满足约束 → parentData 是否放在正确父节点下 → 是否被裁剪 → 是否只是绘制透明。

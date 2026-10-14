@@ -57,6 +57,12 @@ Transform(
 - 越界内容是否可见取决于祖先的裁剪策略。
 - 角度使用弧度。
 
+## 查询绘制坐标
+
+布局完成后，用子 RenderBox 的 `getTransformTo(ancestor)` 查询到自身或祖先局部坐标的矩阵；沿途的布局偏移和绘制变换按祖先到子节点的顺序累计，`origin` / `alignment` 已包含在对应 Transform 的有效矩阵内，无需重复叠加。目标不是祖先时会抛出 `IllegalArgumentException`。
+
+`LayoutNode` 只累计布局偏移，不包含这些画布变换。完整边界条件与累计示例见[布局指南](/guides/layout/#查询到祖先的绘制坐标变换)。
+
 {% aside type="danger" title="不要调用未实现的矩阵接口" %}
 `Matrix44CMO.transform(x, y, z)` 当前仍是未实现接口。请使用已经验证的矩阵构造与组合方法。
 {% /aside %}

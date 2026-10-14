@@ -37,7 +37,7 @@ provider 重载把 `url`、`noCache`、`cache` 替换为 `provider: () -> Image`
 | `alignment` / `baseline` | 图片占位盒与文字行的对齐 |
 | `width` / `height` | 显式尺寸；未设置时尝试继承所在 TextSpan 的字号 |
 | `fit` / `imageAlignment` / `repeat` | 图片在占位盒内的绘制方式 |
-| `scale` / `opacity` | 图片缩放系数与透明度 |
+| `scale` / `opacity` | 图片像素密度与透明度 |
 | `color` / `colorBlendMode` | 图片着色 |
 | `url` / `provider` | 图片来源 |
 
@@ -58,3 +58,7 @@ URL 版本会同步访问网络，并使用与 `CachedNetworkImage` 相同的缓
 {% /aside %}
 
 为了稳定字号与基线，建议关键场景显式指定 `width`、`height` 和 `alignment`。
+
+省略 `fit` 时与普通图片一样按 `SCALE_DOWN` 绘制，小图不会自动放大到占位框；要拉伸铺满或保留旧版默认效果，请显式设置 `fit = BoxFit.FILL`。此规则也适用于 Parser 的 `<Emoji>`。
+
+`scale` 必须有限且大于零，表示每个逻辑像素对应的图像像素数；它影响图片的自然逻辑尺寸与采样，不会直接放大文本占位框。详细规则见 [RawImage](/widgets/image/raw-image/#scale-与逻辑尺寸)。

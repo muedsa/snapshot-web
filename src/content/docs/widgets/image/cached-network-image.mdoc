@@ -43,12 +43,14 @@ fun ChildSlot.CachedNetworkImage(
 | `url` | 必填 | 图片 URL |
 | `width` / `height` | `null` | 目标布局尺寸 |
 | `fit`、`alignment`、`repeat` | 见 RawImage | 图片适配与定位 |
-| `scale`、`opacity` | `1f` | 缩放系数和透明度 |
+| `scale`、`opacity` | `1f` | 像素密度和透明度 |
 | `color`、`colorBlendMode` | `null` | 图片着色 |
 | `noCache` | `false` | true 时绕过缓存读取和写入 |
 | `cache` | 全局默认缓存 | 自定义 NetworkImageCache |
 
 `scale` 必须是有限正数。默认缓存是无上限的 `SimpleNoLimitedNetworkImageCache`；`SimpleLimitedNetworkImageCache` 只限制缓存张数和单图下载字节数，不代表完整网络安全防护。
+
+省略 `fit` 时使用 `SCALE_DOWN`，保持比例、只缩不放；若需保留旧版拉伸铺满的效果，显式设置 `fit = BoxFit.FILL`。`scale` 表示像素密度，自然逻辑尺寸为图像像素尺寸除以它，详见 [RawImage](/widgets/image/raw-image/#scale-与逻辑尺寸)。
 
 `repeat` 平铺同样受全局 `ImageRepeatConfig.maxTileCount` 限制，默认单次绘制最多 100,000 个矩形；超限会抛出 `IllegalArgumentException`，与网络缓存限额是两回事。
 

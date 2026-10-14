@@ -28,6 +28,8 @@ fun ChildSlot.ProviderImage(
 
 除 `provider` 外，其余参数与 [RawImage](/widgets/image/raw-image/) 相同。
 
+省略 `fit` 时按 `SCALE_DOWN` 等比缩小、不放大小图，剩余空间按 `alignment` 对齐；需要保留旧版拉伸铺满的效果时，显式设置 `fit = BoxFit.FILL`。
+
 | 参数 | 说明 |
 | --- | --- |
 | `provider` | 返回非空 Skia Image；构造 ProviderImage 时执行 |
@@ -44,4 +46,4 @@ ProviderImage(
 
 provider 中的异常会直接中止 Widget 构造。重复渲染相同图片时，应在外部复用解码结果或实现缓存，避免每次重新读取与解码。
 
-`scale` 与 RawImage 一样必须是有限正数；provider 在构造 Widget 时立即执行，不会等到布局或绘制阶段。
+`scale` 是像素密度，与 RawImage 一样必须是有限正数，自然逻辑尺寸为图像像素尺寸除以 `scale`；provider 在构造 Widget 时立即执行，不会等到布局或绘制阶段。

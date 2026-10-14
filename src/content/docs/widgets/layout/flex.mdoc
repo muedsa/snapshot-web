@@ -53,6 +53,8 @@ Flex(
 
 ## 约束要求
 
+`Expanded` / `Flexible` 的份额和 `TIGHT` / `LOOSE` 仅控制主轴，交叉轴最大约束仍来自父级：Column 保留最大宽度，Row 保留最大高度。非 `STRETCH` 对齐允许交叉轴尺寸更小；`STRETCH` 才强制填满交叉轴。父级交叉轴无界时不会自动变为有界。文本换行示例见 [Column](/widgets/layout/column/#弹性子节点的宽度与文本换行)。
+
 当主轴最大约束无限时，不能合理计算 `Expanded` 的剩余空间。应先用 SizedBox、Container 或 ConstrainedBox 提供有限主轴尺寸，或者避免使用紧 Flex 子项。
 
 基线对齐通常只用于水平 Flex，并且必须同时设置 `textBaseline`。

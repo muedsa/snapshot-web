@@ -34,7 +34,19 @@ Parser 的 Container 已自动做这层转换。
 
 ## Stack 中的阴影为什么被切掉？
 
-Stack 默认 `clipBehavior = HARD_EDGE`。把它改为 `ClipBehavior.NONE`，同时确认更外层没有其他 Clip。
+Stack 默认 `clipBehavior = HARD_EDGE`，但只在直接子节点布局矩形越界时启用裁剪；启用后阴影也可能被切掉。允许越界绘制时改为 `ClipBehavior.NONE`（Parser 写 `clipBehavior="NONE"`），同时确认更外层没有其他 Clip。反过来，只有阴影、变换或深层子孙绘制越界时，Stack 不保证裁剪；需要无条件裁到容器边界时外包 `ClipRect`。
+
+## Column 中的 Expanded / Flexible 会解除宽度限制吗？
+
+不会。弹性分配只改变主轴高度，子节点仍受父级最大宽度约束；文本默认据此换行。非 `STRETCH` 对齐允许更窄，只有 `crossAxisAlignment = STRETCH` 才要求填满宽度。父级本来无界时仍需先提供宽度约束，详见 [Column](/widgets/layout/column/#弹性子节点的宽度与文本换行)。
+
+## 升级后图片不再铺满目标框怎么办？
+
+普通图片省略 `fit` 现在按 `SCALE_DOWN` 等比缩小、不放大；要保留旧版拉伸铺满效果，请显式设置 `fit = BoxFit.FILL`，Parser 的 `<Image>` / `<Emoji>` 写 `fit="FILL"`。底层九宫格省略 `fit` 则改为 `FILL`，要保留原先只缩不放的效果，显式设置 `SCALE_DOWN`。这改变的是绘制适配，不改变组件布局尺寸。
+
+## 图片 scale 是直接放大目标框吗？
+
+不是。它是像素密度，自然逻辑尺寸 = 图像像素尺寸 ÷ scale；`40 × 20` 像素图片在 `scale = 2f` 时为 `20 × 10`。平铺间距与九宫格 `centerSlice` 都使用逻辑坐标，完整说明见 [RawImage](/widgets/image/raw-image/)。
 
 ## 为什么 ColorFiltered 仍可能给背景染色？
 
@@ -71,6 +83,8 @@ ColorFiltered 会依据可确定的子树绘制边界限制作用范围；但通
 ## 怎样调试布局？
 
 先用 `layoutWidget` 获取 RenderBox，再用 `toLayoutNode()` 查看尺寸与全局偏移；需要视觉辅助时启用 `debug = true`。测试中优先用 testkit 的布局断言。
+
+`LayoutNode` 的累计偏移不包含 Transform 等画布矩阵。查询变换后的绘制坐标时，在布局完成后使用 `getTransformTo(ancestor)`；目标只能是自身或祖先，其他目标会抛出 `IllegalArgumentException`，见[坐标变换说明](/guides/layout/#查询到祖先的绘制坐标变换)。
 
 ## 为什么文本 Golden 在不同系统不一致？
 

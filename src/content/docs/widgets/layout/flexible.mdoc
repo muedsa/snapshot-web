@@ -40,6 +40,8 @@ SizedBox(width = 600f, height = 120f) {
 
 `TIGHT` 与 Expanded 行为相同；`LOOSE` 只给出最大可用份额，子节点可以选择更小尺寸。
 
+份额只影响主轴，不解除交叉轴最大约束。Column 中的文本仍按父级最大宽度换行；非 `STRETCH` 对齐允许更窄，`STRETCH` 才强制填满宽度。Row 中对应保留最大高度，详见 [Column](/widgets/layout/column/#弹性子节点的宽度与文本换行)。
+
 {% aside type="caution" title="Flexible 只能放在 Flex 中" %}
 `Flexible` 的 DSL 签名是 `fun Flex.Flexible(...)`。它必须是 `Flex` 的直接子节点；`Row` 和 `Column` 都继承自 `Flex`，因此上面的写法有效。外层 `SizedBox` 为 Row 提供有限宽度，使主轴剩余空间可以计算。
 {% /aside %}

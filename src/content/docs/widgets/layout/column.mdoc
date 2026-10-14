@@ -46,3 +46,19 @@ Column(
 ```
 
 在无界高度中使用 Expanded 会导致无法计算剩余高度。若要创建占满固定高度的列，先用 `SizedBox(height = ...)` 或 Container 提供边界。
+
+## 弹性子节点的宽度与文本换行
+
+`Expanded` / `Flexible` 只分配主轴的高度，仍保留 Column 收到的最大宽度约束。文本默认开启 `softWrap`，会按这个宽度换行；不需要为了恢复宽度约束再包一层固定宽度组件。
+
+非 `STRETCH` 对齐允许子节点比 Column 更窄，`START` / `CENTER` / `END` 控制其水平位置；`crossAxisAlignment = STRETCH` 才强制填满父级可用宽度。父级宽度本来无界时，Column 不会自动产生有限宽度，应先提供宽度约束。
+
+```kotlin
+SizedBox(width = 200f, height = 300f) {
+    Column(crossAxisAlignment = CrossAxisAlignment.START) {
+        Flexible {
+            Text("这段较长的说明会在 Column 的最大宽度内换行，而不会获得无限宽度。")
+        }
+    }
+}
+```

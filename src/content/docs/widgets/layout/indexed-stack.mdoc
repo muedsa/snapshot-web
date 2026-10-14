@@ -24,3 +24,5 @@ IndexedStack(index = 1) {
 ```
 
 Parser 默认 `alignment="TOP_LEFT"`，与 Kotlin DSL 的 `TOP_START` 不同；可写 `<IndexedStack index="1" fit="EXPAND">…</IndexedStack>`。裸写 `index` 表示 `null`。
+
+裁剪规则与 [Stack](/widgets/layout/stack/#布局越界与绘制越界) 相同：默认 `HARD_EDGE` 根据全部直接子节点的布局矩形累计越界状态，即使越界节点不是当前绘制的 `index`，也可能启用裁剪。阴影、变换或更深子孙的绘制越界不一定触发裁剪；需要无条件限制到容器边界时，外包 `ClipRect`。

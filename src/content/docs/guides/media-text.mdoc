@@ -16,14 +16,30 @@ description: 图片来源、缓存、适配、TextStyle、TextSpan 和行内图�
 | 参数 | 含义 |
 | --- | --- |
 | `width` / `height` | 图片盒尺寸；可以只指定一个维度 |
-| `fit` | `FILL`、`CONTAIN`、`COVER` 等适配方式 |
+| `fit` | 普通图片省略时按 `SCALE_DOWN`；可显式设置 `FILL`、`CONTAIN`、`COVER` 等 |
 | `alignment` | 图片在目标盒中的对齐位置 |
 | `repeat` | 不重复、横向、纵向或双向平铺 |
-| `scale` | 图片像素与逻辑尺寸的缩放系数 |
+| `scale` | 像素密度：每个逻辑像素对应的图像像素数 |
 | `opacity` | 0 到 1 的透明度 |
 | `color` / `colorBlendMode` | 颜色叠加和混合模式 |
 
 `scale` 必须是有限正数。图片尺寸为零、缩放和平铺等边界情况由当前实现校验或安全处理；不要依赖零尺寸图片产生可见内容。
+
+### 默认适配与迁移
+
+普通图片的 `fit = null` 按 `BoxFit.SCALE_DOWN` 处理：保持宽高比，只在放不下时缩小，不把小图放大，剩余空间按 `alignment` 对齐。底层 `RenderImage` / `paintImage` 或 `DecorationImage` 指定 `centerSlice` 时，省略 `fit` 则按 `FILL` 九宫格填满。适配只决定盒内如何绘制，不改变组件自身的布局尺寸。
+
+这套默认值与 Flutter 一致，`RawImage`、`ProviderImage`、`CachedNetworkImage`、行内图片和 `DecorationImage` 共用绘制规则；Parser 的 `<Image>` / `<Emoji>` 省略 `fit` 也按 `SCALE_DOWN`。
+
+{% aside type="caution" title="升级后如何保留旧图片效果" %}
+此前普通图片默认拉伸铺满，九宫格默认只缩不放。保留普通图片的旧效果，请显式设置 `fit = BoxFit.FILL`（Parser 写 `fit="FILL"`）；保留九宫格的旧效果，请显式设置 `fit = BoxFit.SCALE_DOWN`。原本已显式指定 `fit` 的适配策略不变。
+{% /aside %}
+
+### 像素密度与逻辑尺寸
+
+自然逻辑尺寸 = 图像像素尺寸 ÷ `scale`。例如 `40 × 20` 像素图片在 `scale = 2f` 时为 `20 × 10` 逻辑像素，在 `scale = 0.5f` 时为 `80 × 40`。它不是对目标框或输出画布直接做缩放。
+
+布局和 `fit` 按逻辑尺寸计算，实际采样源矩形再换回图像像素；非 `1` 的 `scale` 不会导致错误截取源图。平铺间距也按适配后的逻辑尺寸计算。底层九宫格的 `centerSlice` 使用逻辑坐标，坐标示例和适配限制见 [RawImage 的九宫格说明](/widgets/image/raw-image/#底层九宫格-centerslice)。
 
 ### 重复平铺数量上限
 

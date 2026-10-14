@@ -30,10 +30,10 @@ fun ChildSlot.RawImage(
 | --- | --- | --- |
 | `image` | 必填 | 已解码的 Skia Image |
 | `width` / `height` | `null` | 图片布局盒尺寸 |
-| `fit` | `null` | 图片如何适配目标盒 |
+| `fit` | `null`（按 `SCALE_DOWN`） | 图片如何适配目标盒；默认等比缩小、不放大 |
 | `alignment` | `CENTER` | fit 后的图片在盒内对齐 |
 | `repeat` | `NO_REPEAT` | 是否平铺 |
-| `scale` | `1f` | 图片像素到逻辑尺寸的比例 |
+| `scale` | `1f` | 像素密度：每个逻辑像素对应的图像像素数 |
 | `opacity` | `1f` | 图片透明度 |
 | `color` | `null` | 叠加颜色 |
 | `colorBlendMode` | `null` | 颜色与图片的 BlendMode |
@@ -41,6 +41,8 @@ fun ChildSlot.RawImage(
 ## BoxFit
 
 `FILL` 拉伸填满；`CONTAIN` 完整显示；`COVER` 填满并裁掉超出部分；`FIT_WIDTH` / `FIT_HEIGHT` 适配单一维度；`NONE` 保持原尺寸；`SCALE_DOWN` 只在必要时缩小。
+
+不设置 `fit` 的普通图片默认使用 `SCALE_DOWN`，小图不会放大到目标盒，剩余空间按 `alignment` 对齐。这只改变绘制适配，不改变组件布局尺寸。若要保留旧版省略 `fit` 时拉伸铺满的效果，请显式设置 `fit = BoxFit.FILL`。
 
 ```kotlin
 RawImage(
@@ -57,3 +59,19 @@ RawImage 是叶子 Widget，不能再挂子节点。资源加载和解码应在�
 `scale` 必须是有限正数。宽高为零的源图或目标区域不会产生可见绘制。
 
 若使用重复平铺，单次绘制默认最多生成 100,000 个矩形；超过 `ImageRepeatConfig.maxTileCount` 会在绘制前抛出 `IllegalArgumentException`。可在应用启动时设置这个全局正整数上限，详见[图片、文本与富文本](/guides/media-text/#重复平铺数量上限)。
+
+## scale 与逻辑尺寸
+
+`scale` 表示像素密度，不是目标框的缩放倍数。原图 `40 × 20` 像素在 `scale = 2f` 时自然逻辑尺寸为 `20 × 10`，在 `scale = 0.5f` 时为 `80 × 40`。
+
+布局会在父约束及显式宽高内尝试保留自然宽高比；`fit` 再按逻辑尺寸决定源区域和目标区域，采样时将源矩形换回图像像素。重复平铺的间距使用适配后的逻辑尺寸，而不是原图物理像素尺寸。
+
+## 底层九宫格 centerSlice
+
+`RawImage`、`ProviderImage` 和 `CachedNetworkImage` 的 Widget 工厂不暴露 `centerSlice`，Parser 的 `<Image>` / `<Emoji>` 也不支持该属性。需要九宫格时，可使用底层 `RenderImage` / `paintImage` 或装饰中的 `DecorationImage`。
+
+`centerSlice` 使用逻辑坐标。例如 `12 × 12` 像素图片在 `scale = 2f` 时对应 `6 × 6` 逻辑尺寸；`Rect.makeXYWH(2f, 2f, 2f, 2f)` 指定的中心区域对应源图从 `(4,4)` 开始的 `4 × 4` 像素区域。
+
+- 省略 `fit` 时默认 `FILL`，拉伸中心和边缘以填满目标框，保留角部的逻辑尺寸。
+- 显式 `SCALE_DOWN` 在目标较大时保留自然逻辑尺寸；若要保留旧版九宫格只缩不放的默认效果，需显式设置它。
+- 九宫格不能同时裁掉部分源图：`NONE`、`COVER` 会被拒绝；`FIT_WIDTH` / `FIT_HEIGHT` 在导致源图裁剪时也会被拒绝。

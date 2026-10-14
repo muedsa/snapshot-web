@@ -250,6 +250,8 @@ rgb(255 0 0 / 50%) / hsl(120deg 100% 50% / 50%)
 
 三者必须是 `Flex`、`Row` 或 `Column` 的直接子节点。`Expanded` 强制填满分配到的主轴空间；`Flexible fit="LOOSE"` 允许子节点小于分配份额。`Spacer` 不绘制内容。
 
+弹性分配不解除交叉轴最大约束：Column 中的子节点仍受父级最大宽度限制，文本默认据此换行；Row 中则保留最大高度。非 `STRETCH` 对齐允许更窄或更矮，只有 `crossAxisAlignment="STRETCH"` 才强制填满交叉轴。
+
 ```xml
 <SizedBox width="480" height="120">
   <Row>
@@ -266,9 +268,11 @@ rgb(255 0 0 / 50%) / hsl(120deg 100% 50% / 50%)
 | `alignment` | `TOP_LEFT` | 非 Positioned 子节点对齐 |
 | `textDirection` | `LTR` | 方向 |
 | `fit` | `LOOSE` | `LOOSE`、`EXPAND`、`PASSTHROUGH` |
-| `clipBehavior` | `HARD_EDGE` | 溢出时的裁剪策略 |
+| `clipBehavior` | `HARD_EDGE` | 直接子节点布局矩形越界时的裁剪策略 |
 
 `IndexedStack` 使用相同属性，另支持 `index`（默认 `0`，从零起）。裸写 `index` 表示 `null`，不绘制子节点，但全部子节点仍参与布局。
+
+Stack / IndexedStack 根据所有直接子节点的布局矩形累计越界状态，后续未越界节点不会取消已有裁剪需求。只有阴影、变换或更深子孙的绘制越界时，不一定触发裁剪；需要无条件限制在容器边界内时外包 `<ClipRect>`。要允许越界绘制可设置 `clipBehavior="NONE"`，但祖先的裁剪仍然生效。
 
 ## Positioned
 
@@ -430,16 +434,18 @@ rgb(255 0 0 / 50%) / hsl(120deg 100% 50% / 50%)
 | --- | --- | --- |
 | `url` / `dataUri` | 二选一 | 网络 URL 或内嵌 Data URI，不能同时指定 |
 | `width` / `height` | 否 | 图片盒尺寸 |
-| `fit` | 否 | `FILL`、`CONTAIN`、`COVER`、`FIT_WIDTH`、`FIT_HEIGHT`、`NONE`、`SCALE_DOWN` |
+| `fit` | 否 | 未设置时按 `SCALE_DOWN`（等比缩小、不放大）；可设 `FILL`、`CONTAIN`、`COVER`、`FIT_WIDTH`、`FIT_HEIGHT`、`NONE`、`SCALE_DOWN` |
 | `alignment` | 否 | `CENTER` |
 | `repeat` | 否 | `NO_REPEAT`、`REPEAT`、`REPEAT_X`、`REPEAT_Y` |
-| `scale` | 否 | `1`；必须有限且大于 0 |
+| `scale` | 否 | `1`；像素密度，必须有限且大于 0；自然逻辑尺寸 = 图像像素尺寸 ÷ scale |
 | `opacity` | 否 | `1` |
 | `color` | 否 | 叠加色 |
 | `colorBlendMode` | 否 | Skia `BlendMode` 常量名 |
 | `noCache` | 否 | `false`，仅适用于 `url` |
 
 默认 `SimpleDataUriImageDecoder` 只处理 PNG、JPEG、WebP 的 Base64 Data URI；解码发生在建树阶段，不访问网络。可通过 `Parser(dataUriImageDecoder = ...)` 注入自定义解码器。网络 URL 则由同步图片缓存获取，服务端应自行施加访问限制。
+
+`fit` 决定盒内绘制适配，不改变组件布局尺寸；默认 `SCALE_DOWN` 的剩余空间按 `alignment` 对齐。需要保留旧版省略 `fit` 时拉伸铺满的效果，请写 `fit="FILL"`。`scale` 不是目标框缩放倍数：`40 × 20` 像素图设为 `scale="2"` 后，自然逻辑尺寸为 `20 × 10`，平铺间距也按适配后的逻辑尺寸计算。`centerSlice` 仅由底层 API / DecorationImage 提供，不能作为 Parser 的 Image 属性。
 
 `repeat` 为 `REPEAT`、`REPEAT_X` 或 `REPEAT_Y` 时，单次绘制默认最多生成 100,000 个平铺矩形；超限会抛 `IllegalArgumentException`。服务端可通过 `ImageRepeatConfig.maxTileCount` 调整全局上限（必须大于 0），Parser 文本不能覆盖它。
 
@@ -485,8 +491,9 @@ rgb(255 0 0 / 50%) / hsl(120deg 100% 50% / 50%)
 | `alignment` | 否 | `BASELINE`；PlaceholderAlignment |
 | `baseline` | 否 | `ALPHABETIC` 或 `IDEOGRAPHIC` |
 | `width` / `height` | 否 | 未设置时根据所在 Span 字号推导 |
-| `fit` / `imageAlignment` / `repeat` | 否 | 与 Image 类似 |
-| `scale` / `opacity` | 否 | 1；`scale` 必须有限且大于 0 |
+| `fit` | 否 | 未设置时按 `SCALE_DOWN`；可选值同 Image，小图不自动放大到占位框，需要拉伸时写 `FILL` |
+| `imageAlignment` / `repeat` | 否 | `CENTER` / `NO_REPEAT`；可选值同 Image |
+| `scale` / `opacity` | 否 | 1；`scale` 是像素密度，必须有限且大于 0 |
 | `color` / `colorBlendMode` | 否 | 图片着色 |
 
 只能作为 `Text` 的子节点；使用 URL 获取网络图片时会同步阻塞，Data URI 则由解码器在本地处理。
