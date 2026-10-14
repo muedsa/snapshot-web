@@ -1,0 +1,56 @@
+---
+title: DecorationImage
+description: 装饰图片的全部参数、圆角路径、九宫格与图片组件的区别。
+---
+
+`com.muedsa.snapshot.paint.decoration.DecorationImage` 让 BoxDecoration 绘制背景图片。它不是 Widget，不通过图片自然尺寸撑开 Container，也不负责下载或异步加载。
+
+## 全部构造参数
+
+| 参数 | 类型 | 默认值 | 含义 |
+| --- | --- | --- | --- |
+| `image` | `org.jetbrains.skia.Image` | 必填 | 已解码、未关闭的图像；需保持到绘制结束 |
+| `colorFilter` | `ColorFilter?` | null | 图片颜色滤镜；不是 RawImage 的 color + colorBlendMode 组合参数 |
+| `fit` | `BoxFit?` | null | 普通图片按 SCALE_DOWN；有 centerSlice 时按 FILL |
+| `alignment` | `BoxAlignment` | CENTER | 剩余空间中的对齐，也影响裁切保留哪部分 |
+| `centerSlice` | `Rect?` | null | 九宫格中心，使用逻辑坐标；null 为普通图片 |
+| `repeat` | `ImageRepeat` | NO_REPEAT | REPEAT / REPEAT_X / REPEAT_Y / NO_REPEAT；按适配后的尺寸平铺 |
+| `scale` | `Float` | 1f | 像素密度，必须有限且大于 0；自然逻辑尺寸 = 图像像素 ÷ scale |
+| `opacity` | `Float` | 1f | 图片不透明度，使用 0..1 的有限值 |
+| `isAntiAlias` | `Boolean` | false | 图片绘制 Paint 的抗锯齿标志，不是可配置的图片采样质量枚举 |
+
+## 装饰图片还是 RawImage
+
+需要图像参与自然尺寸布局时用 RawImage；已有卡片尺寸、图片只是背景时用 DecorationImage。BoxDecoration 的圆角/圆形会裁剪装饰图片，但不裁剪上方普通子节点。
+
+下面的自包含代码片段生成一张双色源图，再作为带圆角的背景。导入 `com.muedsa.snapshot.*`、Widget、decoration、`com.muedsa.snapshot.paint.BoxFit` 和 `com.muedsa.geometry.EdgeInsets` 后可放入 main；`png` 是结果字节。
+
+```kotlin
+val png = SnapshotImage {
+    Row {
+        Container(width = 80f, height = 80f, color = 0xFF0369A1.toInt())
+        Container(width = 80f, height = 80f, color = 0xFF38BDF8.toInt())
+    }
+}.use { source ->
+    SnapshotPNG {
+        Padding(padding = EdgeInsets.all(16f)) {
+            Container(width = 320f, height = 160f, decoration = BoxDecoration(
+                borderRadius = BorderRadius.circular(24f),
+                image = DecorationImage(image = source, fit = BoxFit.COVER),
+            ))
+        }
+    }
+}
+```
+
+## 九宫格
+
+centerSlice 将源图分为九个区域，保留角部逻辑尺寸并拉伸中心/边缘。以 `12 × 12` 像素、scale 2 为例，逻辑尺寸为 `6 × 6`；`Rect.makeXYWH(2f, 2f, 2f, 2f)` 对应从物理像素 `(4,4)` 开始的 `4 × 4` 中心。
+
+- 切片应在图像逻辑边界内，且中心宽高有效。
+- 未指定 fit 时用 FILL；SCALE_DOWN 保留只缩不放行为。
+- NONE、COVER 不支持；FIT_WIDTH / FIT_HEIGHT 如果导致源图裁剪也会被拒绝。
+- 目标尺寸必须容纳保留的边角；不要对任意小框无条件套用九宫格。
+- 重复绘制同样受 `ImageRepeatConfig.maxTileCount` 限制。
+
+RawImage / ProviderImage / CachedNetworkImage 工厂以及 Parser Image、Emoji 不开放 centerSlice。Parser 也不直接支持 DecorationImage；模板可用 Stack + Image 实现普通背景图，但不是九宫格的等价替代。

@@ -1,0 +1,166 @@
+---
+title: 参数效果对比
+description: 用实际 Snapshot 输出比较图片适配、渐变、行内对齐与子树裁剪。
+---
+
+以下图片由本地 Snapshot 实际渲染，不是概念示意图。每组固定其他条件，只改变指定参数；字体环境仍可能改变文本度量。完整业务模板见[模板示例](/guides/examples/)。
+
+## 代码怎么运行
+
+先完成[快速开始](/guides/quickstart/)的依赖配置。每段 Kotlin 可独立放进 `fun main()`，生成的 `png` 是图片字节；最后调用 `java.io.File("comparison.png").writeBytes(png)` 保存。各段共用以下导入（不是独立运行程序）：
+
+```text
+import com.muedsa.snapshot.*
+import com.muedsa.snapshot.widget.*
+import com.muedsa.snapshot.widget.text.*
+import com.muedsa.snapshot.paint.*
+import com.muedsa.snapshot.paint.text.*
+import com.muedsa.snapshot.paint.decoration.*
+import com.muedsa.snapshot.paint.gradient.*
+import com.muedsa.snapshot.rendering.flex.*
+import com.muedsa.geometry.*
+import org.jetbrains.skia.paragraph.PlaceholderAlignment
+```
+
+## 图片适配 BoxFit
+
+![同一张双色源图在七种 BoxFit 模式下的实际效果](/examples/box-fit-comparison.png)
+
+源图为 `160×80`，目标框为 `110×110`，灰色区域表示没有被源图覆盖。FILL 改变宽高比；COVER 裁掉左右部分；CONTAIN / FIT_WIDTH 完整显示；本例 FIT_HEIGHT 与 COVER 相似，SCALE_DOWN 与 CONTAIN 相似，NONE 按自然逻辑尺寸显示中间部分。这些相似关系会随源图和目标框比例改变。
+
+```kotlin
+val png = SnapshotImage {
+    Row {
+        Container(width = 80f, height = 80f, color = 0xFF0369A1.toInt(), alignment = BoxAlignment.CENTER) {
+            Text("A", style = TextStyle(fontSize = 36f, color = 0xFFFFFFFF.toInt()))
+        }
+        Container(width = 80f, height = 80f, color = 0xFFF59E0B.toInt(), alignment = BoxAlignment.CENTER) {
+            Text("B", style = TextStyle(fontSize = 36f, color = 0xFF0F172A.toInt()))
+        }
+    }
+}.use { source ->
+    SnapshotPNG {
+        Padding(padding = EdgeInsets.all(16f)) {
+            Column(mainAxisSize = MainAxisSize.MIN, crossAxisAlignment = CrossAxisAlignment.START) {
+                for (group in listOf(
+                    listOf(BoxFit.FILL, BoxFit.CONTAIN, BoxFit.COVER, BoxFit.FIT_WIDTH),
+                    listOf(BoxFit.FIT_HEIGHT, BoxFit.NONE, BoxFit.SCALE_DOWN),
+                )) {
+                    Row(mainAxisSize = MainAxisSize.MIN) {
+                        for (fit in group) {
+                            Padding(padding = EdgeInsets.all(8f)) {
+                                Column(mainAxisSize = MainAxisSize.MIN) {
+                                    Container(width = 110f, height = 110f, color = 0xFFE2E8F0.toInt()) {
+                                        RawImage(image = source, fit = fit)
+                                    }
+                                    SizedBox(height = 8f)
+                                    Text(fit.name, style = TextStyle(fontSize = 12f))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+```
+
+这是 fit 的比较，不是 scale 的比较。scale 表示像素密度；小图目标框较大时，SCALE_DOWN 不会像 CONTAIN 那样放大，见 [RawImage](/widgets/image/raw-image/)。
+
+## 三种渐变
+
+![同一组颜色对应线性、径向和扫描渐变的效果](/examples/gradient-comparison.png)
+
+颜色相同，变化的是颜色轴：LINEAR 沿直线推进，RADIAL 按距中心的距离推进，SWEEP 按绕中心的角度推进。
+
+```kotlin
+val colors = intArrayOf(0xFF0369A1.toInt(), 0xFF38BDF8.toInt(), 0xFFFBBF24.toInt())
+val gradients = listOf(
+    "LINEAR" to LinearGradient(colors = colors),
+    "RADIAL" to RadialGradient(colors = colors, radius = 0.5f),
+    "SWEEP" to SweepGradient(colors = colors),
+)
+val png = SnapshotPNG {
+    Padding(padding = EdgeInsets.all(16f)) {
+        Row(mainAxisSize = MainAxisSize.MIN) {
+            for ((label, gradient) in gradients) {
+                Padding(padding = EdgeInsets.all(8f)) {
+                    Column(mainAxisSize = MainAxisSize.MIN) {
+                        Container(width = 160f, height = 120f, decoration = BoxDecoration(gradient = gradient))
+                        SizedBox(height = 8f)
+                        Text(label, style = TextStyle(fontSize = 14f))
+                    }
+                }
+            }
+        }
+    }
+}
+```
+
+改变 radius 不是改变 Container 大小；改变 GradientRotation 也不会旋转文字。全部参数见[渐变参考](/reference/gradients/)。
+
+## 行内图标对齐
+
+![同一文本行中行内图标使用 TOP、MIDDLE、BOTTOM 对齐的效果](/examples/inline-alignment-comparison.png)
+
+文字及图标 Span 继承同一个 32 号样式，蓝色图标尺寸为 16×16；alignment 作用于行内排版，不是外层 Container。不要只给相邻文字设置字号、却让 WidgetSpan 留在默认字号，否则对比的字体度量不同。字体 ascent / descent 不对称时，MIDDLE 不一定等于人眼感知的字形中心。
+
+```kotlin
+val png = SnapshotPNG {
+    Container(width = 480f, padding = EdgeInsets.all(24f), color = 0xFFF1F5F9.toInt()) {
+        Column(mainAxisSize = MainAxisSize.MIN, crossAxisAlignment = CrossAxisAlignment.START) {
+            for (mode in listOf(PlaceholderAlignment.TOP, PlaceholderAlignment.MIDDLE, PlaceholderAlignment.BOTTOM)) {
+                RichText {
+                    TextSpan(style = TextStyle(fontSize = 32f)) {
+                        TextSpan(text = "Ag 中文 ")
+                        WidgetSpan(alignment = mode) {
+                            Container(width = 16f, height = 16f, color = 0xFF0284C7.toInt())
+                        }
+                        TextSpan(text = " ${mode.name}", style = TextStyle(fontSize = 16f))
+                    }
+                }
+                SizedBox(height = 12f)
+            }
+        }
+    }
+}
+```
+
+BASELINE / ABOVE_BASELINE / BELOW_BASELINE 使用字体基线，见[行内对齐参考](/reference/text-layout/#widgetspan-与-emoji-对齐)。
+
+## 圆角背景与子树裁剪
+
+![只有圆角背景时蓝色子节点仍为矩形，ClipRRect 和 ClipOval 分别裁成圆角与椭圆](/examples/clip-comparison.png)
+
+三个子节点都是相同的蓝色矩形。第一项仅给外层背景设置圆角，子节点覆盖它后仍是矩形；第二、第三项明确裁剪子树。
+
+```kotlin
+val png = SnapshotPNG {
+    Padding(padding = EdgeInsets.all(16f)) {
+        Row(mainAxisSize = MainAxisSize.MIN) {
+            for (label in listOf("背景圆角", "ClipRRect", "ClipOval")) {
+                Padding(padding = EdgeInsets.all(8f)) {
+                    Column(mainAxisSize = MainAxisSize.MIN) {
+                        SizedBox(width = 160f, height = 100f) {
+                            when (label) {
+                                "背景圆角" -> Container(decoration = BoxDecoration(
+                                    color = 0xFFE2E8F0.toInt(), borderRadius = BorderRadius.circular(24f),
+                                )) { ColoredBox(color = 0xFF0284C7.toInt()) }
+                                "ClipRRect" -> ClipRRect(borderRadius = BorderRadius.circular(24f)) {
+                                    ColoredBox(color = 0xFF0284C7.toInt())
+                                }
+                                else -> ClipOval { ColoredBox(color = 0xFF0284C7.toInt()) }
+                            }
+                        }
+                        SizedBox(height = 8f)
+                        Text(label, style = TextStyle(fontSize = 14f))
+                    }
+                }
+            }
+        }
+    }
+}
+```
+
+裁剪不会给内容预留空间，也不会扩大输出画布。需要外部阴影时，将阴影装饰留在裁剪组件外侧，详见 [BoxShadow](/reference/box-shadow/)。

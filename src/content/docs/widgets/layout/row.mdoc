@@ -48,8 +48,8 @@ Row(
 ## 与 Expanded 配合
 
 ```kotlin
-SizedBox(width = 480f) {
-    Row {
+SizedBox(width = 480f, height = 80f) {
+    Row(crossAxisAlignment = CrossAxisAlignment.STRETCH) {
         Expanded(flex = 2) { ColoredBox(color = 0xFF38BDF8.toInt()) }
         Expanded(flex = 1) { ColoredBox(color = 0xFFA78BFA.toInt()) }
     }

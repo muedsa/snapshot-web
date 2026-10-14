@@ -42,6 +42,7 @@ export default defineConfig({
             { label: "快速开始", slug: "guides/quickstart" },
             { label: "安装与构建", slug: "guides/installation" },
             { label: "完整模板示例", slug: "guides/examples" },
+            { label: "参数效果对比", slug: "guides/visual-reference" },
           ],
         },
         {
@@ -58,6 +59,19 @@ export default defineConfig({
             { label: "Widget 与布局", slug: "guides/widgets" },
             { label: "绘制、装饰与效果", slug: "guides/painting" },
             { label: "图片、文本与富文本", slug: "guides/media-text" },
+          ],
+        },
+        {
+          label: "公共配置参考",
+          collapsed: true,
+          items: [
+            { label: "TextStyle 与文本装饰", slug: "reference/text-style" },
+            { label: "段落、行高与行内对齐", slug: "reference/text-layout" },
+            { label: "BoxDecoration", slug: "reference/box-decoration" },
+            { label: "Border、BorderSide 与圆角", slug: "reference/borders" },
+            { label: "BoxShadow", slug: "reference/box-shadow" },
+            { label: "DecorationImage", slug: "reference/decoration-image" },
+            { label: "渐变与渐变变换", slug: "reference/gradients" },
           ],
         },
         {
@@ -85,6 +99,7 @@ export default defineConfig({
           items: [
             { label: "类 DOM 解析器", slug: "guides/parser" },
             { label: "标签与属性参考", slug: "reference/parser-tags" },
+            { label: "文本属性详解", slug: "reference/parser-text" },
             { label: "错误处理与扩展", slug: "reference/parser-errors" },
             { label: "DSL 语言服务", slug: "guides/language-server" },
           ],

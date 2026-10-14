@@ -26,6 +26,19 @@ description: 布局、绘制、图片、文本和解析器常用枚举值。
 | `ContainerMode` | `NONE`、`SINGLE`、`MULTIPLE` |
 | `FontStyle` | `NORMAL`、`BOLD`、`ITALIC`、`BOLD_ITALIC` |
 | `FilterBlurMode` | `NORMAL`、`SOLID`、`OUTER`、`INNER` |
+| `FilterTileMode` | `CLAMP`、`REPEAT`、`MIRROR`、`DECAL`，效果见[渐变参考](/reference/gradients/#共用参数) |
+| `Alignment`（段落） | `LEFT`、`RIGHT`、`CENTER`、`JUSTIFY`、`START`、`END` |
+| `HeightMode` | `ALL`、`DISABLE_FIRST_ASCENT`、`DISABLE_LAST_DESCENT`、`DISABLE_ALL` |
+| `FontEdging` | `ALIAS`、`ANTI_ALIAS`、`SUBPIXEL_ANTI_ALIAS` |
+| `FontHinting` | `NONE`、`SLIGHT`、`NORMAL`、`FULL` |
+| `DecorationLineStyle` | `SOLID`、`DOUBLE`、`DOTTED`、`DASHED`、`WAVY` |
+| `PaintMode` | `FILL`、`STROKE`、`STROKE_AND_FILL` |
+| `PaintStrokeCap` | `BUTT`、`ROUND`、`SQUARE` |
+| `PaintStrokeJoin` | `MITER`、`ROUND`、`BEVEL` |
+
+`FontStyle` 是带常用常量的类，并非 Kotlin 枚举；Parser 只开放表中四个名称。`BlendMode` 来自 Skia，常见 `SRC_OVER`、`SRC_IN`、`MULTIPLY`、`SCREEN`；绘制顺序和背景内容会影响结果，不应把不同混合模式当作颜色别名。
+
+枚举可解析不意味着效果已经完整实现。当前 TextOverflow 的 FADE / VISIBLE 限制见[段落布局](/reference/text-layout/#换行宽度与溢出)。
 
 ## BoxAlignment
 

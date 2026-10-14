@@ -55,6 +55,14 @@ Text(
 
 ## TextStyle 主要字段
 
-包括 `color`、`foreground`、`background`、`fontStyle`、`fontSize`、`fontFamilies`、`height`、`letterSpacing`、`wordSpacing`、`shadows`、`fontFeatures`、`typeface`、`locale`、`baselineMode`、`fontEdging`、`fontHinting` 和 `subpixel`。
+完整的 19 个字段、类型、默认值与继承规则见 [TextStyle 与文本装饰](/reference/text-style/)，包括 `decorationStyle`、`topRatio`、前景画笔、文本阴影与 OpenType 特性。`style = null` 不是清空字体设置；根默认字号为 14，颜色为黑色。
 
 服务器与 CI 中应显式固定字体，避免系统默认字体造成布局与像素差异。需要多段样式或行内 Widget 时使用 RichText。
+
+## 参数组合与实现边界
+
+单行省略号需要有限宽度、`maxLines = 1` 和 `overflow = ELLIPSIS`；仅指定最大行数不能替代宽度约束。`softWrap = false` 不会移除显式换行。
+
+当前 FADE 尚未实现渐隐，VISIBLE 在检测到溢出时也仍会被裁剪。不能仅按枚举名推断行为。StrutStyle、textHeightMode、textWidthBasis 的完整语义与示例见[段落、行高与行内对齐](/reference/text-layout/)。
+
+Parser 对应 `<Text>`，但样式是展开的 XML 属性，不是 style 对象；全部字段见[文本属性详解](/reference/parser-text/)。

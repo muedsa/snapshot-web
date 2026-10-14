@@ -7,7 +7,10 @@
     "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "docs:coverage": "node scripts/check-doc-coverage.mjs",
+    "docs:test": "node --test scripts/check-doc-coverage.test.mjs",
+    "docs:links": "node scripts/check-doc-links.mjs"
   },
   "dependencies": {
     "@astrojs/markdoc": "^2.0.8",

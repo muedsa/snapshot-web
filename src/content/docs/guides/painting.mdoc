@@ -33,7 +33,9 @@ Container(
 ) { /* content */ }
 ```
 
-`shape = CIRCLE` 时不要同时依赖矩形圆角。`backgroundBlendMode` 只有在颜色或渐变等背景层存在时才有意义。
+`shape = CIRCLE` 时不要同时设置矩形圆角。设置 `backgroundBlendMode` 时必须提供 color 或 gradient，否则 BoxDecoration 构造时会抛异常；仅有 image 也不满足这个条件。
+
+完整字段与绘制顺序见 [BoxDecoration](/reference/box-decoration/)，背景图片见 [DecorationImage](/reference/decoration-image/)。
 
 ## 边框与圆角
 
@@ -48,6 +50,8 @@ Border.all(
 
 `BorderRadius.circular(16f)` 适用于四角一致；也可以通过 `only`、`vertical`、`horizontal` 为不同角设置半径。
 
+描边位置 strokeAlign、四边默认值与复杂组合限制见 [Border、BorderSide 与圆角](/reference/borders/)。
+
 ## 渐变
 
 | 类型 | 核心参数 |
@@ -56,13 +60,17 @@ Border.all(
 | `RadialGradient` | `center`、`radius`、`focal`、`colors`、`stops` |
 | `SweepGradient` | `center`、`startAngle`、`endAngle`、`colors`、`stops` |
 
-`colors` 至少应有两个颜色。传入 `stops` 时，其数量应和颜色数量一致，并按 0 到 1 递增。角度使用弧度。
+`colors` 至少应有两个颜色。传入 `stops` 时，其数量应和颜色数量一致，值在 0 到 1 之间且非递减，允许相同位置。角度使用弧度。
+
+完整默认值、半径单位、focalRadius 与 GradientRotation 见[渐变参考](/reference/gradients/)，直观区别见[参数效果对比](/guides/visual-reference/#三种渐变)。
 
 ## 阴影
 
 `BoxShadow` 包含颜色、偏移、模糊半径、扩散半径和模糊模式。`com.muedsa.snapshot.material.ELEVATION_MAP` 提供 0、1、2、3、4、6、8、9、12、16、24 级的 Material 风格阴影数组，适合快速获得一致的卡片深度。
 
 阴影会绘制到盒子边界之外；如果外层 Stack 或 Clip Widget 启用了裁剪，阴影可能被截断。
+
+全部参数、blurRadius 与 sigma 的区别、多层阴影示例见 [BoxShadow](/reference/box-shadow/)。
 
 ## 透明度与颜色滤镜
 

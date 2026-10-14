@@ -41,4 +41,16 @@ SizedBox(width = 300f, height = 180f) {
 
 `BoxAlignment(-1f, -1f)` 是左上，`(0f, 0f)` 是中心，`(1f, 1f)` 是右下。
 
-尺寸因子在无界轴上尤其有用；最终尺寸仍需满足父约束。
+## 尺寸因子与边界
+
+每个轴独立计算：
+
+| 因子与父约束 | Align 希望取得的自身尺寸 |
+| --- | --- |
+| factor 为 null，最大尺寸有限 | 尽量占满最大尺寸 |
+| factor 为 null，最大尺寸无限 | 包裹子节点 |
+| factor 非 null | 子节点尺寸 × factor，最后限制到父约束 |
+
+因子必须非负；推荐有限值，负数或 NaN 会报错。0 不一定让最终尺寸变为 0，父级最小约束仍生效。factor 小于 1 可能让子节点绘制溢出，Align 本身不裁剪，也不会缩放子节点。无子节点时，收缩轴以 0 计算，占满轴仍尝试填满。
+
+与 FractionallySizedBox 的区别：Align 乘的是**子节点尺寸**，FractionallySizedBox 乘的是**父约束最大尺寸**。Parser 使用 `<Align alignment="CENTER" widthFactor="2">…</Align>`。

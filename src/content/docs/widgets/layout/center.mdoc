@@ -34,3 +34,5 @@ SizedBox(width = 320f, height = 180f) {
 ```
 
 需要其他对齐位置时使用 [Align](/widgets/layout/align/)。
+
+尺寸因子必须非负，推荐有限值；null 在有界轴上占满、无界轴上包裹子节点。因子只影响自身期望尺寸，不缩放子节点，最后仍服从父约束。完整边界见 [Align 尺寸因子](/widgets/layout/align/#尺寸因子与边界)。Parser 使用 `<Center widthFactor="2">…</Center>`。

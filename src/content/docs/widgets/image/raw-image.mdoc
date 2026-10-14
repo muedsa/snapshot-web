@@ -70,6 +70,8 @@ RawImage 是叶子 Widget，不能再挂子节点。资源加载和解码应在�
 
 `RawImage`、`ProviderImage` 和 `CachedNetworkImage` 的 Widget 工厂不暴露 `centerSlice`，Parser 的 `<Image>` / `<Emoji>` 也不支持该属性。需要九宫格时，可使用底层 `RenderImage` / `paintImage` 或装饰中的 `DecorationImage`。
 
+背景图全部字段与示例见 [DecorationImage](/reference/decoration-image/)；常用适配差异见 [BoxFit 效果对比](/guides/visual-reference/#图片适配-boxfit)。
+
 `centerSlice` 使用逻辑坐标。例如 `12 × 12` 像素图片在 `scale = 2f` 时对应 `6 × 6` 逻辑尺寸；`Rect.makeXYWH(2f, 2f, 2f, 2f)` 指定的中心区域对应源图从 `(4,4)` 开始的 `4 × 4` 像素区域。
 
 - 省略 `fit` 时默认 `FILL`，拉伸中心和边缘以填满目标框，保留角部的逻辑尺寸。

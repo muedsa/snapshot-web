@@ -37,6 +37,8 @@ RichText {
 }
 ```
 
-`BASELINE`、`ABOVE_BASELINE`、`BELOW_BASELINE` 通常需要提供 baseline；`TOP`、`BOTTOM`、`MIDDLE` 按行盒对齐。
+`BASELINE`、`ABOVE_BASELINE`、`BELOW_BASELINE` 使用 baseline 指定的基线类型；当前实现中 null 回退为 ALPHABETIC。`TOP`、`BOTTOM`、`MIDDLE` 按行盒对齐。各模式见[行内对齐](/reference/text-layout/#widgetspan-与-emoji-对齐)。
+
+`style` 是占位 Span 的文本样式，不会自动改写内部 Container 或 Text 的属性。应在内部 Widget 显式配置颜色与尺寸。
 
 WidgetSpan 会增加段落布局复杂度。简单图标优先使用固定尺寸，避免无限或不稳定约束。

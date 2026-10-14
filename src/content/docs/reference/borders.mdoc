@@ -1,0 +1,80 @@
+---
+title: Border、BorderSide 与圆角
+description: 边框的四边配置、描边位置、圆角工厂及可用组合。
+---
+
+本页类型位于 `com.muedsa.snapshot.paint.decoration`；`Radius` 位于 `com.muedsa.geometry`。它们是装饰配置，不是 Kotlin Widget。Parser 的 `<Border>` 则是一个标签，不要混淆。
+
+## BorderSide 全部参数
+
+| 参数 | 类型 / 默认值 | 含义 |
+| --- | --- | --- |
+| `color` | `Int = Color.BLACK` | ARGB 边框颜色 |
+| `width` | `Float = 1f` | 逻辑像素宽度，使用有限非负值；SOLID 下 0 是 hairline，不应当作隐藏边框 |
+| `style` | `BorderStyle = SOLID` | SOLID 绘制，NONE 不绘制；显式无边框可用 BorderSide.NONE |
+| `strokeAlign` | `Float = STROKE_ALIGN_INSIDE` | -1 在内部、0 居中、1 在外部；边框外扩可能被祖先裁剪 |
+
+常量为 `BorderSide.STROKE_ALIGN_INSIDE`、`STROKE_ALIGN_CENTER`、`STROKE_ALIGN_OUTSIDE`。宽度为 w、对齐为 a 时，内侧占用量为 `w * (1-a) / 2`，外侧为 `w * (1+a) / 2`。BorderSide 不统一校验所有非法数值，业务输入应使用有限宽度和明确的对齐范围。
+
+## Border 全部参数与工厂
+
+| 构造参数 | 类型 / 默认值 | 对应边 |
+| --- | --- | --- |
+| `top` | `BorderSide = NONE` | 上 |
+| `right` | `BorderSide = NONE` | 右 |
+| `bottom` | `BorderSide = NONE` | 下 |
+| `left` | `BorderSide = NONE` | 左 |
+
+- `Border.all(color, width, style, strokeAlign)`：四边相同，默认值与 BorderSide 一致。
+- `Border.fromBorderSide(side)`：四边使用同一配置。
+- `Border.symmetric(vertical = NONE, horizontal = NONE)`：vertical 用于上/下，horizontal 用于左/右。
+- `Border(top = ..., bottom = ...)`：不指定的边为 NONE。
+
+均匀边框支持圆角和圆形；不同宽度但可见颜色一致的非 hairline 边框也有相应绘制路径。不同颜色、hairline 与圆角等复杂组合不能假定得到 CSS 一样的效果，优先使用均匀边框。Border 不会让 Container 自动为边框增加 padding。
+
+## BorderRadius 全部参数与工厂
+
+直接构造 `BorderRadius(topLeft, topRight, bottomLeft, bottomRight)`，四项均为必填的 `Radius`：
+
+| 参数 | 类型 / 默认值 | 位置 |
+| --- | --- | --- |
+| `topLeft` | Radius，必填 | 左上角 |
+| `topRight` | Radius，必填 | 右上角 |
+| `bottomLeft` | Radius，必填 | 左下角 |
+| `bottomRight` | Radius，必填 | 右下角 |
+
+也可以使用便捷工厂：
+
+| 方法 | 参数与默认值 | 用法 |
+| --- | --- | --- |
+| `circular(radius)` | Float，必填 | 四角圆形半径 |
+| `all(radius)` | Radius，必填 | 四角同一个半径；可传 Radius.elliptical(x, y) |
+| `only(...)` | 四个角，均默认为 Radius.ZERO | 仅修改指定角 |
+| `vertical(top, bottom)` | 两项均为 Radius.ZERO | 上两角 / 下两角 |
+| `horizontal(left, right)` | 两项均为 Radius.ZERO | 左两角 / 右两角 |
+
+半径为逻辑像素，使用有限非负值。圆角只改变装饰轮廓；子树裁剪见 [BoxDecoration](/reference/box-decoration/#圆角不等于裁剪子节点)。
+
+## 示例
+
+放进 `SnapshotPNG { … }`；导入 decoration、Widget/Text、`com.muedsa.geometry.Radius` 与 EdgeInsets。
+
+```kotlin
+Container(
+    width = 320f,
+    height = 120f,
+    padding = EdgeInsets.all(20f),
+    decoration = BoxDecoration(
+        color = 0xFFF0F9FF.toInt(),
+        border = Border.all(color = 0xFF0369A1.toInt(), width = 3f),
+        borderRadius = BorderRadius.only(
+            topLeft = Radius.circular(24f),
+            bottomRight = Radius.circular(24f),
+        ),
+    ),
+) { Text("两个角使用圆角") }
+```
+
+## Parser 对应
+
+`border="2 SOLID #0369A1"` 设置四边，borderLeft / borderTop / borderRight / borderBottom 覆盖对应边。当前文本语法不开放 strokeAlign，按内部描边处理。borderRadius 和四个 borderRadiusTopLeft / TopRight / BottomLeft / BottomRight 属性支持统一或逐角配置，详见[通用属性格式](/reference/parser-tags/#圆角)。

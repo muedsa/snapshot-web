@@ -1,0 +1,82 @@
+---
+title: 段落、行高与行内对齐
+description: Text 和 RichText 的段落参数、StrutStyle、宽度基准与当前溢出实现边界。
+---
+
+Text 和 RichText 共用段落布局参数。字体与字形样式见 [TextStyle](/reference/text-style/)，文本模板对应[Parser 文本属性](/reference/parser-text/)。
+
+## 段落参数
+
+| 参数 | 类型 / 默认值 | 行为 |
+| --- | --- | --- |
+| `textAlign` | `Alignment = START` | `LEFT` / `RIGHT` 固定方向；`START` / `END` 跟随文字方向；`CENTER` 居中，`JUSTIFY` 两端对齐 |
+| `textDirection` | `Direction = LTR` | `LTR` / `RTL`，用于段落与 start/end 解析；不是反转字符串 |
+| `softWrap` | `Boolean = true` | 是否按有限最大宽度软换行；false 不会移除字符串中的显式换行 |
+| `overflow` | `TextOverflow = CLIP` | 溢出策略；当前实现限制见下节 |
+| `maxLines` | `Int? = null` | 不设置时不主动限定行数；指定时使用正整数。高度约束仍可能裁掉部分行 |
+| `strutStyle` | `StrutStyle? = null` | 段落支撑字体度量；null 使用新建的 Skia StrutStyle，不显式启用 |
+| `textWidthBasis` | `TextWidthBasis = PARENT` | 控制文本测量宽度，不改变父级紧约束，见下节 |
+| `textHeightMode` | `HeightMode? = null` | 不覆盖 Skia 默认高度模式；显式选项控制首行 ascent / 末行 descent 的高度调整 |
+
+`textHeightMode` 可选 `ALL`（均应用）、`DISABLE_FIRST_ASCENT`、`DISABLE_LAST_DESCENT`、`DISABLE_ALL`（两端均禁用）。它影响段落首尾的度量处理，不会替代 `height`，也不会关闭整个段落高度计算。
+
+## 换行、宽度与溢出
+
+宽度约束与绘制策略是两个独立问题。Row 中用 Expanded 提供剩余宽度；只有 `maxLines` 而没有有限宽度，不能保证你预期的换行位置。
+
+当前 TextPainter 的测量公式为：`PARENT` 使用排版后的最长行宽 `longestLine`，`LONGESTLINE` 使用最大固有行宽 `maxIntrinsicLineExtent`，两者最后都限制在父级 minWidth / maxWidth 内。因此不要仅从名称推断 PARENT 会无条件占满，或 LONGESTLINE 会突破父宽。父级紧约束下两者可能得到同样的布局宽度。
+
+{% aside type="caution" title="TextOverflow 的当前实现边界" %}
+枚举接受 `CLIP`、`FADE`、`ELLIPSIS`、`VISIBLE`，但当前 RenderParagraph 只有 ELLIPSIS 会为 Skia 设置省略号；检测到宽度/高度溢出时仍统一裁剪。FADE 尚未实现渐隐，VISIBLE 也不能保证越界文字可见。不要按 Flutter 同名枚举的完整效果推断 Snapshot 行为。
+{% /aside %}
+
+`softWrap = false` 且不是 ELLIPSIS 时，文本以无界行宽测量；ELLIPSIS 即使在 softWrap 为 false 时也会采用可用最大宽度。需要稳定的单行省略效果时，显式设置有限宽度、`maxLines = 1`、`overflow = ELLIPSIS`。
+
+## StrutStyle
+
+`org.jetbrains.skia.paragraph.StrutStyle` 为每行提供支撑字体度量。通常用于混合字号、中文与拉丁字母时保持行距稳定。以下列出常用的可配置属性；未赋值项沿用当前 Skia 默认值，不等于继承 TextStyle。
+
+| 属性 / 方法 | 类型 | 含义 |
+| --- | --- | --- |
+| `isEnabled` | `Boolean` | 是否启用；Kotlin 中建议显式设 true。Parser 在出现任意 strut 属性时默认启用 |
+| `setFontFamilies(...)` | `Array<String>` | 度量所用字体族；需在渲染环境存在 |
+| `fontStyle` | `FontStyle` | 支撑字体的字重与倾斜 |
+| `fontSize` | `Float` | 支撑字号，使用有限正数，逻辑像素 |
+| `height` | `Float` | 支撑行高倍数；配合 `isHeightOverridden = true` 显式覆盖字体度量 |
+| `leading` | `Float` | 相对于字号的额外 leading 比例；不是容器 padding，使用有限值 |
+| `isHeightForced` | `Boolean` | true 时强制使用支撑高度；较大字形/行内 Widget 可能与邻行重叠 |
+| `isHeightOverridden` | `Boolean` | 是否使用显式 height；与强制所有行等高不是同一开关 |
+
+当前依赖快照的 `StrutStyle.topRatio` 存在上游记录的原生符号兼容问题，Parser 未开放 `strutTopRatio`；不要把 TextStyle 的 `topRatio` 直接照搬到 Strut。旧 `isHalfLeading` 也已弃用，不推荐新代码使用。
+
+下面片段放入 `SnapshotPNG { … }`；需导入 Widget/Text、TextStyle，以及 `org.jetbrains.skia.paragraph.StrutStyle`：
+
+```kotlin
+Container(width = 360f, padding = com.muedsa.geometry.EdgeInsets.all(20f)) {
+    Text(
+        text = "第一行\n第二行",
+        style = TextStyle(fontSize = 20f),
+        strutStyle = StrutStyle().apply {
+            isEnabled = true
+            fontSize = 24f
+            height = 1.5f
+            isHeightOverridden = true
+            isHeightForced = true
+        },
+    )
+}
+```
+
+## WidgetSpan 与 Emoji 对齐
+
+| `PlaceholderAlignment` | 含义 |
+| --- | --- |
+| `BASELINE` | 占位对象的基线对齐文字基线；当前实现查询子 Widget 基线，无可用值时回退 0 |
+| `ABOVE_BASELINE` | 占位对象整体位于指定基线上方 |
+| `BELOW_BASELINE` | 占位对象整体位于指定基线下方 |
+| `TOP` / `BOTTOM` | 与文字行盒顶部 / 底部对齐 |
+| `MIDDLE` | 与文字行盒中部对齐，不是整个 Text 容器垂直居中 |
+
+`baseline = null` 在当前布局中回退 `ALPHABETIC`；可显式选择 `IDEOGRAPHIC`。WidgetSpan 默认 BOTTOM，URL 版 ImageEmojiSpan 默认 BASELINE，provider 版默认 BOTTOM。使用图标时显式设置尺寸与 alignment，可避免不同字体度量造成意外位置。
+
+WidgetSpan 的样式与相邻 TextSpan 分别继承父 Span；只增大旁边文字的字号，不会同步增大图标 Span 的字体度量。需要按同一字号比较行内位置时，把共用样式放到父 TextSpan，见[实际对齐效果](/guides/visual-reference/#行内图标对齐)。

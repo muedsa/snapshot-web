@@ -101,6 +101,8 @@ Text(
 
 ## TextStyle
 
+逐字段的类型、默认值和继承规则见 [TextStyle 与文本装饰](/reference/text-style/)；行高、StrutStyle 和宽度基准见[段落参考](/reference/text-layout/)。Parser 写法无需再跳到上游仓库，可直接查[文本属性详解](/reference/parser-text/)。
+
 文本样式覆盖字体、字号、颜色、字距、词距、高度、装饰线、前景/背景 Paint、阴影、字体特性等。字体查找由 Skia Paragraph 处理；在服务器或 CI 中要确保字体实际存在。
 
 `fontFamilies = listOf("Noto Sans SC")` 或 Parser 的 `fontFamily="Noto Sans SC"` 只是请求字体名称，不会下载或安装字体。应在实际渲染进程所在的机器或容器中配置字体；浏览器中能显示中文不代表服务端拥有同一套字体。Parser 的多字体写法为 `fontFamily="Noto Sans SC,Arial"`，逗号后不要添加空格。

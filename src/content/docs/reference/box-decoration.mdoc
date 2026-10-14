@@ -1,0 +1,55 @@
+---
+title: BoxDecoration
+description: 背景装饰的完整字段、绘制顺序、裁剪规则与 Parser 对应关系。
+---
+
+`com.muedsa.snapshot.paint.decoration.BoxDecoration` 是配置对象，不是 Widget。放入 Container 的 `decoration` / `foregroundDecoration`，或 DecoratedBox 的 `decoration`。
+
+## 全部构造参数
+
+| 参数 | 类型 | 默认值 | 行为 |
+| --- | --- | --- | --- |
+| `color` | `Int?` | null | ARGB 背景色；没有颜色和渐变就不绘制背景填充 |
+| `image` | `DecorationImage?` | null | [背景图片](/reference/decoration-image/)，绘制在填充上方，不参与布局尺寸推导 |
+| `border` | `BoxBorder?` | null | 通常使用 [Border](/reference/borders/)，画在装饰图片上方 |
+| `borderRadius` | `BorderRadius?` | null | 矩形圆角；只适用于 RECTANGLE |
+| `boxShadow` | `Array<BoxShadow>?` | null | [阴影列表](/reference/box-shadow/)，按数组顺序绘制，可能超出布局边界 |
+| `gradient` | `Gradient?` | null | [线性、径向或扫描渐变](/reference/gradients/)，作为填充 Paint 的 shader |
+| `backgroundBlendMode` | `BlendMode?` | null | 填充 Paint 的混合模式；必须同时有 color 或 gradient，否则构造时抛异常 |
+| `shape` | `BoxShape` | RECTANGLE | RECTANGLE 或 CIRCLE；圆形以短边的一半为半径，居中绘制，不会把矩形布局改成正方形 |
+
+## 绘制顺序与布局
+
+一次装饰绘制按 **阴影 → 颜色/渐变填充 → 装饰图片 → 边框** 执行。颜色和渐变共用一个 Paint，并非先画一层纯色再画一层渐变；需要分层合成时显式使用多个 DecoratedBox / Stack。
+
+装饰本身不增加布局尺寸，也不会自动为边框或阴影腾出空间。Container 的 padding 应显式设置；外部阴影留白用外层 Padding / margin。`foregroundDecoration` 在子树之后绘制，完全不透明的前景填充会遮住内容。
+
+## 圆角不等于裁剪子节点
+
+圆角/圆形会限定装饰背景图片的路径，但不会自动裁剪普通子 Widget。需要限制子树时使用 `ClipRRect` / `ClipOval`，或 Container 的 `clipBehavior` 与背景 `decoration` 组合。
+
+- `shape = CIRCLE` 不要同时提供 borderRadius；部分绘制路径会断言或抛异常。
+- Kotlin Container 的 `color` 与 `decoration` 互斥；把背景色放进 BoxDecoration。
+- Parser 会把 `color` 与装饰属性组合进 BoxDecoration，因此 XML 中可以同时使用 color 和 borderRadius。
+- Parser 的 Container 启用裁剪时，只有 color 不足以建立装饰路径；还需圆角、边框等使其构造 BoxDecoration 的属性。
+
+## 可运行的组件片段
+
+放进 `SnapshotPNG { … }`；导入 `com.muedsa.snapshot.paint.decoration.*`、Widget/Text 与 `com.muedsa.geometry.EdgeInsets`。
+
+```kotlin
+Container(
+    width = 320f,
+    height = 140f,
+    padding = EdgeInsets.all(24f),
+    decoration = BoxDecoration(
+        color = 0xFFE0F2FE.toInt(),
+        border = Border.all(color = 0xFF0284C7.toInt(), width = 2f),
+        borderRadius = BorderRadius.circular(18f),
+    ),
+) {
+    Text("背景、边框与内容分开配置")
+}
+```
+
+Parser 的完整装饰写法与默认值见[Container 属性](/reference/parser-tags/#container)。Parser 不开放 DecorationImage 背景图片配置；可用 Stack 中的 Image 作为底层，再叠加文字。

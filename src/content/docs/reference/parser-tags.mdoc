@@ -177,14 +177,15 @@ rgb(255 0 0 / 50%) / hsl(120deg 100% 50% / 50%)
 | 渐变属性 | 格式 / 默认值 |
 | --- | --- |
 | `gradientColors` | 逗号分隔的至少两种颜色，逗号两侧可有空白；颜色函数内部的逗号不作为列表分隔符 |
-| `gradientStops` | 与颜色等长、位于 0～1 且升序的浮点列表；默认等距 |
+| `gradientStops` | 与颜色等长、位于 0～1 且非递减的浮点列表，允许相同位置；默认等距 |
+| `gradientRotation` | 有限弧度，绕绘制矩形中心旋转渐变；未设置则不旋转 |
 | `gradientTileMode` | `CLAMP`（默认）、`REPEAT`、`MIRROR`、`DECAL` |
 | `gradientBegin` / `gradientEnd` | 线性渐变起止对齐，默认 `CENTER_LEFT` / `CENTER_RIGHT` |
 | `gradientCenter` / `gradientRadius` | 径向渐变中心与半径，默认 `CENTER` / `0.5`；半径须大于 0 |
-| `gradientFocal` / `gradientFocalRadius` | 径向渐变焦点与焦点半径；显式设置半径时必须指定焦点 |
+| `gradientFocal` / `gradientFocalRadius` | 焦点默认未设置，焦点半径默认 0.5（短边比例）；显式设置半径时必须指定焦点 |
 | `gradientStartAngle` / `gradientEndAngle` | 扫描渐变起止弧度，默认 `0` / `2π`，起点必须小于终点 |
 
-不同渐变类型的专用参数不可混用。例如：
+不同渐变类型的专用参数不可混用。完整坐标规则、取值与前景属性名见[渐变参考](/reference/gradients/#parser-对应与限制)。例如：
 
 ```xml
 <Container width="320" height="120"
@@ -463,6 +464,8 @@ Stack / IndexedStack 根据所有直接子节点的布局矩形累计越界状�
 
 ## Text
 
+以下为入口索引。每个字段的类型、取值、条件默认值、继承规则及完整示例见[Parser 文本属性详解](/reference/parser-text/)；复杂配置不要只依据总表中的“未设置”推断行为。
+
 | 属性 | 默认值 | 说明 |
 | --- | --- | --- |
 | `text` | 未设置 | 属性形式的文本内容 |
@@ -470,20 +473,22 @@ Stack / IndexedStack 根据所有直接子节点的布局矩形累计越界状�
 | `fontSize` | 未设置 | 字号 |
 | `fontFamily` | 未设置 | 多个字体用英文逗号分隔 |
 | `fontStyle` | 未设置 | `NORMAL`、`BOLD`、`ITALIC`、`BOLD_ITALIC` |
-| `height` / `topRatio` / `letterSpacing` / `wordSpacing` / `locale` | 未设置 | 行高、基线、间距和语言区域 |
-| `baselineMode` / `fontEdging` / `fontHinting` / `subpixel` | 未设置 | 字体栅格化设置 |
+| `height` / `topRatio` / `letterSpacing` / `wordSpacing` / `locale` | 未设置 | 行高倍数、上下度量比例、间距和语言区域 |
+| `baselineMode` / `fontEdging` / `fontHinting` / `subpixel` | 未设置 | 基线选择与字体栅格化设置 |
 | `foregroundColor` / `foreground*` / `backgroundColor` | 未设置 | 前景画笔与文本背景；其他 `foreground*` 参数要求 `foregroundColor` |
-| `decoration` / `decorationColor` / `decorationLineStyle` / `decorationThickness` / `decorationGaps` | 未设置 | 装饰线及样式；修饰参数要求 `decoration` |
+| `decoration` / `decorationColor` / `decorationLineStyle` / `decorationThickness` / `decorationGaps` | 未设置时继承；创建后的默认见详解 | 装饰线及样式；修饰参数要求 `decoration` |
 | `textShadow` / `fontFeatures` | 未设置 | 文本阴影与 OpenType 特性；`NONE` 可取消继承 |
 | `strut*` | 未设置 | 段落支撑样式，仅最外层 Text 生效 |
 | `textAlign` / `textDirection` / `softWrap` / `overflow` / `maxLines` | `START` / `LTR` / `true` / `CLIP` / 未设置 | 段落对齐、换行和溢出，仅最外层 Text 生效 |
 | `textWidthBasis` / `textHeightMode` | `PARENT` / 未设置 | 段落尺寸计算，仅最外层 Text 生效 |
 
-`Text` 可以嵌套 `Text`、`Raw`、`Emoji` 和 `WidgetSpan`。普通文本节点会被 trim；多字体字符串不会逐项 trim，因此 `"A, B"` 的第二个名称会保留前导空格，建议写成 `"A,B"`。`decoration` 支持 `UNDERLINE`、`OVERLINE`、`LINE_THROUGH`；`textShadow` 格式为 `x y [blurSigma] [color]`；`fontFeatures` 支持 `+liga -kern tnum=2 smcp[2:8]` 等形式。更完整的文本属性格式见[上游使用说明](https://github.com/muedsa/snapshot/blob/main/docs/usage/README.md)。
+`Text` 可以嵌套 `Text`、`Raw`、`Emoji` 和 `WidgetSpan`。普通文本节点会被 trim；多字体字符串不会逐项 trim，因此 `"A, B"` 的第二个名称会保留前导空格，建议写成 `"A,B"`。`decoration` 支持 `UNDERLINE`、`OVERLINE`、`LINE_THROUGH`；`textShadow` 格式为 `x y [blurSigma] [color]`；`fontFeatures` 支持 `+liga -kern tnum=2 smcp[2:8]` 等形式。详细语法见[文本属性详解](/reference/parser-text/)。
 
 `foregroundColor` 是其他前景画笔参数的前提；可搭配 `foregroundMode`（`FILL` / `STROKE` / `STROKE_AND_FILL`）、`foregroundStrokeWidth`、`foregroundStrokeMiter`、`foregroundStrokeCap`、`foregroundStrokeJoin`、`foregroundAntiAlias`。`backgroundColor` 提供纯色文本背景。
 
 `decorationColor`、`decorationLineStyle`、`decorationThickness`、`decorationGaps` 必须与 `decoration` 一起使用；可用 `decoration="NONE"` 取消继承的装饰。`textShadow` 用英文逗号分隔多条阴影，例如 `"3 4 1.5 #00000066,-2 0 #E5393566"`；`textShadow="NONE"` 可取消继承。颜色函数内部的逗号不会拆分阴影。`fontFeatures` 用空白分隔 OpenType 特性，标签为四个小写字母或数字，支持 `NONE` 取消继承。
+
+字体特性的范围语法会被解析和校验，但当前 Skiko 段落样式未使用 start/end；按片段应用请拆分 Span，见[字体特性限制](/reference/text-style/#fontfeature-字体特性)。
 
 `strutEnabled`、`strutFontFamily`、`strutFontStyle`、`strutFontSize`、`strutHeight`、`strutLeading`、`strutHeightForced`、`strutHeightOverridden` 只作用于最外层 `Text`；指定任一 `strut*` 属性即创建支撑样式，`strutFontSize` / `strutHeight` 必须是有限正数。当前 Parser 不提供 `strutTopRatio`。段落属性同样只作用于最外层 `Text`，嵌套 `Text` 仅作为行内 Span。
 

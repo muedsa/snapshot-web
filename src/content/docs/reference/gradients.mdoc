@@ -1,0 +1,92 @@
+---
+title: 渐变与渐变变换
+description: LinearGradient、RadialGradient、SweepGradient 的完整参数、坐标单位与 Parser 写法。
+---
+
+三种渐变位于 `com.muedsa.snapshot.paint.gradient`，配置到 BoxDecoration.gradient。视觉对比见[参数效果图](/guides/visual-reference/#三种渐变)。
+
+## 共用参数
+
+| 参数 | 类型 / 默认值 | 含义与有效输入 |
+| --- | --- | --- |
+| `colors` | `IntArray`，必填 | 至少两个 ARGB 颜色；透明度在最高字节 |
+| `stops` | `FloatArray? = null` | 每种颜色对应的 0..1 位置；null 等距分配。提供时应与 colors 等长、有限、非递减；重复位置可表达硬过渡 |
+| `tileMode` | `FilterTileMode = CLAMP` | 超出定义区间后的延展方式，见下表 |
+| `transform` | `GradientTransform? = null` | 变换渐变坐标，不改变组件尺寸或文字位置 |
+
+Kotlin 渐变类不会像 Parser 一样预先完整校验所有组合；业务传入数组和数值时仍应验证。不要将原生层未立即拒绝的值当成受支持输入。
+
+| tileMode | 超出区间后 |
+| --- | --- |
+| `CLAMP` | 延续边缘颜色 |
+| `REPEAT` | 从起点重复 |
+| `MIRROR` | 往返镜像重复 |
+| `DECAL` | 区间外透明 |
+
+## LinearGradient
+
+除共用参数外：
+
+| 参数 | 类型 / 默认值 | 含义 |
+| --- | --- | --- |
+| `begin` | `AlignmentGeometry = CENTER_LEFT` | 起点；BoxAlignment(-1,-1) 为左上，(1,1) 为右下 |
+| `end` | `AlignmentGeometry = CENTER_RIGHT` | 终点；起止点连线定义颜色轴，不是像素坐标 |
+
+不要让 begin 与 end 重合。BoxDecoration 当前创建 shader 时不传 textDirection，使用 BoxAlignment 最直观；不要假设它自动解析方向感知的 AlignmentDirectional。
+
+## RadialGradient
+
+| 参数 | 类型 / 默认值 | 含义 |
+| --- | --- | --- |
+| `center` | `AlignmentGeometry = CENTER` | 中心位置 |
+| `radius` | `Float = 0.5f` | 半径占绘制矩形短边的比例；有限正数。200×100 区域中的 0.5 对应半径 50 |
+| `focal` | `AlignmentGeometry? = null` | 第二圆心；null 使用普通径向渐变 |
+| `focalRadius` | `Float = 0.5f` | 第二圆的半径比例，有限非负；只有 focal 生效时才影响双圆锥渐变 |
+
+focal 不为空时通常使用两点圆锥渐变，不只是把中心向另一点移动。想要点状焦点应显式设 `focalRadius = 0f`，不要套用其他框架的默认值。center 与 focal 相同且 focalRadius 为 0 时走普通径向分支。
+
+## SweepGradient
+
+| 参数 | 类型 / 默认值 | 含义 |
+| --- | --- | --- |
+| `center` | `AlignmentGeometry = CENTER` | 扫描中心 |
+| `startAngle` | `Float = 0f` | 起始弧度，0 指向右方 |
+| `endAngle` | `Float = 2π` | 终止弧度；使用有限值并满足 startAngle < endAngle |
+
+在画布 y 轴向下的坐标系中，正角度沿顺时针方向推进。半圈写 π，不是 180；超出区间按 tileMode 处理。
+
+## GradientRotation
+
+`GradientRotation(radians: Float)` 以绘制矩形中心旋转渐变，单位为弧度。自定义 `GradientTransform` 可覆盖 `transform(bounds: Rect): Matrix44CMO?`，但 Parser 只开放旋转属性，不开放任意渐变矩阵。
+
+以下片段放进 `SnapshotPNG { … }`；导入 Widget、decoration、gradient 与 BoxAlignment：
+
+```kotlin
+Container(width = 320f, height = 160f, decoration = BoxDecoration(
+    gradient = LinearGradient(
+        begin = BoxAlignment.CENTER_LEFT,
+        end = BoxAlignment.CENTER_RIGHT,
+        colors = intArrayOf(0xFF0369A1.toInt(), 0xFF38BDF8.toInt(), 0xFFE0F2FE.toInt()),
+        stops = floatArrayOf(0f, 0.35f, 1f),
+        transform = GradientRotation(0.35f),
+    ),
+))
+```
+
+## Parser 对应与限制
+
+| Kotlin | Parser 属性 | 默认 / 格式 |
+| --- | --- | --- |
+| 渐变类 | `gradientType` | 必须显式给 LINEAR / RADIAL / SWEEP |
+| `colors` | `gradientColors` | 必填，CSS 颜色列表；函数内逗号不拆分颜色 |
+| `stops` | `gradientStops` | 不设置为等距；逗号分隔数字，允许相同位置 |
+| `tileMode` | `gradientTileMode` | CLAMP |
+| `GradientRotation` | `gradientRotation` | 不设置则不旋转；有限弧度 |
+| `begin` / `end` | `gradientBegin` / `gradientEnd` | CENTER_LEFT / CENTER_RIGHT，仅 LINEAR |
+| `center` | `gradientCenter` | CENTER，仅 RADIAL / SWEEP |
+| `radius` | `gradientRadius` | 0.5，仅 RADIAL，有限正数 |
+| `focal` | `gradientFocal` | 未设置，仅 RADIAL |
+| `focalRadius` | `gradientFocalRadius` | 0.5；显式设置时必须同时提供 gradientFocal，有限非负 |
+| `startAngle` / `endAngle` | `gradientStartAngle` / `gradientEndAngle` | 0 / 2π，仅 SWEEP，有限且起点小于终点 |
+
+没有 gradientType 但提供其他渐变属性会报错；不同类型的专用属性不可混用。Container 前景装饰使用 `foregroundGradientType`、`foregroundGradientColors` 等完整名称（foreground 后的 Gradient 首字母大写），其余规则相同。Border / DecoratedBox 支持背景渐变；前景用途也可通过 DecoratedBox 的 position 实现。

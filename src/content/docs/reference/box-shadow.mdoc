@@ -1,0 +1,54 @@
+---
+title: BoxShadow
+description: 阴影的偏移、半径、扩散、模糊模式及与文本阴影的区别。
+---
+
+`com.muedsa.snapshot.paint.decoration.BoxShadow` 放入 `BoxDecoration.boxShadow` 数组。它只参与绘制，不改变组件布局尺寸。
+
+## 全部构造参数
+
+| 参数 | 类型 | 默认值 | 含义 |
+| --- | --- | --- | --- |
+| `color` | `Int` | 必填 | ARGB，通常使用带透明度的颜色 |
+| `offset` | `Offset` | 必填 | 逻辑像素偏移；x 正向右、y 正向下，允许负数 |
+| `blurRadius` | `Float` | 必填 | 模糊半径，推荐有限非负数；不是 sigma |
+| `spreadRadius` | `Float` | 0f | 模糊前扩展轮廓的逻辑像素量；正数扩展、负数收缩 |
+| `blurStyle` | `FilterBlurMode` | NORMAL | 模糊形状的模式，见下表 |
+
+| 模式 | 效果 |
+| --- | --- |
+| `NORMAL` | 轮廓内外正常模糊 |
+| `SOLID` | 内部保持实心，外部模糊 |
+| `OUTER` | 仅轮廓外的模糊部分 |
+| `INNER` | 仅轮廓内的模糊部分；不等于 CSS inset 阴影 |
+
+转换公式：正 blurRadius 对应 `sigma = blurRadius * 0.57735 + 0.5`，否则 sigma 为 0。文本 `Shadow` 与 Parser 的 textShadow 接收的是 **blurSigma**，不要直接复制同一个数值期待相同效果。
+
+## 留白与多层阴影
+
+阴影依次绘制在背景之前。外扩阴影可能被图片画布边缘或祖先 Clip 截掉；增大画布或增加外层 Padding，不能只增大 blurRadius。
+
+以下片段放入 `SnapshotPNG { … }`；需导入 decoration、Widget、`EdgeInsets` 和 `Offset`：
+
+```kotlin
+Padding(padding = EdgeInsets.all(32f)) {
+    Container(
+        width = 280f,
+        height = 120f,
+        decoration = BoxDecoration(
+            color = 0xFFFFFFFF.toInt(),
+            borderRadius = BorderRadius.circular(16f),
+            boxShadow = arrayOf(
+                BoxShadow(color = 0x33000000, offset = Offset(0f, 8f), blurRadius = 16f),
+                BoxShadow(color = 0x22000000, offset = Offset(0f, 2f), blurRadius = 4f),
+            ),
+        ),
+    )
+}
+```
+
+预设 `ELEVATION_MAP` 在 `com.muedsa.snapshot.material`，支持 0、1、2、3、4、6、8、9、12、16、24；不是任意整数都存在。
+
+## Parser 对应
+
+`boxShadow="0 8 16 0 #00000033 NORMAL"` 按 `x y [blurRadius] [spreadRadius] [color] [blurStyle]` 解析；也可写 `ELEVATION_8`。多个阴影用逗号分隔，颜色函数内部逗号不拆分列表。Parser 的可省略项不代表 Kotlin 构造函数也有相同默认值。

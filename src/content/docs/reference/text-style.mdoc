@@ -1,0 +1,112 @@
+---
+title: TextStyle 与文本装饰
+description: 完整的文本样式参数、继承规则、画笔优先级、字体与装饰线配置。
+---
+
+`com.muedsa.snapshot.paint.text.TextStyle` 用于 Text、TextSpan 和 WidgetSpan。它描述字形样式，不负责整段的换行、最大行数或对齐；这些行为见[段落与行高](/reference/text-layout/)。Parser 写法见[文本属性详解](/reference/parser-text/)。
+
+## 默认值与继承
+
+全部 19 个构造参数的声明默认值都是 `null`：表示不覆盖祖先同名字段，**不是清除样式**。根节点最后与 Snapshot 的默认样式合并：黑色、字号 `14f`；其余未指定项交给 Skia。字体最终取决于运行环境。
+
+合并以字段为单位。`foreground`、`decorationStyle`、`shadows` 等对象或列表整体继承/替换，不逐项合并。要清除祖先阴影或字体特性，使用 `emptyList()`；取消装饰线使用 `DecorationStyle.NONE`。不能用 `foreground = null` 清除祖先画笔，需要调整 Span 层级或显式提供替代画笔。
+
+## 字体与度量参数
+
+下表的“范围”是推荐的有效输入；TextStyle 自身并不统一校验这些数值，不能把未报错当作有效。
+
+| 参数 | Kotlin 类型 | 含义、单位与使用限制 |
+| --- | --- | --- |
+| `fontSize` | `Float?` | 字号，逻辑像素；使用有限正数。根回退为 14 |
+| `fontFamilies` | `List<String>?` | 按顺序请求字体族，如 `listOf("Noto Sans SC", "Arial")`；不会下载字体 |
+| `fontStyle` | `FontStyle?` | 字重、宽度和倾斜；常用 `NORMAL`、`BOLD`、`ITALIC`、`BOLD_ITALIC` |
+| `typeface` | `Typeface?` | 直接提供 Skia 字体对象；Parser 不开放此项。需在绘制完成前保持对象有效 |
+| `height` | `Float?` | 行高倍数，不是像素高度；例如字号 20、height 1.5。未覆盖时按字体度量；最终行高还受同行其他样式和 Strut 影响 |
+| `topRatio` | `Float?` | ascent 占 ascent + descent 的比例；`0..1` 指定比例，`-1` 按字体上升/下降度量分配。`0.5f` 为上下均分；不是平移文字 |
+| `letterSpacing` | `Float?` | 额外字距，逻辑像素；有限值，负值会使字形靠近 |
+| `wordSpacing` | `Float?` | 额外词间距，逻辑像素；不是中文字符之间的统一间距 |
+| `locale` | `String?` | 语言区域，如 `"zh-CN"`；影响字体塑形/选择，不做文本翻译 |
+| `baselineMode` | `BaselineMode?` | `ALPHABETIC` 或 `IDEOGRAPHIC`；不要与行内 Widget 的 `baseline` 参数混淆 |
+
+## 颜色、画笔与装饰参数
+
+| 参数 | Kotlin 类型 | 含义与组合规则 |
+| --- | --- | --- |
+| `color` | `Int?` | ARGB 字体颜色；根回退为黑色。存在前景画笔时，由画笔绘制字形 |
+| `foreground` | `Paint?` | 字形画笔，可设置填充、描边等；优先于普通 `color` |
+| `background` | `Paint?` | 文本运行区域的背景，不等同于给整个 Text 布局盒设置背景 |
+| `decorationStyle` | `DecorationStyle?` | 下划线、上划线、删除线及其颜色、线型与粗细，见下节 |
+| `shadows` | `List<Shadow>?` | `org.jetbrains.skia.paragraph.Shadow` 列表；偏移为逻辑像素，模糊值为 sigma；空列表取消继承 |
+| `fontFeatures` | `List<FontFeature>?` | OpenType 特性，如连字、等宽数字；字体必须实际支持，空列表取消继承 |
+| `fontEdging` | `FontEdging?` | `ALIAS`、`ANTI_ALIAS`、`SUBPIXEL_ANTI_ALIAS`，字形边缘栅格化方式 |
+| `fontHinting` | `FontHinting?` | `NONE`、`SLIGHT`、`NORMAL`、`FULL`，字体微调强度 |
+| `subpixel` | `Boolean?` | 是否允许子像素字形定位；与 `fontEdging` 的边缘抗锯齿不是同一个选项 |
+
+## DecorationStyle
+
+类型来自 `org.jetbrains.skia.paragraph`。完整构造参数如下；直接调用构造函数时全部必填。更便捷的入口是从 `DecorationStyle.NONE` 调用 `withUnderline(true)`、`withColor(...)` 等方法。
+
+| 参数 | 类型 | 含义 |
+| --- | --- | --- |
+| `_underline` | `Boolean` | 下划线 |
+| `_overline` | `Boolean` | 上划线 |
+| `_lineThrough` | `Boolean` | 删除线；三种线可组合 |
+| `_gaps` | `Boolean` | 是否避让字形；NONE 中为 true |
+| `color` | `Int` | ARGB 装饰线颜色；NONE 中为黑色，不是自动继承字色 |
+| `lineStyle` | `DecorationLineStyle` | `SOLID`、`DOUBLE`、`DOTTED`、`DASHED`、`WAVY` |
+| `thicknessMultiplier` | `Float` | 相对字体装饰线粗细的倍数，推荐有限正数；不是像素线宽 |
+
+## Shadow 文本阴影
+
+`org.jetbrains.skia.paragraph.Shadow` 的四个参数全部必填；它与 BoxShadow 不是同一种配置：
+
+| 参数 | 类型 | 含义 |
+| --- | --- | --- |
+| `color` | `Int` | ARGB 阴影颜色 |
+| `offsetX` / `offsetY` | `Float` | 有限逻辑像素偏移，正值向右 / 向下 |
+| `blurSigma` | `Double` | 有限非负高斯 sigma；注意 Kotlin 使用 Double，如 `2.0`，不是 `2f` |
+
+例如 `shadows = listOf(Shadow(0x66000000, 2f, 3f, 2.0))`。也可用 `Shadow(color, offset: Point, blurSigma)` 重载。多个阴影按列表配置，空列表清除继承；阴影不为文字额外预留布局空间，需要外层留白。
+
+## FontFeature 字体特性
+
+类型是 `org.jetbrains.skia.FontFeature`。常用构造是 `FontFeature("tnum", true)` 或 `FontFeature("kern", 0)`；只传 `FontFeature("liga")` 时 value 为 1。它们分别请求等宽数字、关闭字偶距和启用连字，字体不支持时不保证产生变化。
+
+| 参数 | 类型 | 含义 |
+| --- | --- | --- |
+| `feature` | `String` | 四字符 OpenType 标签，如 liga、kern、tnum；底层构造也接收四字节标签整数 `_tag` |
+| `value` | `Int` 或便捷重载的 `Boolean` | 0 关闭、1 开启；其他非负值含义由特性定义 |
+| `start` / `end` | `UInt` | 四参数重载中的范围；省略范围的重载使用 GLOBAL_START=0u、GLOBAL_END=UInt.MAX_VALUE |
+
+{% aside type="caution" title="范围语法不等于段落范围生效" %}
+Parser 可解析 `smcp[2:8]` 并校验起止顺序，但当前 Skiko 的 TextStyle.addFontFeature 只把 tag 和 value 交给段落，未传递 start/end。需要只作用于一段文字时，应拆成不同 TextSpan 并分别设置 fontFeatures，不要依赖范围字段裁定生效位置。
+{% /aside %}
+
+例如 `fontFeatures = listOf(FontFeature("tnum", true))`；空列表清除继承的特性。Kotlin 使用的构造类型、Parser 接受的字符串语法和底层排版效果应分别判断。
+
+## 样式继承示例
+
+以下是 `SnapshotPNG { … }` 内的组件片段。需要 `com.muedsa.snapshot.widget.*`、`com.muedsa.snapshot.widget.text.*`、`com.muedsa.snapshot.paint.text.*` 与 `org.jetbrains.skia.paragraph.DecorationStyle`。
+
+```kotlin
+Container(width = 420f, padding = com.muedsa.geometry.EdgeInsets.all(24f)) {
+    RichText {
+        TextSpan(style = TextStyle(
+            fontSize = 24f,
+            color = 0xFF0369A1.toInt(),
+            decorationStyle = DecorationStyle.NONE.withUnderline(true),
+        )) {
+            TextSpan(text = "继承下划线 ")
+            TextSpan(text = "取消装饰", style = TextStyle(
+                decorationStyle = DecorationStyle.NONE,
+            ))
+        }
+    }
+}
+```
+
+## 字体与资源
+
+在服务端、容器或 CI 安装字体后，按它的实际族名配置 `fontFamilies`。浏览器网页使用的字体不会自动进入服务端渲染。若使用字体文件，可通过 `Typeface.makeFromFile(...)` 创建字体对象并赋给 `typeface`，在整个布局与绘制过程结束后再释放；不要在构建 TextStyle 后立即关闭仍要使用的 Paint / Typeface。
+
+涉及换行、字号或字体变化时重新构建并布局；不要依赖已缓存的段落自动感知可变样式。需要跨机器一致的图片，还应固定字体文件、Skiko runtime 和输出环境。

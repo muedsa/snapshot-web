@@ -13,8 +13,10 @@
 
 - 产品落地页与能力展示；
 - 安装、快速开始、渲染、布局、绘制、图片、文本与测试指南；
-- 34 个独立 Widget API 页面，包含源码签名、参数、行为、示例和限制；
-- 类 DOM Parser 的标签、属性、错误处理与扩展说明；
+- 39 个独立 Widget API 页面，包含源码签名、参数、行为、示例和限制；
+- TextStyle、段落与行高、装饰、边框、阴影、背景图片和渐变的公共配置参考；
+- 类 DOM Parser 的标签、属性、文本样式详解、错误处理与扩展说明；
+- 可复制的完整模板，以及真实渲染的图片适配、渐变、行内对齐与裁剪对比图；
 - 枚举速查、FAQ 和源码索引。
 
 Widget API 按布局、绘制与效果、图片、文本四组自动生成侧边栏。
@@ -83,6 +85,9 @@ pnpm preview
 | `pnpm dev` | 启动本地开发服务器 |
 | `pnpm build` | 构建静态站点并生成搜索索引与 Sitemap |
 | `pnpm preview` | 预览 `dist/` 中的生产构建 |
+| `pnpm docs:test` | 运行参数覆盖检查器的单元测试 |
+| `pnpm docs:coverage` | 对照相邻 Snapshot 源码检查公共配置与 Parser 文本/渐变的参数表覆盖 |
+| `pnpm docs:links` | 检查已构建页面的站内链接、锚点和资源路径 |
 | `pnpm astro -- --help` | 查看 Astro CLI 帮助 |
 
 ## 目录结构
@@ -91,7 +96,9 @@ pnpm preview
 .
 ├── public/
 │   ├── favicon.svg
+│   ├── examples/                 # 模板与参数对比的真实渲染输出
 │   └── showcase/                 # 首页展示图片
+├── scripts/                      # 文档覆盖、链接与示例验证
 ├── src/
 │   ├── components/               # Playground 与主题初始化组件
 │   ├── content/
@@ -160,6 +167,16 @@ sidebar:
 5. 可以独立理解的 Kotlin 示例；
 6. 父节点要求、约束条件和常见错误。
 
+对象型参数不应只写类型名。TextStyle、BoxDecoration 等公共配置单独放在 `reference/`，组件页链接到对应参考，避免复制多份容易漂移的长表。公共配置页应包含：
+
+- 全部参数的类型、默认值，以及 null 表示继承、自动选择还是禁用；
+- 数值单位、推荐范围、实际校验范围和相互依赖；
+- 布局、绘制、裁剪与资源生命周期的区别；
+- Kotlin 与 Parser 的名称、默认值和能力差异；
+- 可运行的组件片段，效果不直观时补充真实渲染对比图。
+
+不要将同名 Flutter / CSS 属性的行为直接套到 Snapshot。当前实现限制应显式写出，例如 TextOverflow.FADE 尚未渐隐，而 VISIBLE 在检测到溢出时仍会裁剪。
+
 ### 使用 Starlight Markdoc 组件
 
 `.mdoc` 文件不能直接依赖任意 HTML 或 MDX 组件。应使用当前 Markdoc 配置提供的标签，例如：
@@ -189,8 +206,14 @@ sidebar:
 至少执行：
 
 ```bash
+pnpm docs:test
+pnpm docs:coverage
 pnpm build
+pnpm docs:links
+git diff --check
 ```
+
+`docs:coverage` 默认读取 `../snapshot`，也可以运行 `node scripts/check-doc-coverage.mjs <snapshot源码目录>`。目前覆盖 10 个配置类的构造参数，以及 Parser 的文本/渐变属性；只核对指定表格列中是否有条目，不验证默认值、语义，也不是整个库的 API 完整性证明。上游声明格式改变时需要同步调整检查器。
 
 构建应成功生成全部静态页面、Pagefind 搜索索引和 Sitemap。提交前还应检查：
 
@@ -200,6 +223,25 @@ pnpm build
 - `.mdoc` 中没有残留未解析的 Markdoc 标签；
 - 示例签名、参数和限制与 Snapshot 源码一致；
 - 没有提交 `dist/`、`.astro/`、`node_modules/` 或本地凭据。
+
+### 验证公共配置示例与更新对比图
+
+当前提供 Windows x64 / Java 17 的本地验证入口，需要 Node.js、PowerShell、相邻 Snapshot 的最新 core / parser JAR，以及已缓存的 Kotlin / Skiko 依赖。先在 Snapshot 项目构建 `:core:jar :parser:jar`；脚本本身不会联网、构建或修改相邻仓库。
+
+```powershell
+# 默认使用 GRADLE_USER_HOME，未设置时使用用户目录下的 .gradle。
+# 按实际路径填写 -GradleCache；例如 D:/.gradle。
+./scripts/verify-doc-examples.ps1 -GradleCache D:/.gradle
+
+# 确认需要更新文档配图时，才覆盖 public/examples 中的四张参数对比图。
+./scripts/verify-doc-examples.ps1 -GradleCache D:/.gradle -UpdateImages
+```
+
+也可指定 `-SnapshotRoot` 和 `-SnapshotVersion`。Kotlin / Skiko 版本读取上游版本目录；编译器的辅助依赖目前按 Kotlin 2.4.20 的本地缓存配置，升级工具链时需同步核对。其他系统需要适配对应的 Skiko 原生 runtime，不能直接使用 Windows JAR。
+
+脚本直接抽取 7 篇公共配置页与效果对比页中的 11 段 Kotlin，以及 Parser 文本页的 2 段 XML，编译并实际渲染。输出放在 `.astro/docs-verification/reference/`，两段 XML 还会检查声明的 480×200 尺寸。其他文档示例不在这个运行器的检查范围内。
+
+运行成功只代表这些示例可以执行，不等于视觉正确。更新图片后仍需打开输出检查文字缺字、对齐、裁剪和效果说明，并在网页中检查深浅主题与窄屏阅读。固定字体环境以减少图片差异；本地成功不代表线上 Open Snapshot 已部署同样版本。
 
 ## 部署
 

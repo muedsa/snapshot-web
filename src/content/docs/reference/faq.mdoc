@@ -13,6 +13,11 @@ description: 尺寸、布局、Parser、网络图片、文本和调试的常见�
 | 图片没有铺满或密度不对 | [默认适配与迁移](/guides/media-text/#默认适配与迁移) |
 | 语法或属性报错 | [Parser 错误分类](/reference/parser-errors/) |
 | 编辑器没有补全或提示 | [DSL 语言服务](/guides/language-server/) |
+| 找不到文本、渐变或装饰对象的详细参数 | [公共配置阅读入口](/guides/overview/#查找参数与行为) |
+
+## 为什么 FADE 没有渐隐，VISIBLE 仍被裁剪？
+
+当前 TextOverflow 接受这些名称，但 RenderParagraph 检测到溢出时仍统一裁剪；只有 ELLIPSIS 会为 Skia 额外配置省略号。这是当前实现边界，不是改一个父容器属性就能恢复的效果。见[段落布局说明](/reference/text-layout/#换行宽度与溢出)。
 
 ## 为什么空 `Container()` 报尺寸为空？
 
