@@ -3,6 +3,19 @@ title: Widget 与布局
 description: Snapshot 常用组件、布局和装饰能力速查。
 ---
 
+## 先按目标选择
+
+| 目标 | 推荐组合 | 原因 |
+| --- | --- | --- |
+| 固定输出画布 | 根 `SizedBox` / `Container` | 为布局提供有限宽高 |
+| 左侧固定图标、右侧长文本 | `Row` + `Expanded` + `Text` | 把剩余宽度交给文字换行 |
+| 顶部标题、底部状态栏 | 有界 `Column` + `Spacer` | 用剩余高度隔开上下内容 |
+| 在卡片上添加角标 | `Stack` + `Positioned` | 单独设置覆盖层的位置 |
+| 让内容始终留在圆角内 | `ClipRRect` | 圆角背景装饰本身不等于子树裁剪 |
+| 对背景做局部模糊 | `ClipRect` / `ClipRRect` + `BackdropFilter` | 明确背景采样与效果区域 |
+
+可复制运行的组合见[完整模板示例](/guides/examples/)。下面按组件查参数；想理解为什么这样布局，阅读[约束、布局与调试](/guides/layout/)。
+
 ## 布局组件
 
 | Widget | 用途 |

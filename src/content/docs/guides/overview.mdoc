@@ -1,0 +1,55 @@
+---
+title: 文档导读
+description: 按目标选择 Kotlin、文本模板或在线编辑器，并找到示例、参数与排错入口。
+---
+
+Snapshot 把布局描述渲染成图片。第一次使用可以先在 Playground 运行一段模板；需要在 JVM 应用中生成图片时，再安装 Kotlin 依赖。无需按侧栏顺序读完所有 API。
+
+## 选择你的起点
+
+| 你想做什么 | 从这里开始 | 接下来阅读 |
+| --- | --- | --- |
+| 先看看能生成什么 | [在线 Playground](/playground/) | [完整模板示例](/guides/examples/) |
+| 在 Kotlin / JVM 应用中出图 | [快速开始](/guides/quickstart/) | [安装与构建](/guides/installation/)、[渲染入口](/guides/rendering/) |
+| 用文本或配置描述图片 | [类 DOM 解析器](/guides/parser/) | [标签与属性参考](/reference/parser-tags/) |
+| 编写 `.snapshot` 文件 | [DSL 语言服务](/guides/language-server/) | Playground 或 VS Code 扩展 |
+| 调整尺寸、对齐或裁剪 | [约束、布局与调试](/guides/layout/) | [按用途选择 Widget](/guides/widgets/) |
+| 图片结果不符合预期 | [常见问题](/reference/faq/) | [解析错误与扩展](/reference/parser-errors/) |
+
+## Kotlin DSL 与文本模板怎么选
+
+| 对比 | Kotlin DSL | Parser 文本模板 |
+| --- | --- | --- |
+| 输入 | Kotlin 代码与 Widget 树 | `<Snapshot>…</Snapshot>` 文本 |
+| 适合 | 动态布局、自定义组件、直接使用 Skia | 受控模板、在线编辑、服务端接收文本 |
+| 输出 | `SnapshotPNG` 等返回图片字节 | `Parser().parse(reader).snapshot()` 返回图片字节 |
+| 能力范围 | 完整 Widget 与底层 API | 默认 39 个标签，可注册自定义标签 |
+| 颜色写法 | ARGB `Int`，如 `0x80FF0000.toInt()` | CSS 颜色，如 `#FF000080` |
+| 默认画布背景 | 白色 | 透明 |
+
+两种入口共用布局和绘制逻辑，但默认值、参数名和写法并非完全一致。迁移模板时请显式设置背景和图片 `fit`，并查阅相应入口的参数表。
+
+## 示例怎么使用
+
+- [快速开始](/guides/quickstart/)提供带 `main()` 的 Kotlin 程序；[完整模板示例](/guides/examples/)中的每个 XML 代码块都带根标签，可整段复制到 Playground。
+- Widget API 页主要展示组件片段：放进 `SnapshotPNG { … }` 或自己的 `ChildSlot` 作用域中使用，省略的 import 按组件类型补齐。
+- 标签参考中的局部片段需要包入 `<Snapshot>`，并满足父子关系。例如 `<Expanded>` 必须直接位于 `<Row>`、`<Column>` 或 `<Flex>` 下。
+- 标有 `/* ... */` 的代码是结构示意，需补上实际内容；根布局必须最终得到有限、非零的宽高。
+
+## 先理解这四个规则
+
+1. **图片尺寸由布局决定。** 固定画布用根 `SizedBox` 或 `Container`；父约束仍优先于子组件期望的尺寸。
+2. **布局与绘制分开。** Transform、阴影和滤镜可能画到布局框外；用 Clip 组件明确限定绘制范围。
+3. **文本需要宽度约束才能按预期换行。** 在 Row 里通常用 Expanded 为文本分配剩余宽度；在 Column 里保留父级最大宽度。
+4. **编辑器诊断不等于渲染验证。** LSP 检查语法和部分属性，Parser、图片解码与布局在实际运行时完成。
+
+## 查找参数与行为
+
+{% cardgrid %}
+{% linkcard title="Widget 选型" description="按布局、绘制、图片和文本用途找到组件。" href="/guides/widgets/" /%}
+{% linkcard title="Parser 标签参考" description="查询子节点限制、属性格式和默认值。" href="/reference/parser-tags/" /%}
+{% linkcard title="常见问题" description="从尺寸、换行、裁剪或图片异常开始排查。" href="/reference/faq/" /%}
+{% linkcard title="源码索引" description="进一步阅读实现与回归测试。" href="/reference/source-index/" /%}
+{% /cardgrid %}
+
+本站说明对应 Snapshot 的持续更新快照。使用旧版依赖或独立部署的渲染服务时，新标签与行为可能尚未同步；版本获取方式见[安装与构建](/guides/installation/)。

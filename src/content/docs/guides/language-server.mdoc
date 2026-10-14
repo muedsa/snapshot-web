@@ -19,7 +19,17 @@ description: 使用 snapshot-lsp 为类 DOM DSL 提供补全、悬停与实时�
 
 打开[在线 Playground](/playground/)即可使用 Monaco 编辑器中的补全、悬停和问题提示。网站将 `@muedsa/snapshot-lsp/browser` 放在 Web Worker 中运行：编辑时的语言服务在浏览器内完成；点击“运行”才会将 DSL 发往 Open Snapshot 服务生成图片。
 
-## 接入本地编辑器
+## 在 VS Code 中使用
+
+可以安装独立的 [Snapshot DSL 扩展](https://github.com/muedsa/vscode-snapshot-lsp)。它已将客户端与语言服务器打包在 VSIX 内，使用者无需单独安装 npm 包或配置 GitHub Packages 令牌。
+
+1. 按扩展仓库的说明获取 VSIX（工作流产物或自行打包）。
+2. 在 VS Code 扩展视图中选择“从 VSIX 安装”。
+3. 打开 `.snapshot` 文件，即可使用补全、诊断、悬停、语法着色、大纲与格式化。
+
+语言服务无响应时，可在命令面板运行“Snapshot: 重启语言服务器”。扩展只负责编辑体验，图片仍需通过 Parser 或 Playground 渲染。VSIX 获取和支持的 VS Code 版本以扩展仓库说明为准。
+
+## 手动接入 LSP 客户端
 
 包发布在 GitHub Packages，要求 Node.js 22 或更高版本。在项目的 `.npmrc` 中指定 registry，并通过环境变量提供具备 `read:packages` 权限的令牌：
 
@@ -40,7 +50,9 @@ pnpm add -D @muedsa/snapshot-lsp
 pnpm exec snapshot-lsp --stdio
 ```
 
-服务实现了文档同步、补全、悬停和诊断发布。具体的服务启动配置由编辑器或其 LSP 客户端决定；这是一项语言服务，并非开箱即用的 VS Code 扩展。
+服务实现了文档同步、补全、悬停和诊断发布。具体的服务启动配置由编辑器或其 LSP 客户端决定；此 npm 包是通用语言服务器，VS Code 用户可以直接使用上面的独立扩展。
+
+## 在浏览器中集成
 
 在浏览器应用中，也可将服务放进 Worker，并用支持 Web Worker 传输的 LSP 客户端连接：
 

@@ -73,6 +73,16 @@ RawImage(
 
 ## 普通文本
 
+文本换行需要有限的可用宽度。Row 中通常用 Expanded 包住 Text 或其外层 Column；Column 的弹性子节点会保留父级最大宽度。完整示例见[固定图标与自适应文本](/guides/examples/#固定图标与自适应文本)。
+
+| 需求 | 设置 |
+| --- | --- |
+| 自动换行 | 保持 `softWrap = true`，并提供有限宽度 |
+| 单行超出显示省略号 | `maxLines = 1` + `overflow = ELLIPSIS`，并限制宽度 |
+| 多行摘要 | `maxLines = 2`（或其他正数）+ `overflow = ELLIPSIS` |
+| 原样保留 Parser 文本首尾空白 | 在 Text 中使用 Raw |
+| 一段文字包含不同样式 | Kotlin 使用 RichText / TextSpan，Parser 嵌套 Text |
+
 ```kotlin
 Text(
     text = "Hello Snapshot",
@@ -92,6 +102,8 @@ Text(
 ## TextStyle
 
 文本样式覆盖字体、字号、颜色、字距、词距、高度、装饰线、前景/背景 Paint、阴影、字体特性等。字体查找由 Skia Paragraph 处理；在服务器或 CI 中要确保字体实际存在。
+
+`fontFamilies = listOf("Noto Sans SC")` 或 Parser 的 `fontFamily="Noto Sans SC"` 只是请求字体名称，不会下载或安装字体。应在实际渲染进程所在的机器或容器中配置字体；浏览器中能显示中文不代表服务端拥有同一套字体。Parser 的多字体写法为 `fontFamily="Noto Sans SC,Arial"`，逗号后不要添加空格。
 
 为了得到跨机器稳定的文本结果：
 

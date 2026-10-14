@@ -1,0 +1,109 @@
+---
+title: 完整模板示例
+description: 可整段复制到 Playground 的信息卡片、图文布局和 SVG 裁剪票券。
+---
+
+下面每个示例都包含完整的 `<Snapshot>` 根节点，不需要网络图片。可以复制代码到[在线 Playground](/playground/)尝试运行，也可保存为 `.snapshot` 文件，交给 [Parser](/guides/parser/) 处理。预览由本地 Snapshot 渲染，字体与实际部署环境不同可能使文字宽度略有差异。
+
+{% aside type="note" title="示例与服务版本" %}
+这些模板已使用当前本地 Parser 验证。在线服务独立部署，可能尚未包含最新标签或行为；例如票券示例需要支持 ClipPath 的版本。若出现 `Unknown element tag [ClipPath]`，请更新实际渲染服务的 Parser，或使用本地新版 Parser 运行；编辑器能补全不代表服务端已支持。
+{% /aside %}
+
+| 示例 | 输出尺寸 | 练习内容 |
+| --- | --- | --- |
+| [信息卡片](#信息卡片) | 560 × 280 | 固定画布、圆角、padding、Spacer |
+| [固定图标与自适应文本](#固定图标与自适应文本) | 560 × 220 | Row、Expanded、换行与省略号 |
+| [SVG 路径票券](#svg-路径票券) | 560 × 220 | ClipPath、viewBox、镂边裁剪 |
+
+## 信息卡片
+
+![带标题、说明和底部状态栏的信息卡片](/examples/info-card.png)
+
+```xml
+<Snapshot background="#E8EEF5" type="png">
+  <Container width="560" height="280" padding="24">
+    <Container padding="28" color="#FFFFFF" borderRadius="20">
+      <Column crossAxisAlignment="START">
+        <Text color="#0369A1" fontSize="14" fontStyle="BOLD">SNAPSHOT / WEEKLY</Text>
+        <SizedBox height="12" />
+        <Text color="#0F172A" fontSize="28" fontStyle="BOLD">让信息成为一张图片</Text>
+        <SizedBox height="8" />
+        <Text color="#475569" fontSize="16">用布局表达层级，用留白组织内容。</Text>
+        <Spacer />
+        <Row crossAxisAlignment="CENTER">
+          <Text color="#0F172A" fontSize="18" fontStyle="BOLD">128 次构建</Text>
+          <Spacer />
+          <Container padding="(6,12)" color="#DCFCE7" borderRadius="10">
+            <Text color="#166534" fontSize="14">全部通过</Text>
+          </Container>
+        </Row>
+      </Column>
+    </Container>
+  </Container>
+</Snapshot>
+```
+
+外层 Container 确定输出尺寸，内层 Container 负责卡片背景和圆角。Column 中的 Spacer 吸收剩余高度，让状态栏靠近底部；Row 中的 Spacer 则把两项推向左右两端。
+
+可先修改标题、`padding` 或根宽高，观察文字换行和留白如何变化。Spacer 需要有限主轴空间，这里由外层固定尺寸提供。
+
+## 固定图标与自适应文本
+
+![左侧固定尺寸标识和右侧自适应宽度的文字说明](/examples/flex-text.png)
+
+```xml
+<Snapshot background="#FFFFFF" type="png">
+  <Container width="560" height="220" padding="28" color="#F1F5F9">
+    <Row crossAxisAlignment="START">
+      <Container width="72" height="72" color="#0369A1" borderRadius="18" alignment="CENTER">
+        <Text color="#FFFFFF" fontSize="36" fontStyle="BOLD">S</Text>
+      </Container>
+      <SizedBox width="20" />
+      <Expanded>
+        <Column mainAxisSize="MIN" crossAxisAlignment="START">
+          <Text color="#0F172A" fontSize="24" fontStyle="BOLD" maxLines="2" overflow="ELLIPSIS">给文字明确的可用宽度</Text>
+          <SizedBox height="12" />
+          <Text color="#475569" fontSize="16" maxLines="3" overflow="ELLIPSIS">左侧图标保持固定尺寸，右侧文本使用 Row 的剩余宽度。把画布调窄后，文字会换行，超过行数时显示省略号。</Text>
+        </Column>
+      </Expanded>
+    </Row>
+  </Container>
+</Snapshot>
+```
+
+Expanded 必须直接放在 Row 下：它把剩余宽度传给 Column 和 Text。`maxLines` 控制最多显示几行，`overflow="ELLIPSIS"` 决定超出后的显示方式。
+
+尝试把根宽度从 `560` 改为 `420`；若移除 Expanded，Row 的普通子节点可能获得无界主轴宽度，文本便无法按预期换行。参见 [Flex 布局](/guides/layout/#flex-布局)。
+
+## SVG 路径票券
+
+![左右两侧带弧形缺口的深色票券](/examples/path-ticket.png)
+
+```xml
+<Snapshot background="#E8EEF5" type="png">
+  <SizedBox width="560" height="220">
+    <ClipPath path="M0 0 H560 V80 Q520 110 560 140 V220 H0 V140 Q40 110 0 80 Z"
+              viewBox="0 0 560 220" fit="FILL">
+      <Container color="#0F172A" padding="36">
+        <Column crossAxisAlignment="START">
+          <Text color="#38BDF8" fontSize="14" fontStyle="BOLD">SNAPSHOT / ADMIT ONE</Text>
+          <Spacer />
+          <Text color="#F8FAFC" fontSize="30" fontStyle="BOLD">把想法渲染出来</Text>
+          <SizedBox height="10" />
+          <Text color="#94A3B8" fontSize="16">SVG 路径 · 声明式布局 · 离线出图</Text>
+        </Column>
+      </Container>
+    </ClipPath>
+  </SizedBox>
+</Snapshot>
+```
+
+SizedBox 决定布局尺寸，`viewBox` 只负责把路径坐标映射到该尺寸。两段 `Q` 曲线形成侧边缺口，缺口露出 Snapshot 的浅色背景。
+
+将 `fit` 改为 `CONTAIN` 并改变宽高比，可以保持路径比例；要做多轮廓镂空，见 [ClipPath 的 EVEN_ODD 示例](/reference/parser-tags/#clippath)。运行服务需要包含支持 ClipPath 的 Parser。
+
+## 接入业务数据
+
+示例中的字符串可以由应用生成，但 Parser 不提供变量替换或 HTML 实体解码。动态文本包含 `<` 等字符时，使用 CDATA，并处理输入中的 `]]>`，避免提前结束 CDATA；不要把任意文本直接拼接到标签或属性中。复杂数据组合也可以直接使用 Kotlin DSL。
+
+继续阅读[标签与属性参考](/reference/parser-tags/)查参数，或在[常见问题](/reference/faq/)中排查尺寸、换行与裁剪。

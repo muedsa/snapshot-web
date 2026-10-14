@@ -37,9 +37,11 @@ export default defineConfig({
           label: "开始使用",
           items: [
             { label: "概览", slug: "index" },
+            { label: "文档导读", slug: "guides/overview" },
             { label: "在线 Playground", link: "/playground/" },
-            { label: "安装与构建", slug: "guides/installation" },
             { label: "快速开始", slug: "guides/quickstart" },
+            { label: "安装与构建", slug: "guides/installation" },
+            { label: "完整模板示例", slug: "guides/examples" },
           ],
         },
         {
@@ -60,18 +62,22 @@ export default defineConfig({
         },
         {
           label: "布局 Widget API",
+          collapsed: true,
           items: [{ autogenerate: { directory: "widgets/layout" } }],
         },
         {
           label: "绘制与效果 Widget API",
+          collapsed: true,
           items: [{ autogenerate: { directory: "widgets/painting" } }],
         },
         {
           label: "图片 Widget API",
+          collapsed: true,
           items: [{ autogenerate: { directory: "widgets/image" } }],
         },
         {
           label: "文本 Widget API",
+          collapsed: true,
           items: [{ autogenerate: { directory: "widgets/text" } }],
         },
         {

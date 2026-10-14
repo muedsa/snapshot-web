@@ -74,8 +74,8 @@ Pos[3:18]~72: Attr [color] unsupported CSS color [not-a-color]
 | 条件 | 异常 |
 | --- | --- |
 | Snapshot 没有根 Widget | `IllegalStateException` |
-| 根布局尺寸为 0 | `IllegalArgumentException: layout size is empty` |
-| 根布局尺寸无限 | `IllegalArgumentException: layout size is infinite` |
+| 根布局尺寸为 0 | `IllegalArgumentException: Layout size is empty` |
+| 根布局尺寸无限 | `IllegalArgumentException: Layout size is infinite` |
 | 图片重复平铺预计超过 `ImageRepeatConfig.maxTileCount` | `IllegalArgumentException`；默认上限为 100,000 个矩形 |
 
 ## HTTP 服务错误映射
@@ -122,7 +122,7 @@ fun render(source: String): ByteArray =
     parser.parse(StringReader(source)).snapshot()
 ```
 
-`parse()` 使用 `@Synchronized`，所以共享实例是串行入口。同一个 Parser 可安全接收并发调用，但这些调用不会并行执行。高并发服务应使用多个实例或实例池；复用期间不要并发修改 `WidgetParserManager`。
+`parse()` 使用 `@Synchronized`，同一 Parser 的解析调用会依次执行；但返回元素后的 `createWidget()` / `snapshot()` 并未被这把锁串行化。上面的 `render()` 函数因此不是整个渲染流程的同步封装。应用仍需独立控制渲染并发，且复用期间不要并发修改 `WidgetParserManager` 或共享全局配置。
 
 ## 自定义标签
 

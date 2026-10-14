@@ -85,7 +85,7 @@ dependencies {
 快照版本会持续更新。需要忽略本地缓存并重新获取时运行：
 
 ```bash
-./gradlew --refresh-dependencies
+./gradlew build --refresh-dependencies
 ```
 
 ## 其他接入方式
@@ -140,5 +140,18 @@ includeBuild("../snapshot")
 ./gradlew :core:test -PincludeSamples
 ./gradlew :core:test -PincludeNetwork
 ```
+
+## 安装排错
+
+| 现象 | 优先检查 |
+| --- | --- |
+| GitHub Packages 返回 401 / 403 | 用户名与令牌是否正确，令牌是否具有 `read:packages` 及相应包的读取权限 |
+| 找不到 `snapshot-core` / `snapshot-parser` | 是否配置 GitHub Maven 仓库；当前不是 Maven Central 的稳定版本 |
+| 原生库加载失败或 `UnsatisfiedLinkError` | 是否声明与运行环境 OS / CPU 架构匹配的 `skiko-awt-runtime-*`；API 与 runtime 版本是否一致 |
+| 同为快照版本但 API 与文档不符 | 执行 `./gradlew build --refresh-dependencies` 刷新，并核对实际解析的依赖版本 |
+| 找不到 `MainKt` 或入口方法 | 是否应用 `application` 插件、配置主类，并将代码放入 `fun main()`；若有 package，主类需带包名 |
+| 能生成图片但中文缺字 | 在实际渲染环境安装或配置支持中文的字体，参见[字体与排版](/guides/media-text/#textstyle) |
+
+Windows PowerShell 中将 `./gradlew` 替换为 `.\gradlew.bat`。若依赖由 `settings.gradle.kts` 集中管理，将仓库配置放到该项目的 `dependencyResolutionManagement.repositories` 中。
 
 完成依赖配置后，继续阅读[快速开始](/guides/quickstart/)。

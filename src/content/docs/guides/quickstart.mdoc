@@ -5,7 +5,9 @@ description: 用 Kotlin 生成第一张 Snapshot 图片。
 
 ## 你将得到什么
 
-Snapshot 把一棵 Widget 树先布局，再交给 Skia 绘制，最后返回图片字节。最小的出图流程只有一个根节点：
+这篇指南面向已有 Kotlin/JVM Gradle 项目的读者：配置依赖后运行一个 `main()`，在项目目录得到 `320 × 180` 的红色 PNG。只想在线尝试时，可以先打开[完整模板示例](/guides/examples/)，无需安装 JVM 环境。
+
+下面是完整的 `src/main/kotlin/Main.kt`，不声明 package。先完成下一节的依赖配置，再运行它：
 
 ```kotlin
 import com.muedsa.snapshot.SnapshotPNG
@@ -13,25 +15,34 @@ import com.muedsa.snapshot.widget.Container
 import org.jetbrains.skia.Color
 import java.io.File
 
-File("out.png").writeBytes(
-    SnapshotPNG {
-        Container(width = 320f, height = 180f, color = Color.RED)
-    }
-)
+fun main() {
+    File("out.png").writeBytes(
+        SnapshotPNG {
+            Container(width = 320f, height = 180f, color = Color.RED)
+        }
+    )
+}
 ```
 
 ## 添加依赖
 
-项目当前通过 GitHub Packages 发布快照版本。先在用户级 `~/.gradle/gradle.properties` 配置凭据：
+准备 JDK 17 和 Gradle 项目，使用项目自带的 Wrapper 执行命令。Snapshot 库以 Java 11 为编译目标，下面的示例应用使用 JDK 17。
+
+项目通过 GitHub Packages 发布快照版本。先在用户级 `~/.gradle/gradle.properties` 配置具备 `read:packages` 权限的凭据（Windows 对应 `%USERPROFILE%\.gradle\gradle.properties`），不要将实际令牌提交到仓库：
 
 ```properties
 gpr.user=YOUR_GITHUB_USERNAME
 gpr.key=YOUR_CLASSIC_PAT
 ```
 
-然后在 `build.gradle.kts` 中添加仓库和依赖。以下以 Windows x64 为例；其他平台请在[安装与构建](/guides/installation/#从-github-packages-引入)中选择对应的 Skiko runtime：
+然后在 `build.gradle.kts` 中配置插件、仓库与依赖，已有项目合并相应配置即可。以下以 Windows x64 为例；其他平台请在[安装与构建](/guides/installation/#从-github-packages-引入)中选择对应的 Skiko runtime：
 
 ```kotlin
+plugins {
+    kotlin("jvm") version "2.4.20"
+    application
+}
+
 repositories {
     mavenCentral()
     maven { url = uri("https://maven.pkg.jetbrains.space/public/p/compose/dev") }
@@ -48,9 +59,28 @@ dependencies {
     implementation("com.muedsa.snapshot:snapshot-core:0.0.0-SNAPSHOT")
     implementation("org.jetbrains.skiko:skiko-awt-runtime-windows-x64:0.0.0-SNAPSHOT")
 }
+
+kotlin { jvmToolchain(17) }
+application { mainClass.set("MainKt") }
 ```
 
 如果要使用类 DOM 解析器，把依赖换为 `snapshot-parser`；它会传递 `core`，但仍需保留平台 runtime。Linux、macOS 或 ARM64 不能直接照抄上述 Windows x64 坐标。
+
+## 运行与检查输出
+
+在项目根目录运行：
+
+```powershell
+# Windows PowerShell
+.\gradlew.bat run
+```
+
+```bash
+# macOS / Linux
+./gradlew run
+```
+
+工作目录会出现 `out.png`。调整根 Container 的宽高后再次运行，即可改变输出尺寸。如果自行添加了 package，记得同步修改 `application.mainClass`。下载失败或原生库无法加载时，见[安装排错](/guides/installation/#安装排错)。
 
 ## 常见输出格式
 
@@ -66,7 +96,7 @@ SnapshotWEBP { /* Widget tree */ }
 
 ## 构建一张完整卡片
 
-下面的示例同时使用固定画布、内边距、圆角、Flex 布局与文本样式：
+下面替换 `Main.kt`，同时使用固定画布、内边距、圆角、Flex 布局与文本样式：
 
 ```kotlin
 import com.muedsa.geometry.BoxAlignment
@@ -81,7 +111,11 @@ import com.muedsa.snapshot.widget.text.Text
 import org.jetbrains.skia.FontStyle
 import java.io.File
 
-val image = SnapshotPNG(background = 0xFF020617.toInt()) {
+fun main() {
+    File("snapshot-card.png").writeBytes(createCard())
+}
+
+fun createCard(): ByteArray = SnapshotPNG(background = 0xFF020617.toInt()) {
     Container(
         width = 720f,
         height = 360f,
@@ -118,32 +152,34 @@ val image = SnapshotPNG(background = 0xFF020617.toInt()) {
         }
     }
 }
-
-File("snapshot-card.png").writeBytes(image)
 ```
 
 这里的根 Container 明确给出 `720 × 360`，所以输出图片就是该尺寸。背景先被填充为深色，Container 再绘制圆角卡片。
 
 ## 使用类 DOM 输入
 
-如果图片结构来自配置、模板或 HTTP 请求，可以使用 parser 模块：
+如果图片结构来自配置、模板或 HTTP 请求，可以使用 parser 模块。依赖改为 `snapshot-parser` 后，用下面代码替换 `Main.kt`：
 
 ```kotlin
 import com.muedsa.snapshot.parser.Parser
+import java.io.File
 import java.io.StringReader
 
-val source = """
-<Snapshot background="#020617" type="png">
-  <Container width="720" height="360" padding="36" color="#0F172A" borderRadius="28">
-    <Column crossAxisAlignment="START">
-      <Text color="#38BDF8" fontSize="18" fontStyle="BOLD">SNAPSHOT</Text>
-      <Text color="#F8FAFC" fontSize="42" fontStyle="BOLD">Layout first. Paint second.</Text>
-    </Column>
-  </Container>
-</Snapshot>
-""".trimIndent()
+fun main() {
+    val source = """
+        <Snapshot background="#020617" type="png">
+          <Container width="720" height="360" padding="36" color="#0F172A" borderRadius="28">
+            <Column crossAxisAlignment="START">
+              <Text color="#38BDF8" fontSize="18" fontStyle="BOLD">SNAPSHOT</Text>
+              <Text color="#F8FAFC" fontSize="42" fontStyle="BOLD">Layout first. Paint second.</Text>
+            </Column>
+          </Container>
+        </Snapshot>
+    """.trimIndent()
 
-val image = Parser().parse(StringReader(source)).snapshot()
+    val image = Parser().parse(StringReader(source)).snapshot()
+    File("parser-card.png").writeBytes(image)
+}
 ```
 
 {% aside type="note" title="Parser 是受控子集" %}

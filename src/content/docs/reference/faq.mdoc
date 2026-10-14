@@ -3,6 +3,17 @@ title: 常见问题
 description: 尺寸、布局、Parser、网络图片、文本和调试的常见问题。
 ---
 
+## 按现象查找
+
+| 现象 | 先看哪里 |
+| --- | --- |
+| 安装、下载或原生库加载失败 | [安装排错](/guides/installation/#安装排错) |
+| 出图尺寸不对、Flex 无法分配空间 | [约束与布局](/guides/layout/) |
+| 长文本不换行、宽度溢出 | [自适应文本完整示例](/guides/examples/#固定图标与自适应文本) |
+| 图片没有铺满或密度不对 | [默认适配与迁移](/guides/media-text/#默认适配与迁移) |
+| 语法或属性报错 | [Parser 错误分类](/reference/parser-errors/) |
+| 编辑器没有补全或提示 | [DSL 语言服务](/guides/language-server/) |
+
 ## 为什么空 `Container()` 报尺寸为空？
 
 无子节点、无约束的 Container 在无界根约束下会被限制为零尺寸，无法创建有效 Surface。给它非零的 `width` 和 `height`，或让子节点产生非零尺寸。其他布局仍可能因无界约束产生无限尺寸，两类异常应分别排查。
@@ -74,7 +85,7 @@ ColorFiltered 会依据可确定的子树绘制边界限制作用范围；但通
 
 ## Parser 可以复用吗？
 
-可以。`parse()` 会在每次调用前重置内部状态，解析失败后也能继续处理下一个文档。该方法使用 `@Synchronized`，所以同一实例的并发调用会串行执行；需要并行解析时使用多个实例或实例池。
+可以。`parse()` 会在每次调用前重置内部状态，解析失败后也能继续处理下一个文档。该方法使用 `@Synchronized`，只串行化解析调用；后续 `createWidget()` / `snapshot()` 不在该锁内，渲染并发仍需应用自行控制。详见 [Parser 实例生命周期](/reference/parser-errors/#parser-实例生命周期)。
 
 ## 网络图片是异步的吗？
 

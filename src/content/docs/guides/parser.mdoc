@@ -63,7 +63,7 @@ val first = parser.parse(StringReader(firstSource)).snapshot()
 val second = parser.parse(StringReader(secondSource)).snapshot()
 ```
 
-即使 `firstSource` 解析失败，下一次 `parse()` 仍会从干净状态开始。注意同一实例会串行处理并发调用；在高并发服务中，可按请求创建实例或建立 Parser 池，避免单实例成为吞吐瓶颈。复用期间不要修改它所使用的 `WidgetParserManager`。
+即使 `firstSource` 解析失败，下一次 `parse()` 仍会从干净状态开始。`@Synchronized` 仅串行化同一实例的 `parse()`，返回元素后的 `createWidget()` / `snapshot()` 不在该锁内；不要把它当作整个渲染服务的串行保证。复用期间不要并发修改 `WidgetParserManager`，渲染并发由应用按字体、缓存及资源使用情况单独控制。
 
 ## 一个更完整的模板
 

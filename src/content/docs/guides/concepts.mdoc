@@ -15,7 +15,7 @@ Widget 树 → RenderBox 树 → 布局尺寸 → Skia Canvas → PNG / JPEG / W
 
 | 类型 | 子节点 | 典型组件 |
 | --- | --- | --- |
-| 单子节点 | 1 个 | `Container`、`Padding`、`Align` |
+| 单子节点 | 最多 1 个 | `Container`、`Padding`、`Align` |
 | 多子节点 | 任意个 | `Row`、`Column`、`Stack`、`IndexedStack` |
 | 叶子节点 | 0 个 | `Text`、`RawImage`、`CachedNetworkImage` |
 | 父布局参数 | 0 或 1 个 | `Expanded`、`Flexible`、`Spacer`、`Positioned` |
@@ -72,7 +72,7 @@ fun ChildSlot.profileCard() {
 - 尺寸与坐标使用 Float 逻辑像素；
 - 最终 Surface 宽高向上取整；
 - `EdgeInsets` 表示四边空间；
-- `Offset`、`Size`、`Rect`、`Radius` 和 `Matrix44CMO` 位于 `com.muedsa.geometry`；
+- `Offset`、`Size`、`Radius` 和 `Matrix44CMO` 位于 `com.muedsa.geometry`；`Rect` 是 `org.jetbrains.skia.Rect`，几何包提供它的扩展函数；
 - 浮点测试应使用容差，不应直接比较复杂计算后的精确值。
 
 `Offset`（以及继承它的 `Size`）不再实现 `Comparable`，不能直接使用 `<`、`<=`、`>`、`>=` 比较二维值。请使用逐分量比较方法 `lessThan`、`lessThanOrEqual`、`greaterThan`、`greaterThanOrEqual`：
