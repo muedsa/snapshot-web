@@ -31,4 +31,4 @@ Consult these guides before working on related tasks:
 - `src/playground/snapshot-lsp-client.ts`：用 Monaco 自带的 `monaco.lsp` 客户端连接 Worker。
 - `src/playground/snapshot-lsp.worker.ts`：在 Web Worker 中启动 `@muedsa/snapshot-lsp/browser`。
 
-`@muedsa/snapshot-lsp` 来自 GitHub Packages（`@muedsa:registry=https://npm.pkg.github.com`），安装需要读取令牌：本地配置在全局 npm/pnpm 配置中，容器构建用 `SNAPSHOT_LSP_TOKEN` secret。修改语言目录前请先更新 snapshot-lsp 包版本。
+`@muedsa/snapshot-lsp` 来自 GitHub Packages（`@muedsa:registry=https://npm.pkg.github.com`），安装需要读取令牌：本地配置在全局 npm/pnpm 配置中，GitHub Actions 容器构建通过 BuildKit 的 `npm_token` secret 传入自动提供的 `GITHUB_TOKEN`；LSP npm 包的 Manage Actions access 需授予当前仓库至少 Read 权限。修改语言目录前请先更新 snapshot-lsp 包版本。

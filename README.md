@@ -307,13 +307,13 @@ docker run --rm -p 8080:80 snapshot-web
 - 向 `main` 分支提交 Pull Request 时，仅验证镜像能够构建，不会推送；
 - 也可以在 GitHub 仓库的 Actions 页面手动运行。
 
-工作流登录 GHCR 使用 GitHub 自动提供的 `GITHUB_TOKEN`。但镜像构建阶段会从 GitHub Packages 安装 `@muedsa/snapshot-lsp`，而 `GITHUB_TOKEN` 只能访问当前仓库的包，因此还需要在仓库 **Settings → Secrets and variables → Actions** 中添加 `SNAPSHOT_LSP_TOKEN`：一个对该包有读取权限（classic token 的 `read:packages`）的 Personal Access Token。
+工作流登录 GHCR 和从 GitHub Packages 安装 `@muedsa/snapshot-lsp` 均使用 GitHub 自动提供的 `GITHUB_TOKEN`，不再依赖自定义的 `SNAPSHOT_LSP_TOKEN`。`GITHUB_TOKEN` 可以读取明确授权给当前仓库的其他包：在 **LSP npm 包的 Package settings → Manage Actions access** 中添加本仓库，并授予至少 **Read** 权限。仅拥有 LSP 源码仓库的访问权限不等于拥有包的 Actions 读取权限，详见 [GitHub Packages 的访问控制说明](https://docs.github.com/en/packages/learn-github-packages/configuring-a-packages-access-control-and-visibility#ensuring-workflow-access-to-your-package)。
 
 Dockerfile 通过 BuildKit secret 读取该令牌，写入用户级 `$HOME/.npmrc` 后执行安装，并在同一条 `RUN` 指令里删除。构建层只记录该指令前后的文件系统差异，所以令牌不会出现在镜像层、镜像历史或构建缓存中；它只用于安装依赖，不参与站点构建。
 
-需要注意：来自 fork 的 Pull Request 拿不到仓库 Secrets，这类 PR 的镜像构建会因缺少令牌而失败；同仓库分支的 PR 不受影响。
+Dependabot PR 的镜像构建也使用自动提供的 `GITHUB_TOKEN`，无需在 Actions 或 Dependabot Secrets 中另配包读取令牌。下载依赖只需要 `packages: read` 和包对本仓库的 Read 授权；PR 仍仅验证镜像构建，不登录或推送 GHCR。
 
-仓库的 Actions 权限需要允许工作流写入 Packages；如果组织策略覆盖了仓库设置，还需要由组织管理员开放相应权限。
+当前工作流声明的 `packages: write` 包含读取权限，并用于非 PR 运行时发布 GHCR 镜像。如果组织策略限制工作流的 Packages 权限，需要由组织管理员配置相应权限。
 
 首次推送 `main` 分支并等待工作流完成后，可以运行：
 

@@ -67,7 +67,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
-          # @muedsa/snapshot-lsp 位于 GitHub Packages，安装时需要可读取该包的令牌
-          # （GITHUB_TOKEN 只覆盖当前仓库的包，读不到 muedsa/snapshot-lsp 的包）。
+          # LSP 包的 Package settings → Manage Actions access 需授予当前仓库 Read 权限。
+          # 使用自动提供的 GITHUB_TOKEN，Dependabot PR 无需额外配置自定义令牌。
           secrets: |
-            npm_token=${{ secrets.SNAPSHOT_LSP_TOKEN }}
+            npm_token=${{ secrets.GITHUB_TOKEN }}
