@@ -17,7 +17,8 @@ const monarchLanguage: Monaco.languages.IMonarchLanguage = {
       [/<!\[CDATA\[/, 'string.quote', '@cdata'],
       // 分组动作数组按捕获组一一对应（不含整体匹配），且分组需连续覆盖整段匹配。
       [/(<\/)([A-Za-z][\w:.-]*)(\s*>)/, ['tag.delimiter', 'tag', 'tag.delimiter']],
-      [/(<\/?)([A-Za-z][\w:.-]*)/, ['tag.delimiter', 'tag'], '@tag'],
+      // 分组规则的状态切换应放在分组动作上；数组后的第三项不会应用到分组。
+      [/(<\/?)([A-Za-z][\w:.-]*)/, ['tag.delimiter', { token: 'tag', next: '@tag' }]],
       [/</, 'tag.delimiter'],
       [/[^<]+/, ''],
     ],
@@ -27,10 +28,18 @@ const monarchLanguage: Monaco.languages.IMonarchLanguage = {
       [/\/>/, 'tag.delimiter', '@pop'],
       [/>/, 'tag.delimiter', '@pop'],
       [/[A-Za-z_][\w:.-]*/, 'attribute.name'],
-      [/=/, 'delimiter'],
-      [/"/, 'string.quote', '@valueDouble'],
-      [/'/, 'string.quote', '@valueSingle'],
+      [/=/, 'delimiter', '@value'],
       [/[^\s"'>/]+/, 'string'],
+    ],
+    // 等号后的取值需要独立状态，避免将 URL 中的单词当成属性名、将 / 当成关闭标记。
+    value: [
+      [/\s+/, ''],
+      [/"/, { token: 'string.quote', switchTo: '@valueDouble' }],
+      [/'/, { token: 'string.quote', switchTo: '@valueSingle' }],
+      [/>/, { token: '@rematch', next: '@pop' }],
+      // 与 Parser 一致：无引号值以空白或 > 结束，/ 属于值。
+      // 自闭合应写 url=https://example.com/a.png />，或使用引号。
+      [/[^\s>]+/, 'string', '@pop'],
     ],
     // 属性取值：颜色、数值单独着色，其余按字符串处理。
     valueDouble: [

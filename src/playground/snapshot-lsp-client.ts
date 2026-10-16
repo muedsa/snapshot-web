@@ -3,6 +3,7 @@
 // 文档同步（didOpen/didChange/didClose）、补全、悬停与 publishDiagnostics → 编辑器标记。
 import * as monaco from 'monaco-editor';
 import SnapshotLspWorker from './snapshot-lsp.worker?worker';
+import { withSnapshotLspCapabilities } from './snapshot-lsp-capabilities';
 
 type SnapshotLspTransport = ReturnType<typeof monaco.lsp.createTransportToWorker>;
 type SnapshotLspMessage = Parameters<SnapshotLspTransport['send']>[0];
@@ -42,7 +43,7 @@ export function connectSnapshotLsp(): SnapshotLspConnection {
     toString: () => transport.toString(),
     send: (message: SnapshotLspMessage) => {
       if (message.method === 'initialize' && message.id !== undefined && message.id !== null) initializeId = message.id;
-      return transport.send(message);
+      return transport.send(withSnapshotLspCapabilities(message));
     },
     setListener: (listener: SnapshotLspListener | undefined) => {
       transport.setListener((message) => {

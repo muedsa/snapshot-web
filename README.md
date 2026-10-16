@@ -88,6 +88,7 @@ pnpm preview
 | `pnpm docs:test` | 运行参数覆盖检查器的单元测试 |
 | `pnpm docs:coverage` | 对照相邻 Snapshot 源码检查公共配置与 Parser 文本/渐变的参数表覆盖 |
 | `pnpm docs:links` | 检查已构建页面的站内链接、锚点和资源路径 |
+| `pnpm playground:test` | 验证 LSP Worker 协议、补全能力适配与真实 Monarch 高亮 |
 | `pnpm astro -- --help` | 查看 Astro CLI 帮助 |
 
 ## 目录结构
@@ -123,13 +124,36 @@ pnpm preview
 
 ```text
 src/playground/
-├── playground.ts             # 编辑器、示例、运行与诊断计数等主逻辑
-├── snapshot-language.ts      # snapshot 语言的 Monarch 词法、注释/括号配置与深浅两套主题
-├── snapshot-lsp-client.ts    # 用 Monaco 自带的 monaco.lsp 客户端连接语言服务
-└── snapshot-lsp.worker.ts    # 在 Worker 中启动 @muedsa/snapshot-lsp/browser
+├── playground.ts               # 编辑器、示例、运行与诊断计数等主逻辑
+├── snapshot-language.ts        # snapshot 语言的 Monarch 词法、注释/括号配置与深浅两套主题
+├── snapshot-lsp-client.ts      # 用 Monaco 自带的 monaco.lsp 客户端连接语言服务
+├── snapshot-lsp-capabilities.ts # 为 Monaco 0.56 补充 snippet 能力声明
+└── snapshot-lsp.worker.ts      # 在 Worker 中启动 @muedsa/snapshot-lsp/browser
 ```
 
 Monaco 与语言服务只在访问 `/playground/` 时懒加载；编辑器主题跟随站点的深色/浅色切换。
+
+当前使用 `@muedsa/snapshot-lsp@0.2.1`。升级包时同步更新 `package.json`、`pnpm-lock.yaml` 和 `pnpm-workspace.yaml` 中的 `minimumReleaseAgeExclude`，不要仅修改版本号而保留旧锁文件。
+
+0.2.1 按客户端能力决定是否返回 snippet。Monaco 0.56 支持占位符，但内置 LSP 客户端未声明 `snippetSupport`，因此本项目在初始化报文中补充该能力。补全结果仍交给 Monaco 原生处理，包括多行属性值的 `additionalTextEdits`；不要再注册一套重复的补全提供器。升级 Monaco 时需重新确认此适配是否仍有必要。
+
+无引号 URL 中的 `/` 是属性值的一部分。自闭合标签应写成 `<Image url=https://example.com/a.png />`，或使用引号 `<Image url="https://example.com/a.png"/>`。高亮只负责着色，语法与取值诊断由 LSP 提供，最终渲染仍以服务端 Parser 为准。
+
+### 验证编辑体验
+
+`pnpm playground:test` 使用 Node 的 TypeScript 类型剥离功能加载本地配置；测试覆盖真实包的浏览器入口（Node Worker + MessagePort）、snippet 能力协商、补全编辑范围、诊断更新及 Monaco Monarch 词法引擎。它不启动浏览器，不验证 UI 接受补全的行为，也不请求渲染服务。
+
+修改编辑器集成后，还应在 `/playground/` 手动验证下表。`|` 仅表示光标位置，不要输入；可用 `Ctrl+Space` 唤起补全。
+
+| 输入与操作 | 预期结果 |
+| --- | --- |
+| `<Snapshot><Container wi\|`，接受 `width`，输入 `100` | 得到 `width="100"`，光标位于引号内，无字面量 `${1}` |
+| `<Snapshot><Container wi\|dht="100"/></Snapshot>`，接受 `width` | 仅修正属性名，保留原赋值 |
+| `textDirection="` 后换行输入 `R\|`，再换行输入 `BAD"`，接受 `RTL` | 整个属性值替换为 `"RTL"`，旧值及内部换行全部移除 |
+| `<Snapshot><Text></Te\|` 后换行输入 `</Snapshot>`，接受 `Text` | 补齐 `</Text>`，不吞掉下一行 |
+| `<Snapshot><Image url=https://example.com/a.png fit="CO\|" /></Snapshot>` | 可补全 `CONTAIN` / `COVER`，URL 与后续属性正确着色 |
+
+测试前保存自己的编辑器草稿，完成后恢复；不必点击“运行”。浏览器语言服务与 Open Snapshot 的部署版本相互独立，前端测试通过不代表后端已同步支持全部特性。
 
 ## 编写和维护文档
 
@@ -208,6 +232,7 @@ sidebar:
 ```bash
 pnpm docs:test
 pnpm docs:coverage
+pnpm playground:test
 pnpm build
 pnpm docs:links
 git diff --check

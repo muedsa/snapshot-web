@@ -55,6 +55,8 @@ description: 类 DOM 解析器支持的全部内置标签、属性格式和默�
 
 ## 通用属性格式
 
+推荐使用带引号的属性值。无引号的 URL / 路径可以包含 `/`，但后接自闭合标记时必须用空白分隔，例如 `<Image url=https://example.com/a.png />`；带引号时可以直接写 `url="https://example.com/a.png"/>`。不要用 HTML 实体代替实际引号或字符，Parser 不做实体解码。详见[属性引号与自闭合](/guides/parser/#属性引号与自闭合)。
+
 ### 颜色
 
 颜色属性支持常用 CSS 写法：

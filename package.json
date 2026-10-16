@@ -10,14 +10,15 @@
     "astro": "astro",
     "docs:coverage": "node scripts/check-doc-coverage.mjs",
     "docs:test": "node --test scripts/check-doc-coverage.test.mjs",
-    "docs:links": "node scripts/check-doc-links.mjs"
+    "docs:links": "node scripts/check-doc-links.mjs",
+    "playground:test": "node --experimental-strip-types --test test/playground-*.test.mjs"
   },
   "dependencies": {
     "@astrojs/markdoc": "^2.0.8",
     "@astrojs/react": "^6.0.6",
     "@astrojs/starlight": "^0.42.2",
     "@astrojs/starlight-markdoc": "^0.7.0",
-    "@muedsa/snapshot-lsp": "^0.2.0",
+    "@muedsa/snapshot-lsp": "^0.2.1",
     "@tailwindcss/vite": "^4.3.3",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
