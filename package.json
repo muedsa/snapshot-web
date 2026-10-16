@@ -14,7 +14,7 @@
     "playground:test": "node --experimental-strip-types --test test/playground-*.test.mjs"
   },
   "dependencies": {
-    "@astrojs/markdoc": "^2.0.8",
+    "@astrojs/markdoc": "^2.0.11",
     "@astrojs/react": "^6.0.6",
     "@astrojs/starlight": "^0.42.2",
     "@astrojs/starlight-markdoc": "^0.7.0",
