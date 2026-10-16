@@ -82,6 +82,20 @@ ColorFiltered 会依据可确定的子树绘制边界限制作用范围；但通
 
 未知属性会被静默忽略。检查拼写、大小写和属性格式；布尔值要显式写 `"true"`。某些属性错误直到 `createWidget()` 或 `snapshot()` 才会出现。
 
+属性诊断增强也没有将布尔解析改成严格校验：已赋值的文本只有 `true`（忽略大小写）转换为 true，其余文本转换为 false，不会因为拼写错误自动报错。
+
+## 属性报错时，怎样知道正确写法？
+
+包含提交 `a7974dd` 的 Parser 会在属性错误提示中追加实际输入、格式、示例和适用的可用值。例如 `ClipPath.fit` 只提示实际支持的 `FILL` / `CONTAIN`，不是全部图片适配枚举。
+
+程序中可读取 `ParseException.attributeDiagnostic`；位置仍读 `pos`，不要拆分 `message`。其中 `attributePresent` 与 `rawValue` 可区分属性缺失、未赋值和空字符串。完整字段与示例见[结构化诊断](/reference/parser-errors/#读取结构化诊断)。在线服务是否返回这些信息取决于后端版本及其响应协议。
+
+## 为什么错误没有 attributeDiagnostic？
+
+结构错误、组件组合约束和统一属性入口之外的校验可能没有该字段；自定义解析器直接抛出的 `ParseException` 也不会自动补充属性诊断。即使有诊断，自定义属性的 `valueInfo` 也可为 null，直接解析属性 Map 时的 `elementName` 也可为 null。
+
+调用方应保留 `message` 和 `pos` 的回退展示。只有首个错误会被抛出，不会一次列出全部问题，详见[诊断边界](/reference/parser-errors/#诊断边界)。
+
 ## 文本中怎样写 `<` 和 `>`？
 
 使用 CDATA。解析器不实现 HTML 实体解码，因此 `&lt;` 不会变成 `<`。

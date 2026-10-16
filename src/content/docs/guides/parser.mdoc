@@ -158,7 +158,13 @@ Parser 已覆盖常用布局、Flex、约束、变换、裁剪与基础滤镜能
 
 ## 错误处理
 
-结构错误和属性错误会包装为 `ParseException`，错误信息带有行、列和偏移。根标签属性在 `parse()` 时校验，其他标签属性在 `createWidget()` / `snapshot()` 时校验；空文档也会抛 `ParseException`。HTTP 服务可以把它作为 400 Bad Request；布局尺寸为空或无限则更适合作为 422 Unprocessable Content。
+解析与建树阶段可捕获 `ParseException`：`pos` 提供行、列和偏移，`message` 提供可读提示，`cause` 保留原始异常；`toString()` 会把位置加到提示前。根标签属性在 `parse()` 时校验，其他标签属性在 `createWidget()` / `snapshot()` 时校验；空文档也会抛 `ParseException`。
+
+包含提交 `a7974dd` 的 Parser 还会在属性错误后补充中文填写说明。例如 `mainAxisAlignment="MIDDLE"` 会提示实际值、枚举格式，以及 `START`、`END`、`CENTER` 等可用值。需要按字段展示时，读取可选的 `attributeDiagnostic`，位置仍从 `pos` 读取。
+
+属性缺失、只写名称和空字符串可以区分；结构错误或组件组合约束不一定有属性诊断。Parser 仍然首错即抛，语法、默认值和布尔转换规则保持不变。完整字段、可运行的捕获示例及版本边界见[属性错误提示与结构化诊断](/reference/parser-errors/#属性错误提示)。
+
+自建 HTTP 服务可以将 `ParseException` 映射为 400 Bad Request；布局尺寸为空或无限则更适合作为 422 Unprocessable Content。已有服务以其实际响应协议为准。
 
 ## 安全边界
 

@@ -98,4 +98,6 @@ const items = service.completions(text, { line: 0, character: text.length }, und
 
 语言服务只做静态检查，不会解码图片、执行布局或生成图片。复杂的属性组合约束和最终解析结果仍以 `snapshot-parser` 为准；语言服务的提示不能替代实际解析与渲染测试。
 
+Parser 的 [`ParseException.attributeDiagnostic`](/reference/parser-errors/#读取结构化诊断) 是 Kotlin Parser 提供的错误信息，与编辑器的 LSP 诊断是两套接口。新增属性填写说明不会自动扩展 LSP 协议或 HTTP 响应字段，在线服务的提示仍取决于后端部署版本。
+
 如果为 Parser 注册了自定义标签，还需要单独扩展语言服务的标签目录；仅注册 `WidgetParserManager` 不会自动让编辑器认识新标签。扩展接口和最新接入说明见 [`snapshot-lsp` 项目](https://github.com/muedsa/snapshot-lsp)。
