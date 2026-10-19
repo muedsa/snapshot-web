@@ -160,10 +160,34 @@ const examplesJson = JSON.stringify(examples).replace(/</g, '\\u003c');
           <span>服务端正在解析并渲染…</span>
         </div>
         <img data-preview-image hidden alt="Snapshot DSL 渲染结果" />
-        <div class="error-state" data-error-state hidden role="alert">
+        <div class="error-state" data-error-state hidden role="alert" tabindex="0">
           <span class="error-code" data-error-code>RENDER_ERROR</span>
           <strong data-error-title>渲染失败</strong>
           <p data-error-message></p>
+          <div class="attribute-diagnostic" data-diagnostic hidden>
+            <div class="diagnostic-heading">
+              <h3>属性诊断</h3>
+              <button class="button button-quiet" type="button" data-diagnostic-locate hidden>定位到错误</button>
+            </div>
+            <p class="diagnostic-note">服务端每次只报告首个错误，修正后请重新运行。</p>
+            <p class="diagnostic-note" data-diagnostic-truncated hidden>部分提示已裁剪或省略，以上内容可能不完整。</p>
+            <p class="diagnostic-note" data-diagnostic-location-note hidden></p>
+            <dl>
+              <div data-diagnostic-row><dt>属性</dt><dd data-diagnostic-attribute></dd></div>
+              <div data-diagnostic-row><dt>所在标签</dt><dd data-diagnostic-element></dd></div>
+              <div data-diagnostic-row><dt>值状态</dt><dd data-diagnostic-state></dd></div>
+              <div data-diagnostic-row><dt>提交时位置</dt><dd data-diagnostic-position></dd></div>
+              <div data-diagnostic-row><dt>期望格式</dt><dd data-diagnostic-format></dd></div>
+              <div data-diagnostic-row>
+                <dt>可选项</dt>
+                <dd>
+                  <span class="diagnostic-values" data-diagnostic-values></span>
+                  <p class="diagnostic-note">复合格式中的可选项可能只适用于其中一个字段，请结合格式和示例填写。</p>
+                </dd>
+              </div>
+              <div data-diagnostic-row><dt>填写示例</dt><dd data-diagnostic-examples></dd></div>
+            </dl>
+          </div>
           <span class="request-id" data-request-id></span>
         </div>
       </div>
@@ -602,11 +626,34 @@ const examplesJson = JSON.stringify(examples).replace(/</g, '\\u003c');
 
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  .error-state { gap: 0.55rem; }
+  .error-state { width: 100%; min-width: 0; max-height: 34rem; gap: 0.55rem; overflow: auto; overflow-wrap: anywhere; padding: 0.25rem; }
   .error-state strong { color: #fecdd3; font-size: 1rem; }
-  .error-state p { margin: 0; color: var(--sl-color-gray-2); font-family: var(--__sl-font-mono); font-size: 0.75rem; line-height: 1.55; white-space: pre-wrap; }
+  .error-state p { max-width: 100%; margin: 0; color: var(--sl-color-gray-2); font-family: var(--__sl-font-mono); font-size: 0.75rem; line-height: 1.55; white-space: pre-wrap; }
   .error-code { border-radius: 0.35rem; padding: 0.22rem 0.45rem; color: #fda4af; background: rgb(244 63 94 / 14%); font-family: var(--__sl-font-mono); font-size: 0.66rem; font-weight: 800; }
   .request-id { color: var(--sl-color-gray-3); font-family: var(--__sl-font-mono); font-size: 0.65rem; }
+
+  .attribute-diagnostic {
+    display: grid;
+    width: 100%;
+    min-width: 0;
+    gap: 0.65rem;
+    border: 1px solid var(--pg-border);
+    border-radius: 0.65rem;
+    padding: 0.9rem;
+    background: var(--pg-surface);
+    color: var(--sl-color-gray-1);
+    text-align: left;
+  }
+
+  .attribute-diagnostic h3 { margin: 0; font-size: 0.88rem; }
+  .diagnostic-heading { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+  .attribute-diagnostic dl { display: grid; gap: 0.6rem; margin: 0; font-size: 0.75rem; }
+  .attribute-diagnostic dl > div { display: grid; grid-template-columns: 5rem minmax(0, 1fr); align-items: baseline; gap: 0.5rem; }
+  .attribute-diagnostic dt { color: var(--sl-color-gray-2); font-weight: 650; }
+  .attribute-diagnostic dd { margin: 0; font-family: var(--__sl-font-mono); white-space: pre-wrap; }
+  .diagnostic-values { display: block; }
+  .error-state .diagnostic-note { font-family: inherit; font-size: 0.72rem; white-space: normal; }
+  .attribute-diagnostic .button { justify-self: start; }
 
   .result-meta {
     display: flex;
@@ -662,6 +709,8 @@ const examplesJson = JSON.stringify(examples).replace(/</g, '\\u003c');
   :global([data-theme='light']) .problems[data-level='ok'] { color: #475569; background: #f1f5f9; }
   :global([data-theme='light']) .problems[data-level='warning'] { color: #b45309; background: rgb(180 83 9 / 10%); }
   :global([data-theme='light']) .problems[data-level='error'] { color: #be123c; background: rgb(190 18 60 / 10%); }
+  :global([data-theme='light']) .error-state strong { color: #9f1239; }
+  :global([data-theme='light']) .error-code { color: #be123c; background: rgb(190 18 60 / 10%); }
 
   @media (max-width: 62rem) {
     .endpoint { display: none; }

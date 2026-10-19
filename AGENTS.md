@@ -27,6 +27,7 @@ Consult these guides before working on related tasks:
 
 - `src/components/SnapshotPlayground.astro`：页面结构、样式与懒加载入口（Monaco 在页面加载后动态 `import`）。
 - `src/playground/playground.ts`：编辑器、示例、运行（调用 Open Snapshot 服务）与诊断计数。
+- `src/playground/render-diagnostics.ts`：服务端可选属性诊断的解析、文本展示与请求版本绑定的定位；错误类型按 `code` 判断，不能解析 `message` 文案。服务端标记与 LSP 标记分开管理。
 - `src/playground/snapshot-language.ts`：`snapshot` 语言的 Monarch 词法、注释/括号配置与深浅两套主题。
 - `src/playground/snapshot-lsp-client.ts`：用 Monaco 自带的 `monaco.lsp` 客户端连接 Worker。
 - `src/playground/snapshot-lsp.worker.ts`：在 Web Worker 中启动 `@muedsa/snapshot-lsp/browser`。

@@ -88,7 +88,7 @@ pnpm preview
 | `pnpm docs:test` | 运行参数覆盖检查器的单元测试 |
 | `pnpm docs:coverage` | 对照相邻 Snapshot 源码检查公共配置与 Parser 文本/渐变的参数表覆盖 |
 | `pnpm docs:links` | 检查已构建页面的站内链接、锚点和资源路径 |
-| `pnpm playground:test` | 验证 LSP Worker 协议、补全能力适配与真实 Monarch 高亮 |
+| `pnpm playground:test` | 验证 LSP Worker 协议、补全、高亮及服务端属性诊断适配 |
 | `pnpm astro -- --help` | 查看 Astro CLI 帮助 |
 
 ## 目录结构
@@ -125,6 +125,7 @@ pnpm preview
 ```text
 src/playground/
 ├── playground.ts               # 编辑器、示例、运行与诊断计数等主逻辑
+├── render-diagnostics.ts       # 服务端错误协议、属性提示与请求版本绑定的定位
 ├── snapshot-language.ts        # snapshot 语言的 Monarch 词法、注释/括号配置与深浅两套主题
 ├── snapshot-lsp-client.ts      # 用 Monaco 自带的 monaco.lsp 客户端连接语言服务
 ├── snapshot-lsp-capabilities.ts # 为 Monaco 0.56 补充 snippet 能力声明
@@ -139,9 +140,17 @@ Monaco 与语言服务只在访问 `/playground/` 时懒加载；编辑器主题
 
 无引号 URL 中的 `/` 是属性值的一部分。自闭合标签应写成 `<Image url=https://example.com/a.png />`，或使用引号 `<Image url="https://example.com/a.png"/>`。高亮只负责着色，语法与取值诊断由 LSP 提供，最终渲染仍以服务端 Parser 为准。
 
+### 服务端属性诊断
+
+运行失败时按响应的 `code` 显示错误类型，并保留 `message` 和请求 ID。服务端返回可选的 `diagnostic` 时，额外展示属性、标签、值状态、期望格式、可选项和填写示例；`truncated: true` 会提示内容不完整。复合格式中的可选项可能只描述某个字段，不会直接作为整个属性值自动替换。`IMAGE_LOAD_ERROR` 即使附带属性提示，仍显示为图片加载失败。
+
+完整有效的位置会在 Monaco 中添加来源为 `Open Snapshot` 的错误标记，点击“定位到错误”跳转到本次提交的对应位置。偏移从 0 开始，行列从 1 开始，按 UTF-16 代码单元计算。服务端只返回一个点，前端不推断属性值范围；缺少位置时仍可阅读诊断。编辑代码后立即移除服务端标记，并提示重新运行；请求期间的编辑同样使旧位置失效。LSP 的实时诊断独立保留。
+
+旧版服务、结构错误和组件约束错误可能没有 `diagnostic`，此时继续展示普通错误，不从消息中提取字段或位置。每次服务响应只报告首个错误；修正后需要重新运行。前端默认请求 JSON 错误，不启用 `errorImage`。这些能力取决于实际服务返回的数据，本地适配通过不代表线上服务已经部署了相应版本。
+
 ### 验证编辑体验
 
-`pnpm playground:test` 使用 Node 的 TypeScript 类型剥离功能加载本地配置；测试覆盖真实包的浏览器入口（Node Worker + MessagePort）、snippet 能力协商、补全编辑范围、诊断更新及 Monaco Monarch 词法引擎。它不启动浏览器，不验证 UI 接受补全的行为，也不请求渲染服务。
+`pnpm playground:test` 使用 Node 的 TypeScript 类型剥离功能加载本地配置；测试覆盖真实包的浏览器入口（Node Worker + MessagePort）、snippet 能力协商、补全编辑范围、诊断更新及 Monaco Monarch 词法引擎，也覆盖服务端新旧错误协议、UTF-16 位置、请求版本变化、复合属性提示和文本安全输出。属性面板测试使用文本槽位和事件替身；该命令不启动浏览器，不验证真实 DOM 布局或 UI 接受补全的行为，也不请求渲染服务。
 
 修改编辑器集成后，还应在 `/playground/` 手动验证下表。`|` 仅表示光标位置，不要输入；可用 `Ctrl+Space` 唤起补全。
 

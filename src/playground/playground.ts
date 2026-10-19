@@ -3,11 +3,13 @@ import * as monaco from 'monaco-editor';
 import EditorWorker from 'monaco-editor/editor/editor.worker?worker';
 import { SNAPSHOT_LANGUAGE_ID, registerSnapshotLanguage, snapshotThemeFor } from './snapshot-language';
 import { connectSnapshotLsp } from './snapshot-lsp-client';
+import { createRenderDiagnostics, parseRenderError, renderErrorTitle, type RenderError, type RenderSource } from './render-diagnostics';
 
 type Example = { id: string; label: string; source: string };
 
 const STORAGE_KEY = 'snapshot-playground-source';
 const MODEL_URI = 'inmemory://snapshot/playground.snapshot';
+const RENDER_MARKER_OWNER = 'snapshot-render';
 
 const PROBLEM_LEVELS = {
   ok: { label: '无问题' },
@@ -92,6 +94,26 @@ export function startPlayground(root: HTMLElement): void {
 
   root.dataset.editorReady = '';
 
+  const renderDiagnostics = createRenderDiagnostics(root, {
+    getVersionId: () => model.getVersionId(),
+    setMarker: (marker) => monaco.editor.setModelMarkers(model, RENDER_MARKER_OWNER, marker ? [{
+      severity: monaco.MarkerSeverity.Error,
+      source: 'Open Snapshot',
+      code: marker.code,
+      message: marker.message,
+      startLineNumber: marker.position.lineNumber,
+      startColumn: marker.position.column,
+      // 接口只提供一个位置，不推断整段属性值的范围。
+      endLineNumber: marker.position.lineNumber,
+      endColumn: marker.position.column,
+    }] : []),
+    revealPosition: (position) => {
+      editor.setPosition(position);
+      editor.revealPositionInCenter(position);
+      editor.focus();
+    },
+  });
+
   let imageUrl = '';
   let imageBlob: Blob | undefined;
   let controller: AbortController | undefined;
@@ -148,6 +170,7 @@ export function startPlayground(root: HTMLElement): void {
   const applyTheme = () => monaco.editor.setTheme(storedTheme());
 
   model.onDidChangeContent(() => {
+    renderDiagnostics.onContentChange();
     updateLineCount();
     persist();
   });
@@ -222,17 +245,16 @@ export function startPlayground(root: HTMLElement): void {
     if (downloadButton instanceof HTMLButtonElement) downloadButton.disabled = true;
   };
 
-  type ErrorPayload = { code?: string; message?: string; requestId?: string } | undefined;
-
-  const showError = (payload: ErrorPayload, fallbackMessage: string) => {
+  const showError = (payload: RenderError | undefined, fallbackMessage: string, snapshot?: RenderSource) => {
     clearImage();
     setHidden(emptyState, true);
     setHidden(loadingState, true);
     setHidden(errorState, false);
     setHidden(resultMeta, true);
     if (errorCode instanceof HTMLElement) errorCode.textContent = payload?.code || 'REQUEST_FAILED';
-    if (errorTitle instanceof HTMLElement) errorTitle.textContent = '渲染失败';
+    if (errorTitle instanceof HTMLElement) errorTitle.textContent = renderErrorTitle(payload?.code);
     if (errorMessage instanceof HTMLElement) errorMessage.textContent = payload?.message || fallbackMessage;
+    renderDiagnostics.show(payload, snapshot);
     if (requestId instanceof HTMLElement) {
       requestId.textContent = payload?.requestId ? `Request ID: ${payload.requestId}` : '';
     }
@@ -242,9 +264,11 @@ export function startPlayground(root: HTMLElement): void {
   const render = async () => {
     const source = model.getValue();
     if (!apiUrl || !source.trim()) return;
+    const snapshot: RenderSource = { source, version: model.getVersionId() };
     controller?.abort();
     const requestController = new AbortController();
     controller = requestController;
+    renderDiagnostics.clear();
 
     if (renderButton instanceof HTMLButtonElement) renderButton.disabled = true;
     if (renderLabel instanceof HTMLElement) renderLabel.textContent = '运行中';
@@ -269,14 +293,14 @@ export function startPlayground(root: HTMLElement): void {
       const contentType = response.headers.get('content-type') || '';
 
       if (!response.ok || !contentType.startsWith('image/')) {
-        let payload: ErrorPayload;
+        let payload: RenderError | undefined;
         try {
-          payload = await response.json();
+          payload = parseRenderError(await response.json());
         } catch {
           payload = undefined;
         }
         if (requestController.signal.aborted) return;
-        showError(payload, `服务返回 ${response.status} ${response.statusText || ''}`.trim());
+        showError(payload, `服务返回 ${response.status} ${response.statusText || ''}`.trim(), snapshot);
         showResponseTiming(response, performance.now() - startedAt);
         setHidden(resultMeta, false);
         return;
@@ -320,6 +344,12 @@ export function startPlayground(root: HTMLElement): void {
   };
 
   const loadExample = (source: string) => {
+    // 重置或切换示例后，不再展示旧请求的结果。
+    controller?.abort();
+    controller = undefined;
+    if (renderButton instanceof HTMLButtonElement) renderButton.disabled = false;
+    if (renderLabel instanceof HTMLElement) renderLabel.textContent = '运行';
+    renderDiagnostics.clear();
     model.setValue(source);
     editor.setPosition({ lineNumber: 1, column: 1 });
     editor.revealLine(1);
@@ -393,6 +423,8 @@ export function startPlayground(root: HTMLElement): void {
   });
 
   window.addEventListener('pagehide', () => {
+    controller?.abort();
+    renderDiagnostics.dispose();
     themeObserver.disconnect();
     window.removeEventListener('keydown', onWindowKeyDown);
     clearImage();
