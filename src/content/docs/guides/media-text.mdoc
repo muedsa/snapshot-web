@@ -1,6 +1,6 @@
 ---
 title: 图片、文本与富文本
-description: 图片来源、缓存、适配、TextStyle、TextSpan 和行内图片。
+description: 图片来源与适配、文本基线、中英文与图文混排、TextStyle 和行内图片。
 ---
 
 ## 图片 Widget
@@ -73,6 +73,12 @@ RawImage(
 
 ## 普通文本
 
+{% aside type="caution" title="先区分文本基线与组件边缘" %}
+Text / RichText 按字体度量和基线排字，布局盒的顶部、底部不等于可见笔画的顶部、底部。同样字号也不保证同样高度：中英文混排可能看起来高低错位；Text 与图标、Image 同行时，盒子已居中或底部已对齐，文字仍可能偏上或偏下；换到另一平台的默认字体后，垂直位置也可能变化。
+
+设计混排布局时应明确要对齐的是文字基线、组件盒，还是可见内容；不要仅靠设置相同的 `fontSize` 或 `height` 判断效果。下面给出推荐写法，度量原理见[文本基线与可见边界](/reference/text-layout/#文本基线与可见边界)，文本模板见[DSL 基线与混排](/reference/parser-text/#基线与混排)。
+{% /aside %}
+
 文本换行需要有限的可用宽度。Row 中通常用 Expanded 包住 Text 或其外层 Column；Column 的弹性子节点会保留父级最大宽度。完整示例见[固定图标与自适应文本](/guides/examples/#固定图标与自适应文本)。
 
 | 需求 | 设置 |
@@ -99,6 +105,59 @@ Text(
 
 `Text` 是对单个根 `TextSpan` 的便捷封装。常用参数：对齐方向、换行开关、溢出策略、最大行数、StrutStyle、宽度基准和高度模式。
 
+## 文本基线与混排
+
+| 场景 | 推荐做法 | 仍需检查 |
+| --- | --- | --- |
+| 一句话里的中文、英文、数字，或仅颜色/字重不同 | 使用一个 Text；不同样式放进同一个 RichText 的 TextSpan，统一父级字体 | 字体缺字后的 fallback，以及不同字形本身的视觉高度 |
+| 多个独立 Text 同行，尤其字号不同 | `Row(crossAxisAlignment = BASELINE, textBaseline = ALPHABETIC)` | 对齐的是各段首行基线，多行文本的底部不会一起对齐 |
+| 独立图标 / 图片与文字组成按钮或标签 | 固定图标盒尺寸，使用 `Row(crossAxisAlignment = CENTER)`；长文本再用 Expanded 提供宽度 | 这是盒居中；图片透明边缘和字体留白仍影响视觉中心 |
+| 图标 / 图片需要跟随文字换行 | 使用 WidgetSpan / ImageEmojiSpan，显式指定尺寸与 `alignment`；可先试 MIDDLE | 对齐文字行盒，不保证图标内容与每个字的笔画上下边缘齐平 |
+| 多行中英文、不同字号造成行距跳动 | 固定字体集合，再配置 StrutStyle | Strut 控制行度量，不会改写字形；强制行高过小可能重叠或被裁剪 |
+
+### 独立文字按基线对齐
+
+以下两段是 `SnapshotPNG { … }` 内的 Kotlin 组件片段。依赖配置见[快速开始](/guides/quickstart/)，组件与枚举导入可复制[参数效果对比的公共导入](/guides/visual-reference/#代码怎么运行)，并补充 `import org.jetbrains.skia.paragraph.BaselineMode`。示例字体需在渲染环境中实际存在。
+
+```kotlin
+Container(width = 420f, padding = com.muedsa.geometry.EdgeInsets.all(16f)) {
+    Row(
+        crossAxisAlignment = CrossAxisAlignment.BASELINE,
+        textBaseline = BaselineMode.ALPHABETIC,
+    ) {
+        Text("价格", style = TextStyle(fontSize = 20f, fontFamilies = listOf("Noto Sans SC")))
+        SizedBox(width = 12f)
+        Text("128.00", style = TextStyle(fontSize = 36f, fontFamilies = listOf("Noto Sans SC")))
+        SizedBox(width = 8f)
+        Text("CNY", style = TextStyle(fontSize = 20f, fontFamilies = listOf("Noto Sans SC")))
+    }
+}
+```
+
+`ALPHABETIC` 是中英文、数字混排常用的起点，不保证中文与拉丁字母的笔画底边完全相同。`IDEOGRAPHIC` 是另一种字体基线，不能当作“有中文就能自动修正”的开关。Row 选择 BASELINE 时必须提供 `textBaseline`；普通图片没有真实文字基线，放在这种 Row 中也不会自动获得与文字相同的基线语义。
+
+### 一段文字里的图标与不同样式
+
+把共用字体放在父 TextSpan，图标与旁边的文字一起继承。这里用固定尺寸的色块代表状态图标，可替换成同尺寸的 RawImage / ProviderImage；图片应预先准备好。
+
+```kotlin
+Container(width = 420f, padding = com.muedsa.geometry.EdgeInsets.all(16f)) {
+    RichText {
+        TextSpan(style = TextStyle(fontSize = 24f, fontFamilies = listOf("Noto Sans SC"))) {
+            TextSpan(text = "状态 Status ")
+            WidgetSpan(alignment = PlaceholderAlignment.MIDDLE) {
+                Container(width = 18f, height = 18f, color = 0xFF22C55E.toInt())
+            }
+            TextSpan(text = " Ready", style = TextStyle(color = 0xFF0369A1.toInt()))
+        }
+    }
+}
+```
+
+如果图标底边应落在文字基线上，可考虑 `ABOVE_BASELINE` 并显式设置 `baseline = BaselineMode.ALPHABETIC`；若应贴着行盒底部则用 `BOTTOM`。这些位置并不相同。图片内部的透明留白、`fit` 和 `imageAlignment` 还会影响可见图形的位置，参见[行内对齐规则](/reference/text-layout/#widgetspan-与-emoji-对齐)与[实际渲染对比](/guides/visual-reference/#行内图标对齐)。
+
+先固定字体和对齐语义，再决定是否需要少量视觉微调。不要把某台机器上试出的 `translateY` 当作通用基线修复：Transform 只改变绘制位置，不重新计算行高或为邻行留空间；字体、字号或内容一变，偏移就可能不再合适。
+
 ## TextStyle
 
 逐字段的类型、默认值和继承规则见 [TextStyle 与文本装饰](/reference/text-style/)；行高、StrutStyle 和宽度基准见[段落参考](/reference/text-layout/)。Parser 写法无需再跳到上游仓库，可直接查[文本属性详解](/reference/parser-text/)。
@@ -110,9 +169,11 @@ Text(
 为了得到跨机器稳定的文本结果：
 
 1. 显式提供字体文件或固定字体集合；
-2. 不依赖操作系统默认字体；
+2. 不依赖操作系统默认字体，并固定缺字时使用的回退字体、字体版本和字重；相同族名也不代表相同文件；
 3. 测试中使用 `testkit` 附带的 Noto Sans SC；
 4. 对文本优先断言度量和像素区域，不轻易把整段抗锯齿文本做跨平台 Golden。
+
+跨平台差异不仅是字宽：字体的 ascent、descent、leading 和 fallback 会改变行高及基线距离。因此应在实际部署的系统 / 容器上检查 `中文 Agjp 0123`、带重音字母、Emoji 和会换行的内容。`fontSize = 24f` 并不代表文本盒高恰好为 24，也不保证在每个平台离盒顶的距离一致。
 
 ## 富文本
 

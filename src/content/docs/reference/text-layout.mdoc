@@ -1,9 +1,55 @@
 ---
 title: 段落、行高与行内对齐
-description: Text 和 RichText 的段落参数、StrutStyle、宽度基准与当前溢出实现边界。
+description: 文本基线与可见边界、字体度量、StrutStyle、段落参数和行内图文对齐。
 ---
 
 Text 和 RichText 共用段落布局参数。字体与字形样式见 [TextStyle](/reference/text-style/)，文本模板对应[Parser 文本属性](/reference/parser-text/)。
+
+## 文本基线与可见边界
+
+{% aside type="caution" title="文本不能按普通矩形的可见边缘理解" %}
+文字按字体基线排版。Text 的组件盒、文字行盒、可见字形边界并不重合；普通图片通常只提供布局尺寸，没有字体意义上的基线。中英文看起来高低错位、文字与图片顶部或底部不齐，以及更换系统后整体垂直偏移，都应先检查字体度量与对齐方式。
+{% /aside %}
+
+| 概念 | 表示什么 | 不代表什么 |
+| --- | --- | --- |
+| 字号 `fontSize` | 字体的缩放尺度 | 字形实际像素高或 Text 的最终盒高 |
+| ascent / descent | 基线上方 / 下方的字体度量距离 | 每个字符都把这两段区域填满 |
+| leading / 行高 | 字体或样式参与计算的行间留白与行度量 | 外层容器的 padding 或 height |
+| 基线 baseline | 同一行文字共享的排版参考线 | 每个字符可见笔画的底边 |
+| 组件盒 / 行盒 | 父布局对齐、段落换行和占位符定位使用的矩形 | 所有可见内容的紧包围盒 |
+
+例如 `A`、`g`、汉字的可见上下边缘本来就不同；即使共享基线，`g` 的下伸部分仍会落在基线下。一个 Text 中也可能因字体缺字，分别用不同字体绘制中英文或 Emoji。字体 fallback、混合字号、行内图片与 Strut 都可能改变行度量。
+
+Row 默认的 `CENTER` 对齐子组件盒的中心；`START` / `END` 对齐交叉轴边缘（上下还受 `verticalDirection` 影响）。这些设置不能保证可见文字与图片的顶边、底边齐平。要求文字对齐时，用 `BASELINE` 并显式指定 `textBaseline`；要求按钮里的图标居中时，用固定图标尺寸和 `CENTER`，再检查实际视觉效果。可复制写法见[文本基线与混排](/guides/media-text/#文本基线与混排)。
+
+### 三处基线设置的区别
+
+| 设置位置 | Kotlin / DSL | 作用 |
+| --- | --- | --- |
+| Row / 水平 Flex | `crossAxisAlignment = BASELINE` + `textBaseline` / 同名属性 | 对齐不同子组件的真实基线；文字通常提供段落首行的基线 |
+| TextStyle / TextSpan | `baselineMode` / `<Text baselineMode="…">` | 交给 Skia 的文本样式基线模式；不会开启父 Row 的基线对齐 |
+| 行内占位符 | WidgetSpan / ImageEmojiSpan 的 `alignment` + `baseline` / `<WidgetSpan>`、`<Emoji>` 的同名属性 | 决定占位盒相对文字行盒或所选基线的位置 |
+
+`ALPHABETIC` 与 `IDEOGRAPHIC` 是字体提供的两种基线度量。Snapshot 不按字符串中是否含中文自动替你选择；同一对齐场景应统一选择，再在目标字体上验收。`baselineMode="IDEOGRAPHIC"` 也不等于把文字视觉中心放到容器中心。
+
+当前 Row 的 BASELINE 布局只让有真实基线的子节点参与基线计算；无真实基线的图片、纯色盒等放在顶部（纵向偏移为 0），不是自动让图片底部贴文字基线，也不随 `verticalDirection` 改为底部。这个规则与下文 WidgetSpan 的基线回退不同。Column 的主轴是垂直方向，不能用相同设置实现一行文字的水平基线对齐。
+
+多行 Text 对外提供段落首行基线，不会把各自末行或整段底部对齐。若相邻区域还需要相同的行节奏，必须同时控制宽度、字体、字号和 Strut；基线对齐本身不负责让它们按同一位置换行。
+
+{% aside type="caution" title="当前实现：留意文字外的纵向包装偏移" %}
+当前 Padding / Align 等单子节点包装通过基类转发子节点的基线距离，未把包装内的纵向位移计入该距离。若只给 Row 的某个 Text 增加顶部 padding 或纵向对齐偏移，即使 Row 使用 BASELINE，绘制出的文字也可能错位。推荐先让 Text 直接参与基线 Row，把共同 padding 放在整行外层，水平间隔用 SizedBox；不要将这种包装差异误判为字体问题。DSL 中的 Padding、带 padding / alignment 的 Container 也需注意。
+{% /aside %}
+
+### 排查与度量顺序
+
+1. 固定实际渲染进程中的字体文件、字体版本、字重与缺字回退；不能只确认浏览器里有这个字体。
+2. 用边框或 debug 绘制区分组件盒、行盒与字形留白，检查图标资源内部是否有透明边缘。
+3. 确定目标是“文字同基线”“图标与行盒居中”还是“可见边缘齐平”，分别选 Row BASELINE、Row CENTER 或行内占位对齐。
+4. 再调整行高与 Strut，检查首行、末行和长文本换行，尤其不要用过小的固定高度掩盖偏差。
+5. 确有像素级视觉要求时，最后才对固定字体与资源做小幅偏移，并在目标平台复测。
+
+Kotlin 需要量化位置时，先用与实际文本一致的 TextSpan、字号、字体、Strut 和宽度创建 `TextPainter`，调用 `layout(minWidth = 0f, maxWidth = …)` 后，再读取 `height` 与 `computeDistanceToActualBaseline(BaselineMode.ALPHABETIC)`。该距离从段落顶部计算；绘制起点为 `offset.y` 时，基线位于 `offset.y + distance`。`debugPaint(canvas, offset)` 可辅助查看首行的度量线，它们仍不是每个字形的紧包围边界。样式变化后重新创建并布局，不能把上一次的基线数值用于新文本。
 
 ## 段落参数
 
@@ -20,6 +66,8 @@ Text 和 RichText 共用段落布局参数。字体与字形样式见 [TextStyle
 
 `textHeightMode` 可选 `ALL`（均应用）、`DISABLE_FIRST_ASCENT`、`DISABLE_LAST_DESCENT`、`DISABLE_ALL`（两端均禁用）。它影响段落首尾的度量处理，不会替代 `height`，也不会关闭整个段落高度计算。
 
+`TextStyle.height` 调整行高倍数，`topRatio` 影响上升 / 下降度量的分配。二者都不是文字的垂直平移量，也不保证字形的视觉中心或笔画边缘对齐；`textHeightMode` 关闭首尾高度调整，也不等于裁掉所有字体留白。父 Container 的 `height` 只是布局约束，不是文本基线或行高控制器。
+
 ## 换行、宽度与溢出
 
 宽度约束与绘制策略是两个独立问题。Row 中用 Expanded 提供剩余宽度；只有 `maxLines` 而没有有限宽度，不能保证你预期的换行位置。
@@ -34,7 +82,7 @@ Text 和 RichText 共用段落布局参数。字体与字形样式见 [TextStyle
 
 ## StrutStyle
 
-`org.jetbrains.skia.paragraph.StrutStyle` 为每行提供支撑字体度量。通常用于混合字号、中文与拉丁字母时保持行距稳定。以下列出常用的可配置属性；未赋值项沿用当前 Skia 默认值，不等于继承 TextStyle。
+`org.jetbrains.skia.paragraph.StrutStyle` 为每行提供支撑字体度量。通常用于混合字号、中文与拉丁字母时保持行距稳定。它不会统一不同字体的字形外观，也不会对齐 Row 里多个独立 Text。以下列出常用的可配置属性；未赋值项沿用当前 Skia 默认值，不等于继承 TextStyle。
 
 | 属性 / 方法 | 类型 | 含义 |
 | --- | --- | --- |
@@ -49,34 +97,41 @@ Text 和 RichText 共用段落布局参数。字体与字形样式见 [TextStyle
 
 当前依赖快照的 `StrutStyle.topRatio` 存在上游记录的原生符号兼容问题，Parser 未开放 `strutTopRatio`；不要把 TextStyle 的 `topRatio` 直接照搬到 Strut。旧 `isHalfLeading` 也已弃用，不推荐新代码使用。
 
-下面片段放入 `SnapshotPNG { … }`；需导入 Widget/Text、TextStyle，以及 `org.jetbrains.skia.paragraph.StrutStyle`：
+下面片段放入 `SnapshotPNG { … }`；需导入 Widget/Text、TextStyle，以及 `org.jetbrains.skia.paragraph.StrutStyle`。文本和支撑度量都指定相同字体，环境中需安装该字体。这里先提供最小行高，不强制压住更高的内容：
 
 ```kotlin
 Container(width = 360f, padding = com.muedsa.geometry.EdgeInsets.all(20f)) {
     Text(
-        text = "第一行\n第二行",
-        style = TextStyle(fontSize = 20f),
+        text = "第一行：中文与 Latin\n第二行：Agjp 0123",
+        style = TextStyle(fontSize = 20f, fontFamilies = listOf("Noto Sans SC")),
         strutStyle = StrutStyle().apply {
             isEnabled = true
+            setFontFamilies(arrayOf("Noto Sans SC"))
             fontSize = 24f
             height = 1.5f
             isHeightOverridden = true
-            isHeightForced = true
+            isHeightForced = false
         },
     )
 }
 ```
 
+若业务要求严格一致的行度量，再考虑 `isHeightForced = true`，并逐项检查更大字号、fallback 字体、重音字母与行内图标。强制高度不会缩小这些内容；它们可能伸出行盒、与邻行重叠，或被外层紧高度裁剪。
+
 ## WidgetSpan 与 Emoji 对齐
 
 | `PlaceholderAlignment` | 含义 |
 | --- | --- |
-| `BASELINE` | 占位对象的基线对齐文字基线；当前实现查询子 Widget 基线，无可用值时回退 0 |
+| `BASELINE` | 子 Widget 的基线对齐所选文字基线；无真实基线的普通盒通常回退为盒高，即用占位盒底边对齐基线 |
 | `ABOVE_BASELINE` | 占位对象整体位于指定基线上方 |
 | `BELOW_BASELINE` | 占位对象整体位于指定基线下方 |
 | `TOP` / `BOTTOM` | 与文字行盒顶部 / 底部对齐 |
 | `MIDDLE` | 与文字行盒中部对齐，不是整个 Text 容器垂直居中 |
 
-`baseline = null` 在当前布局中回退 `ALPHABETIC`；可显式选择 `IDEOGRAPHIC`。WidgetSpan 默认 BOTTOM，URL 版 ImageEmojiSpan 默认 BASELINE，provider 版默认 BOTTOM。使用图标时显式设置尺寸与 alignment，可避免不同字体度量造成意外位置。
+`baseline = null` 在当前布局中回退 `ALPHABETIC`；可显式选择 `IDEOGRAPHIC`。`BASELINE` 先调用子 Widget 的 `getDistanceToBaseline()`；该查询默认将无真实基线的盒回退为其高度，不应把调用处的 `?: 0f` 理解为普通图片都用顶部作基线。`ABOVE_BASELINE` 则直接把占位盒底边放到所选基线，`BELOW_BASELINE` 把顶部放到基线。
+
+WidgetSpan 默认 BOTTOM，URL 版 ImageEmojiSpan 默认 BASELINE，provider 版默认 BOTTOM；Parser 的 `<Emoji>` 默认 BASELINE，`<WidgetSpan>` 默认 BOTTOM。从图片重载切换到另一重载，或从 WidgetSpan 换成 Emoji 时，省略 alignment 可能改变垂直位置。图标混排建议显式指定尺寸与 alignment。
+
+`TOP` / `BOTTOM` / `MIDDLE` 参考的是文字行盒，不是汉字、字母或图片非透明像素的边缘。`alignment` 控制占位盒的位置，`imageAlignment` 只控制图片在这个盒内的位置；若图片因 `SCALE_DOWN` 没有填满占位盒，或源图自带透明边缘，仍可能看起来偏移。
 
 WidgetSpan 的样式与相邻 TextSpan 分别继承父 Span；只增大旁边文字的字号，不会同步增大图标 Span 的字体度量。需要按同一字号比较行内位置时，把共用样式放到父 TextSpan，见[实际对齐效果](/guides/visual-reference/#行内图标对齐)。

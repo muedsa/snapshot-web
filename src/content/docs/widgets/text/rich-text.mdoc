@@ -51,3 +51,9 @@ RichText(maxLines = 2, overflow = TextOverflow.ELLIPSIS) {
 子 TextSpan 会继承祖先未覆盖的 TextStyle 字段。RichText 内不能直接挂普通 Widget；行内组件必须通过 WidgetSpan 转换为段落占位符。
 
 RenderParagraph 会提取所有 WidgetSpan 子节点，先测量占位 Widget，再把对应 PlaceholderStyle 交给 Skia Paragraph。
+
+## 混排与基线
+
+一句话中只改变颜色、字重或字号时，优先使用同一个 RichText 的 TextSpan，而不是拆成 Row 里的多个 Text。把共同字体放在父 Span，让文字和行内对象共享样式；但缺字回退和字形本身的差异仍会影响视觉高度，共享段落不保证笔画顶边 / 底边相同。
+
+WidgetSpan / ImageEmojiSpan 应显式指定尺寸和占位对齐。`MIDDLE` 对齐的是行盒中心，`BASELINE` / `ABOVE_BASELINE` / `BELOW_BASELINE` 使用指定的字体基线；它们不等同于图片可见像素的对齐。需要稳定多行节奏时再配置 StrutStyle，避免直接强制过小行高。示例与排查方法见[文本基线与混排](/guides/media-text/#文本基线与混排)；Parser 对应一个外层 `<Text>` 中的嵌套 Text / Raw / WidgetSpan / Emoji，见 [DSL 示例](/reference/parser-text/#基线与混排)。

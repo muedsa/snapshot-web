@@ -1,9 +1,13 @@
 ---
 title: Parser 文本属性详解
-description: Text、Raw 与 WidgetSpan 的完整样式属性、段落参数、Strut、默认值和可运行示例。
+description: Text、Raw、WidgetSpan 与 Emoji 的基线与混排、完整文本属性、Strut 和可运行示例。
 ---
 
 本页将[标签参考](/reference/parser-tags/#text)中的文本属性展开。属性名和枚举值区分大小写；布尔值请显式写 `"true"` / `"false"`。当前布尔解析仅将忽略大小写的 true 当作真，拼错不一定报错。
+
+{% aside type="caution" title="DSL 也遵循字体基线，不是按字形边缘对齐" %}
+`<Text>` 使用与 Kotlin 相同的段落布局。中英文、数字、图标混排时，相同 `fontSize` 不保证可见顶部或底部一致；`<Row crossAxisAlignment="CENTER">` 也只对齐组件盒的中心。服务端默认字体或缺字回退不同，还可能让同一 DSL 在不同平台上出现垂直偏移。请先确定要对齐的对象，再按下方[基线与混排](#基线与混排)选择设置。
+{% /aside %}
 
 ## 作用域与未设置值
 
@@ -35,6 +39,69 @@ description: Text、Raw 与 WidgetSpan 的完整样式属性、段落参数、St
 | `subpixel` | bool | 继承 / Skia 默认 | 子像素字形定位，不等于 fontEdging |
 
 基础 Float 属性多数仅做数值解析；推荐输入不表示 Parser 对每项都严格校验。外部输入应由应用额外约束。
+
+## 基线与混排
+
+### 配置应该写在哪个标签上
+
+| 目标 | DSL 写法 | 注意 |
+| --- | --- | --- |
+| 多个独立文字组件共用基线 | `<Row crossAxisAlignment="BASELINE" textBaseline="ALPHABETIC">` | 对齐各子组件的真实基线；多行 Text 使用首行基线 |
+| 同一句话里的多种样式 | 一个外层 `<Text>`，内部嵌套 `<Text>` / `<Raw>` | 共享段落；共同字体、字号放在外层，空格用 Raw 保留 |
+| 选择文字样式基线模式 | `<Text baselineMode="ALPHABETIC">` | 不等于 Row 的 textBaseline，也不会让兄弟组件自动对齐 |
+| 图标随文字换行、与行盒居中 | `<WidgetSpan alignment="MIDDLE">` 或 `<Emoji alignment="MIDDLE" …>` | 显式指定内部 Widget 或 Emoji 的宽高；`MIDDLE` 不是 `CENTER` |
+| 图标底边落在文字基线上 | `alignment="ABOVE_BASELINE" baseline="ALPHABETIC"` | 与 `BOTTOM` 的行盒底部对齐不同 |
+| 稳定多行的支撑度量 | 在最外层 `<Text>` 上配置 `strutFontFamily`、`strutFontSize`、`strutHeight`、`strutHeightOverridden` | Strut 不会继承文本字体；通常先保持 `strutHeightForced="false"` |
+
+`ALPHABETIC` 是中英文、数字混排的常用起点；`IDEOGRAPHIC` 是另一种字体基线，不是自动纠正中文高低差的开关。同一行中应统一选择，再检查实际字体的结果。三组基线参数的区别与多行限制见[基线设置参考](/reference/text-layout/#三处基线设置的区别)。
+
+独立 `<Image>` 与 `<Text>` 组成一行标签时，可为 Image 设置固定宽高，并使用 `<Row crossAxisAlignment="CENTER">` 做盒居中。普通图片没有真实文字基线，不要期望改成 Row BASELINE 就会自动把图片底边放到文字基线上；需要这种语义时使用行内 WidgetSpan / Emoji。
+
+### 示例：不同字号的独立文字
+
+以下两个完整示例均输出 480×200，可交给本地 Parser；渲染环境需已安装 `Noto Sans SC`。字号不同的文字共享基线，但字形顶部不应因此一样高。
+
+```xml
+<Snapshot background="#FFFFFF">
+  <Container width="480" height="200" padding="24">
+    <Row crossAxisAlignment="BASELINE" textBaseline="ALPHABETIC">
+      <Text fontFamily="Noto Sans SC" fontSize="20">价格</Text>
+      <SizedBox width="12" />
+      <Text fontFamily="Noto Sans SC" fontSize="36">128.00</Text>
+      <SizedBox width="8" />
+      <Text fontFamily="Noto Sans SC" fontSize="20">CNY</Text>
+    </Row>
+  </Container>
+</Snapshot>
+```
+
+对比时可以把 Row 改成 `crossAxisAlignment="CENTER"` 或 `"END"`，观察组件盒对齐与文字基线对齐的差异。不要给 Text 设置 `height="36"` 来表示 36 像素高：这里的 height 是行高倍数；容器高度才是布局尺寸。
+
+### 示例：中英文与图标共享文本流
+
+共用字体、字号与样式基线放在最外层 Text；Raw 保留英文片段前后的空格。示例中的色块代表固定尺寸的状态图标，也可在 WidgetSpan 中换成具有明确尺寸的 `<Image url="…" width="18" height="18" />` 或 Data URI 图片。
+
+```xml
+<Snapshot background="#FFFFFF">
+  <Container width="480" height="200" padding="24">
+    <Text fontFamily="Noto Sans SC" fontSize="24" baselineMode="ALPHABETIC">
+      <Raw>状态 Status </Raw>
+      <WidgetSpan alignment="MIDDLE">
+        <Container width="18" height="18" color="#22C55E" />
+      </WidgetSpan>
+      <Raw color="#0369A1"> Ready</Raw>
+    </Text>
+  </Container>
+</Snapshot>
+```
+
+如果使用 `<Emoji>`，同样建议显式设置 `alignment="MIDDLE" width="18" height="18"`，并提供 `url` 或 `dataUri`。Emoji 默认 BASELINE，WidgetSpan 默认 BOTTOM，直接互换且省略 alignment 会改变垂直位置。Emoji 的 `imageAlignment` 只调整图片在占位盒内的绘制位置，不能替代占位对齐。图片透明留白也不会被自动识别为对齐边缘。
+
+### 平台与字体一致性
+
+`fontFamily="Noto Sans SC"` 只请求服务端字体，不会安装字体，也不会使用浏览器 CSS 字体。要减少 Windows、Linux、macOS 或容器之间的偏移，应固定同一份字体文件、版本和字重，并为中文、拉丁字符与 Emoji 准备明确的缺字回退。多字体名称写成 `fontFamily="Noto Sans SC,Arial"`，但列表中的字体均须在目标环境存在。
+
+文本字体、Strut 字体和回退集合都应检查；只固定其中一项，仍可能出现行高或基线变化。`height`、`topRatio` 与 `textHeightMode` 调整的是行度量，不能代替字体配置或保证字形边缘齐平。不要先加固定平移来掩盖差异；先按[排查顺序](/reference/text-layout/#排查与度量顺序)验证，再处理确实需要的视觉微调。
 
 ## 前景画笔与背景
 
@@ -132,13 +199,13 @@ description: Text、Raw 与 WidgetSpan 的完整样式属性、段落参数、St
 
 ## 完整示例：固定行高与显式换行
 
-Raw 保留换行。调整 strutHeight 比较行距；不要用 Container 的 height 代替行高属性。
+Raw 保留换行。这里显式固定文本字体和 Strut 字体，再用 `strutHeightForced="true"` 演示固定行度量；这不会统一中英文字形的可见高度。只需提供最小行高时先改为 false，让更高的字符或行内图标可以撑开行盒。强制高度过小会使内容重叠或被外层裁剪，不要用 Container 的 height 代替行高属性。
 
 ```xml
 <Snapshot background="#FFFFFF">
   <Container width="480" height="200" padding="24">
-    <Text fontSize="20" color="#0F172A"
-          strutFontSize="24" strutHeight="1.5"
+    <Text fontFamily="Noto Sans SC" fontSize="20" color="#0F172A"
+          strutFontFamily="Noto Sans SC" strutFontSize="24" strutHeight="1.5"
           strutHeightOverridden="true" strutHeightForced="true"><Raw>第一行：中文与 Latin
 第二行：保持统一的行距
 第三行：1234567890</Raw></Text>

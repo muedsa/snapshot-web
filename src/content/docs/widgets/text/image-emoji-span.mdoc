@@ -43,13 +43,15 @@ provider 重载把 `url`、`noCache`、`cache` 替换为 `provider: () -> Image`
 
 ```kotlin
 RichText {
-    TextSpan(text = "构建成功 ", style = TextStyle(fontSize = 24f))
-    ImageEmojiSpan(
-        provider = { successIcon },
-        width = 24f,
-        height = 24f,
-        alignment = PlaceholderAlignment.MIDDLE,
-    )
+    TextSpan(style = TextStyle(fontSize = 24f, fontFamilies = listOf("Noto Sans SC"))) {
+        TextSpan(text = "构建成功 ")
+        ImageEmojiSpan(
+            provider = { successIcon },
+            width = 24f,
+            height = 24f,
+            alignment = PlaceholderAlignment.MIDDLE,
+        )
+    }
 }
 ```
 
@@ -58,6 +60,10 @@ URL 版本会同步访问网络，并使用与 `CachedNetworkImage` 相同的缓
 {% /aside %}
 
 为了稳定字号与基线，建议关键场景显式指定 `width`、`height` 和 `alignment`。
+
+共用字体与字号应放到父 TextSpan，字体需实际安装。未设置尺寸时，图片使用所在 Span 的继承字号，不是旁边那个字符的可见高度。URL 重载、provider 重载与 Parser `<Emoji>` 的默认 alignment 并不完全相同；显式写出对齐方式可避免更换图片来源后位置变化。
+
+`BASELINE` 下普通图片无真实文字基线，通常以占位盒底边对齐；`MIDDLE` 则按文字行盒居中。`imageAlignment` 只在占位盒内定位图像，不能修正字体基线；透明留白和未填满盒子的图片都可能仍显得偏上或偏下。排查与 DSL 示例见[文本基线与混排](/guides/media-text/#文本基线与混排)。
 
 省略 `fit` 时与普通图片一样按 `SCALE_DOWN` 绘制，小图不会自动放大到占位框；要拉伸铺满或保留旧版默认效果，请显式设置 `fit = BoxFit.FILL`。此规则也适用于 Parser 的 `<Emoji>`。
 

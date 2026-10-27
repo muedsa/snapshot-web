@@ -468,6 +468,10 @@ Stack / IndexedStack 根据所有直接子节点的布局矩形累计越界状�
 
 以下为入口索引。每个字段的类型、取值、条件默认值、继承规则及完整示例见[Parser 文本属性详解](/reference/parser-text/)；复杂配置不要只依据总表中的“未设置”推断行为。
 
+{% aside type="caution" title="混排时请显式考虑文本基线" %}
+文字可见边缘与组件盒不同，同字号的中英文、文字与图片也可能高低不齐；平台默认字体和缺字回退会进一步改变垂直度量。Row 的 `textBaseline`、Text 的 `baselineMode` 与 WidgetSpan / Emoji 的 `baseline` 作用不同，推荐写法见[DSL 基线与混排](/reference/parser-text/#基线与混排)。
+{% /aside %}
+
 | 属性 | 默认值 | 说明 |
 | --- | --- | --- |
 | `text` | 未设置 | 属性形式的文本内容 |
@@ -501,6 +505,8 @@ Stack / IndexedStack 根据所有直接子节点的布局矩形累计越界状�
 ## WidgetSpan
 
 只能作为 `Text` 子节点，且必须恰有一个普通 Widget 子节点。`alignment` 默认为 `BOTTOM`，可设 `BASELINE`、`ABOVE_BASELINE`、`BELOW_BASELINE`、`TOP`、`BOTTOM`、`MIDDLE`；`baseline` 可设 `ALPHABETIC` 或 `IDEOGRAPHIC`，并支持 Text 的文本样式属性。
+
+BOTTOM / MIDDLE 参考文字行盒；BASELINE 使用子 Widget 基线，无真实基线的普通盒通常以盒底回退。共用字体和字号应放在父 Text，图标尺寸与 alignment 建议显式给出，见[行内对齐规则](/reference/text-layout/#widgetspan-与-emoji-对齐)。
 
 ## Emoji
 

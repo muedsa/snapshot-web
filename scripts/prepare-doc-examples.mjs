@@ -17,11 +17,16 @@ const examples = references.map(name => {
   const code = blocks(`reference/${name}`, 'kotlin', 1)[0];
   return { name, code: name === 'decoration-image' ? code : `val png = SnapshotPNG {\n${code}\n}`, publish: false };
 });
+// 指南中的两段基线/行内示例也是 SnapshotPNG 内的组件片段。
+const mediaText = blocks('guides/media-text', 'kotlin', 5);
+['text-baseline-row', 'text-baseline-inline'].forEach((name, i) => {
+  examples.push({ name, code: `val png = SnapshotPNG {\n${mediaText[i + 2]}\n}`, publish: false });
+});
 const visualNames = ['box-fit-comparison', 'gradient-comparison', 'inline-alignment-comparison', 'clip-comparison'];
 blocks('guides/visual-reference', 'kotlin', visualNames.length).forEach((code, i) => {
   examples.push({ name: visualNames[i], code, publish: true });
 });
-const xml = blocks('reference/parser-text', 'xml', 2);
+const xml = blocks('reference/parser-text', 'xml', 4);
 xml.forEach((code, i) => writeFileSync(resolve(output, `parser-text-${i + 1}.xml`), code));
 
 const visualImports = blocks('guides/visual-reference', 'text', 1)[0];
@@ -31,6 +36,7 @@ const calls = examples.map((example, i) =>
 const source = `${visualImports}
 import org.jetbrains.skia.paragraph.DecorationStyle
 import org.jetbrains.skia.paragraph.StrutStyle
+import org.jetbrains.skia.paragraph.BaselineMode
 import com.muedsa.snapshot.parser.Parser
 import java.io.File
 import java.io.ByteArrayInputStream

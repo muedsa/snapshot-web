@@ -28,6 +28,10 @@ description: 完整的文本样式参数、继承规则、画笔优先级、字�
 | `locale` | `String?` | 语言区域，如 `"zh-CN"`；影响字体塑形/选择，不做文本翻译 |
 | `baselineMode` | `BaselineMode?` | `ALPHABETIC` 或 `IDEOGRAPHIC`；不要与行内 Widget 的 `baseline` 参数混淆 |
 
+{% aside type="caution" title="字号、行高与基线都不等于字形可见高度" %}
+同样的 `fontSize`、`height` 不保证中文、拉丁字母、Emoji 或不同字体的可见顶部 / 底部齐平。`topRatio` 改变行度量分配，不是字形平移；`baselineMode` 是文字样式参数，不会开启外层 Row 的基线对齐。中英文高低错位或图文同行偏移时，先检查字体 fallback，再明确要对齐基线还是组件盒，见[文本基线与可见边界](/reference/text-layout/#文本基线与可见边界)。
+{% /aside %}
+
 ## 颜色、画笔与装饰参数
 
 | 参数 | Kotlin 类型 | 含义与组合规则 |
@@ -110,3 +114,5 @@ Container(width = 420f, padding = com.muedsa.geometry.EdgeInsets.all(24f)) {
 在服务端、容器或 CI 安装字体后，按它的实际族名配置 `fontFamilies`。浏览器网页使用的字体不会自动进入服务端渲染。若使用字体文件，可通过 `Typeface.makeFromFile(...)` 创建字体对象并赋给 `typeface`，在整个布局与绘制过程结束后再释放；不要在构建 TextStyle 后立即关闭仍要使用的 Paint / Typeface。
 
 涉及换行、字号或字体变化时重新构建并布局；不要依赖已缓存的段落自动感知可变样式。需要跨机器一致的图片，还应固定字体文件、Skiko runtime 和输出环境。
+
+相同族名或字号不保证不同系统有相同的 ascent、descent 和 leading；即使指定了 `typeface`，该字体缺少的字符仍需检查回退。因此部署时除了文本宽度，也应验收行高、首行基线、中英文混排以及带下伸部分 / 重音的字母。测试建议见[文本与 Golden](/guides/testing/)。

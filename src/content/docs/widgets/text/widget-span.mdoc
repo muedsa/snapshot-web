@@ -29,16 +29,22 @@ fun TextSpan.WidgetSpan(
 
 ```kotlin
 RichText {
-    TextSpan(text = "状态：", style = TextStyle(fontSize = 20f))
-    WidgetSpan(alignment = PlaceholderAlignment.MIDDLE) {
-        Container(width = 12f, height = 12f, color = 0xFF22C55E.toInt())
+    TextSpan(style = TextStyle(fontSize = 20f, fontFamilies = listOf("Noto Sans SC"))) {
+        TextSpan(text = "状态：")
+        WidgetSpan(alignment = PlaceholderAlignment.MIDDLE) {
+            Container(width = 12f, height = 12f, color = 0xFF22C55E.toInt())
+        }
+        TextSpan(text = " 正常")
     }
-    TextSpan(text = " 正常", style = TextStyle(fontSize = 20f))
 }
 ```
 
 `BASELINE`、`ABOVE_BASELINE`、`BELOW_BASELINE` 使用 baseline 指定的基线类型；当前实现中 null 回退为 ALPHABETIC。`TOP`、`BOTTOM`、`MIDDLE` 按行盒对齐。各模式见[行内对齐](/reference/text-layout/#widgetspan-与-emoji-对齐)。
 
 `style` 是占位 Span 的文本样式，不会自动改写内部 Container 或 Text 的属性。应在内部 Widget 显式配置颜色与尺寸。
+
+上例把字号和字体放在父 TextSpan，让文字与占位 Span 共同继承；只给相邻 TextSpan 设置字号，不会同步设置 WidgetSpan 的样式。字体需在渲染环境中存在。MIDDLE 参考行盒中心，不能保证图标与汉字 / 拉丁字母的可见上下边缘都对齐；图标内部透明留白也需要单独检查。
+
+BASELINE 查询子 Widget 的基线：没有真实基线的图片或色块通常使用盒高回退，即以盒底贴到文字基线；它与默认 BOTTOM 的行盒底部对齐不是一回事。DSL `<WidgetSpan>` 使用同样规则，完整示例见[基线与混排](/reference/parser-text/#基线与混排)。
 
 WidgetSpan 会增加段落布局复杂度。简单图标优先使用固定尺寸，避免无限或不稳定约束。

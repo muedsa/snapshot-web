@@ -32,6 +32,10 @@ fun ChildSlot.Row(
 - `verticalDirection` 影响交叉轴 start/end；
 - `textBaseline` 用于文字基线对齐。
 
+{% aside type="caution" title="盒居中不等于文字基线对齐" %}
+不同字号、中英文或不同字体的 Text 即使已 CENTER / END 对齐，也可能看起来高低错位。需要文字共用基线时，同时设置 `crossAxisAlignment = BASELINE` 与 `textBaseline = BaselineMode.ALPHABETIC`；多行文本对齐首行基线。无真实基线的普通图片和纯色盒放在顶部（纵向偏移为 0），不会自动把图片底边贴到文字基线。图标与文字的其他组合方式见[混排指南](/guides/media-text/#文本基线与混排)，文字外的纵向 Padding / Align 还需注意[当前包装基线限制](/reference/text-layout/#三处基线设置的区别)。
+{% /aside %}
+
 ## 示例
 
 ```kotlin
