@@ -321,16 +321,22 @@ docker run --rm -p 8080:80 snapshot-web
 工作流 `.github/workflows/publish-container.yml` 会自动构建 Docker 镜像并发布到 GitHub Container Registry：
 
 - 推送到 `main` 分支时，发布 `latest`、`main` 和 `sha-<提交哈希>` 标签；
-- 向 `main` 分支提交 Pull Request 时，仅验证镜像能够构建，不会推送；
+- 向 `main` 分支提交 Pull Request 时，运行质量检查并验证镜像能够构建，不会推送；
 - 也可以在 GitHub 仓库的 Actions 页面手动运行。
+
+所有触发方式都会先运行 `quality` 作业：安装锁文件中的依赖后，依次执行 `docs:test`、`docs:coverage`、`playground:test`、`build` 和 `docs:links`。链接检查读取本次构建的 `dist/`。`build` 镜像作业通过 `needs: quality` 等待这些检查全部成功，检查失败时不会构建或发布镜像。
+
+`docs:coverage` 对照工作流中 `SNAPSHOT_DOCS_REF` 指定的 Snapshot 提交，源码检出到 `.ci/snapshot`，只读取 Kotlin 源文件，不运行 Gradle。同步上游 API 文档时，应一起更新该提交并运行覆盖检查；这不包含使用方安装流程或 Kotlin 示例编译验证。CI 使用 Node.js 22 和 pnpm 10.33.0，与 Dockerfile 的构建环境保持一致。
 
 工作流登录 GHCR 和从 GitHub Packages 安装 `@muedsa/snapshot-lsp` 均使用 GitHub 自动提供的 `GITHUB_TOKEN`，不再依赖自定义的 `SNAPSHOT_LSP_TOKEN`。`GITHUB_TOKEN` 可以读取明确授权给当前仓库的其他包：在 **LSP npm 包的 Package settings → Manage Actions access** 中添加本仓库，并授予至少 **Read** 权限。仅拥有 LSP 源码仓库的访问权限不等于拥有包的 Actions 读取权限，详见 [GitHub Packages 的访问控制说明](https://docs.github.com/en/packages/learn-github-packages/configuring-a-packages-access-control-and-visibility#ensuring-workflow-access-to-your-package)。
 
+质量检查作业只申请 `contents: read` 和 `packages: read`。`setup-node` 把 GitHub Packages 的 scoped registry 和认证占位符写入 `NPM_CONFIG_USERCONFIG` 指向的临时配置文件，只有安装依赖步骤提供 `NODE_AUTH_TOKEN`，不向仓库写入 `.npmrc`。
+
 Dockerfile 通过 BuildKit secret 读取该令牌，写入用户级 `$HOME/.npmrc` 后执行安装，并在同一条 `RUN` 指令里删除。构建层只记录该指令前后的文件系统差异，所以令牌不会出现在镜像层、镜像历史或构建缓存中；它只用于安装依赖，不参与站点构建。
 
-Dependabot PR 的镜像构建也使用自动提供的 `GITHUB_TOKEN`，无需在 Actions 或 Dependabot Secrets 中另配包读取令牌。下载依赖只需要 `packages: read` 和包对本仓库的 Read 授权；PR 仍仅验证镜像构建，不登录或推送 GHCR。
+Dependabot PR 的质量检查和镜像构建也使用自动提供的 `GITHUB_TOKEN`，无需在 Actions 或 Dependabot Secrets 中另配包读取令牌。下载依赖只需要 `packages: read` 和包对本仓库的 Read 授权；PR 不登录或推送 GHCR。
 
-当前工作流声明的 `packages: write` 包含读取权限，并用于非 PR 运行时发布 GHCR 镜像。如果组织策略限制工作流的 Packages 权限，需要由组织管理员配置相应权限。
+镜像作业声明的 `packages: write` 包含读取权限，并用于非 PR 运行时发布 GHCR 镜像。如果组织策略限制工作流的 Packages 权限，需要由组织管理员配置相应权限。
 
 首次推送 `main` 分支并等待工作流完成后，可以运行：
 

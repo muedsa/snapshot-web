@@ -18,8 +18,72 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  quality:
+    name: Validate documentation and Playground
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: read
+    env:
+      # 文档同步上游时一起更新此提交；避免 main 的变化影响同一份文档的检查结果。
+      SNAPSHOT_DOCS_REF: 84df2fb203d1c7ecbc891d1acad33d3b573dfed1
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Checkout Snapshot documentation baseline
+        uses: actions/checkout@v7
+        with:
+          repository: muedsa/snapshot
+          ref: ${{ env.SNAPSHOT_DOCS_REF }}
+          path: .ci/snapshot
+          persist-credentials: false
+          sparse-checkout: |
+            core/src/main/kotlin
+            parser/src/main/kotlin
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          # 与 Dockerfile 中的构建版本保持一致。
+          version: 10.33.0
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: pnpm
+          registry-url: https://npm.pkg.github.com
+          scope: '@muedsa'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        env:
+          # setup-node 将认证配置写入 NPM_CONFIG_USERCONFIG 指向的临时文件。
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Test documentation checker
+        run: pnpm docs:test
+
+      - name: Check documentation parameter coverage
+        run: pnpm docs:coverage .ci/snapshot
+
+      - name: Test Playground
+        run: pnpm playground:test
+
+      - name: Build documentation site
+        run: pnpm build
+
+      - name: Check built documentation links
+        run: pnpm docs:links
+
   build:
     name: Build container image
+    needs: quality
     runs-on: ubuntu-24.04
     permissions:
       contents: read
