@@ -1,0 +1,18 @@
+---
+import DefaultHead from '@astrojs/starlight/components/Head.astro';
+import { getCollection } from 'astro:content';
+
+const { entry } = Astro.locals.starlightRoute;
+// StarlightPage（如 Playground）和默认 404 也有 entry，但不属于文档集合。
+// Starlight 会将 index 的路由 ID 规范化为空字符串，用源文件路径关联原始 ID。
+const doc = (await getCollection('docs')).find(doc => doc.filePath === entry.filePath);
+// 与 llms 插件的 replace 命名及 excludePages 配置一致；首页为 /index.md。
+const markdownUrl = doc && !doc.data.draft && !['404', 'search'].includes(doc.id)
+  ? new URL(`${import.meta.env.BASE_URL}${doc.id}.md`, Astro.site)
+  : undefined;
+const llmsUrl = new URL(`${import.meta.env.BASE_URL}llms.txt`, Astro.site);
+---
+
+<DefaultHead />
+<link rel="describedby" type="text/plain" href={llmsUrl} title="Snapshot AI 文档索引" />
+{markdownUrl && <link rel="alternate" type="text/markdown" href={markdownUrl} title="Markdown" />}

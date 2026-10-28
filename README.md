@@ -29,6 +29,7 @@ Widget API 按布局、绘制与效果、图片、文本四组自动生成侧边
 - Tailwind CSS 4
 - [Monaco Editor](https://github.com/microsoft/monaco-editor) 0.57，用于在线 Playground
 - [snapshot-lsp](https://github.com/muedsa/snapshot-lsp)，Playground 的 DSL 语言服务（LSP over Web Worker）
+- [@rttnd/starlight-llms-txt](https://github.com/Rettend/starlight-llms-txt) 0.7.0，用于生成 AI 可读取的 Markdown 文档与索引
 - pnpm
 
 文档以 `.mdoc` 编写，并通过 `@astrojs/starlight-markdoc` 使用 Starlight 的 Aside、Tabs、Steps、Card、LinkCard 等组件。
@@ -83,13 +84,46 @@ pnpm preview
 | --- | --- |
 | `pnpm install` | 安装项目依赖 |
 | `pnpm exec astro dev --background` | 启动本地开发服务器 |
-| `pnpm build` | 构建静态站点并生成搜索索引与 Sitemap |
+| `pnpm build` | 构建静态站点、搜索索引、Sitemap 与 AI 文档 |
 | `pnpm preview` | 预览 `dist/` 中的生产构建 |
 | `pnpm docs:test` | 运行参数覆盖检查器的单元测试 |
 | `pnpm docs:coverage` | 对照相邻 Snapshot 源码检查公共配置与 Parser 文本/渐变的参数表覆盖 |
 | `pnpm docs:links` | 检查已构建页面的站内链接、锚点和资源路径 |
+| `pnpm docs:llms` | 检查 Markdown/llms 导出的覆盖、链接、代码块与表格内容 |
 | `pnpm playground:test` | 验证 LSP Worker 协议、补全、高亮及服务端属性诊断适配 |
 | `pnpm astro -- --help` | 查看 Astro CLI 帮助 |
+
+## AI 文档与 Markdown
+
+`pnpm build` 会从同一份 `.mdoc` 文档生成网页和 Markdown，无需单独维护 AI 版正文。部署后可从以下地址读取：
+
+| 地址 | 内容与用途 |
+| --- | --- |
+| `/llms.txt` | 文档索引，列出单页 Markdown 和合集；建议从这里开始 |
+| `/guides/quickstart.md` 等 | 单页正文：将网页路径末尾的 `/` 换成 `.md` |
+| `/index.md` | 首页的 Markdown 版本 |
+| `/llms-full.txt` | 全站文档合集，适合需要完整上下文的工具 |
+| `/llms-small.txt` | 去掉首页、源码索引和视觉对比页的合集；仍然保留说明、警告和完整代码，并非短摘要 |
+| `/_llms-txt/kotlin.txt` | Kotlin 接入、布局绘制、Widget 与公共配置参考 |
+| `/_llms-txt/dsl.txt` | Parser 模板、标签属性、错误处理与语言服务 |
+
+例如，快速开始的网页是 `https://snapshot.muedsa.com/guides/quickstart/`，Markdown 地址为 `https://snapshot.muedsa.com/guides/quickstart.md`。内容较多时，优先读取索引并按需选择单页或主题合集。
+
+插件配置位于 `astro.config.mjs`。当前固定使用 `@rttnd/starlight-llms-txt@0.7.0`，它支持本项目的 Astro 7 / Starlight 版本及单页 Markdown 导出。采用渲染后的 HTML 转换正文：提示框保留标题和说明，Tabs 展开为带标签的列表，表格和代码块保留为 Markdown；不直接暴露 Markdoc 组件标签。仅移除网页标题旁的辅助链接，不压缩代码空白或删除提示。正文中的站内链接仍指向网页，可通过索引找到对应 Markdown。
+
+`src/components/Head.astro` 保留 Starlight 默认 Head，并给文档页添加 `rel="alternate" type="text/markdown"` 链接，给所有页面添加指向 `llms.txt` 的发现链接。Playground 是交互页面，不属于文档集合；它与 404 页面都没有单页 Markdown。`llms.txt` 是供工具主动读取的约定，并不保证任何 AI 服务会自动抓取或采用。
+
+检查生产导出：
+
+```bash
+pnpm build
+pnpm docs:links
+pnpm docs:llms
+```
+
+`docs:llms` 会核对已发布文档与索引、HTML 发现链接、站内链接和图片，并对比源文档与导出的代码块语言、非空行内容及缩进、表格内容。还会检查全文/精简版中的正文完整性和代表性的提示框、Tabs、主题合集。Expressive Code 转换会增加空行，检查忽略空白行和行尾空格；它不能替代示例运行或文义审查。升级插件、修改排除规则或主题合集时应一起运行检查。
+
+导出文件位于 `dist/`，不要手动修改或提交。`deploy/nginx.conf` 为 `.md` 设置 `text/markdown; charset=utf-8`，为 llms 合集保留 `text/plain`；两者均要求缓存重新验证。换用其他静态托管时也应配置相应 MIME 和缓存策略，发布后检查实际响应头。新增自定义导出排除项时，同时更新 Head 中的发现规则和导出检查。
 
 ## 目录结构
 
@@ -312,6 +346,7 @@ docker run --rm -p 8080:80 snapshot-web
 - 自定义 404 页面及正确的 404 状态；
 - Astro 哈希资源的长期缓存；
 - Pagefind 搜索资源的短期缓存；
+- Markdown 与 llms 文档的 UTF-8 文本类型、缓存重新验证；
 - Gzip 压缩和基础响应头。
 
 当前 Dockerfile 未配置 HEALTHCHECK。如部署平台需要健康探测，可为容器的 HTTP 根路径另行配置探针。
@@ -324,7 +359,7 @@ docker run --rm -p 8080:80 snapshot-web
 - 向 `main` 分支提交 Pull Request 时，运行质量检查并验证镜像能够构建，不会推送；
 - 也可以在 GitHub 仓库的 Actions 页面手动运行。
 
-所有触发方式都会先运行 `quality` 作业：安装锁文件中的依赖后，依次执行 `docs:test`、`docs:coverage`、`playground:test`、`build` 和 `docs:links`。链接检查读取本次构建的 `dist/`。`build` 镜像作业通过 `needs: quality` 等待这些检查全部成功，检查失败时不会构建或发布镜像。
+所有触发方式都会先运行 `quality` 作业：安装锁文件中的依赖后，依次执行 `docs:test`、`docs:coverage`、`playground:test`、`build`、`docs:links` 和 `docs:llms`。链接与 AI 文档检查读取本次构建的 `dist/`。`build` 镜像作业通过 `needs: quality` 等待这些检查全部成功，检查失败时不会构建或发布镜像。
 
 `docs:coverage` 对照工作流中 `SNAPSHOT_DOCS_REF` 指定的 Snapshot 提交，源码检出到 `.ci/snapshot`，只读取 Kotlin 源文件，不运行 Gradle。同步上游 API 文档时，应一起更新该提交并运行覆盖检查；这不包含使用方安装流程或 Kotlin 示例编译验证。CI 使用 Node.js 22 和 pnpm 10.33.0，与 Dockerfile 的构建环境保持一致。
 

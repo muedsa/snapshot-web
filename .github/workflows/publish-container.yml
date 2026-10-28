@@ -81,6 +81,9 @@ jobs:
       - name: Check built documentation links
         run: pnpm docs:links
 
+      - name: Check Markdown and llms exports
+        run: pnpm docs:llms
+
   build:
     name: Build container image
     needs: quality

@@ -2,6 +2,7 @@
 import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
 import markdoc from "@astrojs/markdoc";
+import starlightLlmsTxt from "@rttnd/starlight-llms-txt";
 
 import tailwindcss from "@tailwindcss/vite";
 
@@ -16,6 +17,43 @@ export default defineConfig({
     starlight({
       title: "Snapshot",
       description: "用 Kotlin Widget 树和 Skia 构建结构化图片。",
+      plugins: [
+        starlightLlmsTxt({
+          projectName: "Snapshot",
+          description: "Snapshot 的 Kotlin/JVM 图片渲染与 Parser 文本 DSL 中文文档。",
+          details:
+            "Kotlin DSL 与 Parser 文本模板共用渲染引擎，但属性名、默认值和颜色写法不完全相同。文档跟随 Snapshot 快照更新，在线 Playground 的渲染能力取决于已部署的 Open Snapshot 服务版本。",
+          generatePageMarkdown: true,
+          markdownFilePattern: "replace",
+          rawContent: false,
+          // 标题旁的辅助链接只对网页交互有用，不应重复进入 Markdown 正文。
+          customSelectors: { all: [".sl-anchor-link"] },
+          promote: ["guides/overview", "guides/quickstart", "guides/parser"],
+          excludePages: ["404", "search"],
+          exclude: ["index", "reference/source-index", "guides/visual-reference"],
+          // 保留提示、实现限制、折叠说明和代码换行；精简版只按页面选择内容。
+          minify: { note: false, tip: false, details: false, whitespace: false },
+          customSets: [
+            {
+              label: "Kotlin",
+              description: "Kotlin 接入、布局绘制、Widget 与公共配置参考。",
+              paths: [
+                "guides/{overview,installation,quickstart,rendering,concepts,layout,widgets,painting,media-text,fonts,data-templates,testing}",
+                "widgets/**",
+                "reference/{text-style,text-layout,box-decoration,borders,box-shadow,decoration-image,gradients,enums,faq}",
+              ],
+            },
+            {
+              label: "DSL",
+              description: "Parser 模板语法、标签属性、错误处理与语言服务。",
+              paths: [
+                "guides/{overview,parser,examples,language-server,fonts,data-templates}",
+                "reference/{parser-tags,parser-text,parser-errors,enums,faq}",
+              ],
+            },
+          ],
+        }),
+      ],
       favicon: "/logo_mark_mono.png",
       defaultLocale: "root",
       locales: {
@@ -23,6 +61,7 @@ export default defineConfig({
       },
       customCss: ["./src/styles/global.css"],
       components: {
+        Head: "./src/components/Head.astro",
         ThemeProvider: "./src/components/ThemeProvider.astro",
       },
       social: [
