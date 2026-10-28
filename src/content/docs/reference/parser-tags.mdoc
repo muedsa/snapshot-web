@@ -16,8 +16,8 @@ description: 类 DOM 解析器支持的全部内置标签、属性格式和默�
 | [Snapshot](#snapshot) | 单个 | 根节点、背景色、调试和图片格式 |
 | [Container](#container) | 单个 | 尺寸、约束、间距、颜色、边框和对齐 |
 | [Border](#border) | 单个 | 边框、圆角与阴影装饰 |
-| [ColoredBox](#border) | 单个 | 纯色填充 |
-| [DecoratedBox](#border) | 单个 | 背景或前景装饰 |
+| [ColoredBox](#coloredbox) | 单个 | 纯色填充 |
+| [DecoratedBox](#decoratedbox) | 单个 | 背景或前景装饰 |
 | [Flex](#row-与-column) | 多个 | 水平或垂直 Flex |
 | [Row](#row-与-column) | 多个 | 横向 Flex |
 | [Column](#row-与-column) | 多个 | 纵向 Flex |
@@ -34,7 +34,7 @@ description: 类 DOM 解析器支持的全部内置标签、属性格式和默�
 | [ConstrainedBox](#constrainedbox) | 单个 | 对子节点附加最小/最大约束 |
 | [LimitedBox](#limitedbox) | 单个 | 在无界轴上限制最大尺寸 |
 | [OverflowBox](#overflowbox) | 单个 | 允许子节点突破父约束 |
-| [SizedOverflowBox](#sizedoverflowbox) | 单个 | 固定自身尺寸并允许子节点溢出 |
+| [SizedOverflowBox](#sizedoverflowbox) | 单个 | 请求自身尺寸，子节点沿用父约束 |
 | [Padding](#sizedboxpaddingalign-与-center) | 单个 | 添加内边距 |
 | [Align](#sizedboxpaddingalign-与-center) | 单个 | 对齐并可按因子调整自身尺寸 |
 | [Center](#sizedboxpaddingalign-与-center) | 单个 | 居中并可按因子调整自身尺寸 |
@@ -212,7 +212,70 @@ rgb(255 0 0 / 50%) / hsl(120deg 100% 50% / 50%)
 
 ## Border
 
-`Border` 支持 `color`、边框、圆角、阴影、形状、背景混合模式和整组 `gradient*` 属性。`ColoredBox` 要求 `color`；`DecoratedBox` 支持相同的装饰属性，另可用 `position="BACKGROUND"` 或 `"FOREGROUND"` 控制绘制顺序。三者最多一个子节点；需要控制尺寸和 padding 时使用 `Container`。
+给已有内容添加背景装饰；虽然名为 Border，也能画背景色、圆角、阴影和渐变。装饰先画，子节点后画，等价于 `position="BACKGROUND"` 的 [DecoratedBox](#decoratedbox)。
+
+| 属性 | 默认值 | 说明 |
+| --- | --- | --- |
+| `color` | 未设置 | 背景填充色 |
+| `border` | 无边框 | 格式如 `"2 SOLID #38BDF8"` |
+| `borderLeft` / `borderTop` / `borderRight` / `borderBottom` | 沿用 `border` | 仅覆盖对应一边 |
+| `borderRadius` | `0` | 四角统一圆角 |
+| `borderRadiusTopLeft` / `borderRadiusTopRight` / `borderRadiusBottomLeft` / `borderRadiusBottomRight` | 沿用 `borderRadius` | 单独覆盖对应一角 |
+| `boxShadow` | 未设置 | 阴影格式见[通用属性](#阴影) |
+| `shape` | `RECTANGLE` | 可选 `RECTANGLE` / `CIRCLE`；圆形不能再设置非零圆角 |
+| `backgroundBlendMode` | 未设置 | 背景色与渐变的混合方式，使用 Skia BlendMode 常量名 |
+| `gradient*` | 未设置 | 格式与默认值同 [Container 渐变](#container)；完整说明见[渐变参考](/reference/gradients/#parser-对应与限制) |
+
+下面是一张 240×100 的浅蓝底卡片，带 2 像素边框与 16 像素圆角：
+
+```xml
+<Snapshot background="#FFFFFF">
+  <Border color="#E0F2FE" border="2 SOLID #0284C7" borderRadius="16">
+    <SizedBox width="240" height="100">
+      <Center><Text fontSize="24">Snapshot</Text></Center>
+    </SizedBox>
+  </Border>
+</Snapshot>
+```
+
+最多一个子节点。Border 不提供 `width`、`height` 或 `padding`，也不会为边框自动留出内边距；需要间距时显式包入 Padding，或改用 Container。圆角只改变装饰形状，不裁剪子节点；若子节点会盖住圆角或背景，用 ClipRRect 等组件明确裁剪。
+
+## ColoredBox
+
+只需纯色背景时使用 ColoredBox。它先填充自己的布局区域，再绘制子节点；不支持边框、圆角或渐变。
+
+| 属性 | 默认值 | 说明 |
+| --- | --- | --- |
+| `color` | 必填 | 支持[CSS 颜色格式](#颜色)；`transparent` 表示完全透明 |
+
+```xml
+<Snapshot>
+  <ColoredBox color="#38BDF8">
+    <SizedBox width="160" height="80" />
+  </ColoredBox>
+</Snapshot>
+```
+
+输出为 160×80 的蓝色色块。最多一个子节点，自身尺寸由子节点与父约束决定；直接给 ColoredBox 写 `width` / `height` 不会生效，应使用 SizedBox 或 Container 设置尺寸。
+
+## DecoratedBox
+
+需要控制装饰与内容的绘制顺序时使用 DecoratedBox。例如给图片或色块加前景边框，让边框画在内容之上。
+
+| 属性 | 默认值 | 说明 |
+| --- | --- | --- |
+| `position` | `BACKGROUND` | `BACKGROUND` 先画装饰再画子节点；`FOREGROUND` 先画子节点再画装饰 |
+| `color`、`border*`、`borderRadius*`、`boxShadow`、`shape`、`backgroundBlendMode`、`gradient*` | 同 [Border](#border) | 属性名、格式和默认值完全相同；前景装饰也使用这些名称，不加 `foreground` 前缀 |
+
+```xml
+<Snapshot>
+  <DecoratedBox position="FOREGROUND" border="4 SOLID #0F172A">
+    <Container width="240" height="100" color="#38BDF8" />
+  </DecoratedBox>
+</Snapshot>
+```
+
+输出为 240×100 的蓝色矩形，深色边框覆盖在色块之上。若前景同时设置不透明 `color`，填充也会盖住子节点。最多一个子节点；与 Border 一样，不额外撑大布局、不自动添加内边距，也不裁剪子节点。需要尺寸、间距与装饰一起配置时，使用 Container。
 
 ## SizedBox、Padding、Align 与 Center
 
@@ -330,13 +393,29 @@ Stack / IndexedStack 根据所有直接子节点的布局矩形累计越界状�
 
 ### SizedOverflowBox
 
-`width` 和 `height` 均为必填 Float，`alignment` 默认为 `CENTER`。自身保持指定尺寸，但子节点仍按父级原始约束布局，因此可以超出它的边界。
+`width` 和 `height` 均为必填 Float，`alignment` 默认为 `CENTER`。它们指定的是**自身期望的尺寸**，实际尺寸仍会被父约束限制。子节点继续按父级原始约束布局，不会收到这组期望宽高，因此可能超出本节点边界；SizedOverflowBox 本身不裁剪。
+
+作为无界根节点时，下面的 SizedOverflowBox 为 160×100，子节点为 240×140，按右下角对齐。若直接包入 Snapshot，输出画布只有 160×100，画布外的内容仍不可见：
 
 ```xml
 <SizedOverflowBox width="160" height="100" alignment="BOTTOM_RIGHT">
   <SizedBox width="240" height="140" />
 </SizedOverflowBox>
 ```
+
+若父级给的是紧约束，期望尺寸就不能决定结果。下面的外层 SizedBox 要求子节点恰好为 200×200，因此 SizedOverflowBox 和内部 ColoredBox 都是 200×200，输出整张蓝色图片，而不是居中的 100×100 色块：
+
+```xml
+<Snapshot>
+  <SizedBox width="200" height="200">
+    <SizedOverflowBox width="100" height="100">
+      <ColoredBox color="#38BDF8" />
+    </SizedOverflowBox>
+  </SizedBox>
+</Snapshot>
+```
+
+与 OverflowBox 的区别是：SizedOverflowBox 请求自己的尺寸；OverflowBox 改变传给子节点的约束。Kotlin 写法见 [SizedOverflowBox](/widgets/layout/sized-overflow-box/)。
 
 ## Opacity 与 Transform
 
@@ -504,9 +583,19 @@ Stack / IndexedStack 根据所有直接子节点的布局矩形累计越界状�
 
 ## WidgetSpan
 
-只能作为 `Text` 子节点，且必须恰有一个普通 Widget 子节点。`alignment` 默认为 `BOTTOM`，可设 `BASELINE`、`ABOVE_BASELINE`、`BELOW_BASELINE`、`TOP`、`BOTTOM`、`MIDDLE`；`baseline` 可设 `ALPHABETIC` 或 `IDEOGRAPHIC`，并支持 Text 的文本样式属性。
+只能出现在最外层 `Text` 建立的行内内容树中，可以直接位于 Text 下，也可以嵌套在其中的 Text / Raw 下；不能直接放在 Row、Container 等普通布局中。WidgetSpan 自身必须恰有一个普通 Widget 子节点。`alignment` 默认为 `BOTTOM`，可设 `BASELINE`、`ABOVE_BASELINE`、`BELOW_BASELINE`、`TOP`、`BOTTOM`、`MIDDLE`；`baseline` 可设 `ALPHABETIC` 或 `IDEOGRAPHIC`，并支持 Text 的文本样式属性。
 
 BOTTOM / MIDDLE 参考文字行盒；BASELINE 使用子 Widget 基线，无真实基线的普通盒通常以盒底回退。共用字体和字号应放在父 Text，图标尺寸与 alignment 建议显式给出，见[行内对齐规则](/reference/text-layout/#widgetspan-与-emoji-对齐)。
+
+下面的 Raw 同时保留文字间的空格，并包含一个随文字排列的绿色状态块。Raw 内的内容刻意写在同一行，避免将格式化换行也当作文本：
+
+```xml
+<Snapshot background="#FFFFFF">
+  <Container width="320" height="80" padding="16">
+    <Text fontSize="24"><Raw>Status <WidgetSpan alignment="MIDDLE"><Container width="18" height="18" color="#16A34A" /></WidgetSpan> Ready</Raw></Text>
+  </Container>
+</Snapshot>
+```
 
 ## Emoji
 
@@ -521,4 +610,4 @@ BOTTOM / MIDDLE 参考文字行盒；BASELINE 使用子 Widget 基线，无真�
 | `scale` / `opacity` | 否 | 1；`scale` 是像素密度，必须有限且大于 0 |
 | `color` / `colorBlendMode` | 否 | 图片着色 |
 
-只能作为 `Text` 的子节点；使用 URL 获取网络图片时会同步阻塞，Data URI 则由解码器在本地处理。
+与 WidgetSpan 一样，只能用于最外层 Text 建立的行内内容树中，也允许嵌套在其中的 Text / Raw 下；Emoji 自身不能有子节点。使用 URL 获取网络图片时会同步阻塞，Data URI 则由解码器在本地处理。

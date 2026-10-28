@@ -4,6 +4,7 @@ param(
     [string]$SnapshotVersion = '0.0.0-SNAPSHOT',
     [switch]$FromSource,
     [string]$CompilerVersion,
+    [string]$FontDirectory = (Join-Path $PSScriptRoot '../.astro/docs-verification/fonts'),
     [switch]$UpdateImages
 )
 
@@ -18,6 +19,12 @@ $taskOutput = Join-Path $taskRepo '.astro/docs-verification/reference'
 $taskWalkthroughs = Join-Path $taskRepo '.astro/docs-verification/walkthroughs'
 $taskRun = Join-Path $taskRepo '.astro/docs-verification/run'
 $taskVersions = Get-Content -LiteralPath (Join-Path $taskSnapshot 'gradle/libs.versions.toml') -Raw
+$taskGuideFonts = @('NotoSansCJKsc-Regular.otf', 'NotoSansCJKsc-Bold.otf')
+foreach ($taskName in $taskGuideFonts) {
+    if (-not (Test-Path -LiteralPath (Join-Path $FontDirectory $taskName) -PathType Leaf)) {
+        throw "缺少字体指南的资源 $taskName；按 guides/fonts 下载到 $FontDirectory，或用 -FontDirectory 指定目录。脚本不自动联网下载。"
+    }
+}
 function Read-TaskVersion([string]$name) {
     $taskMatch = [regex]::Match($taskVersions, "(?m)^$name\s*=\s*`"([^`"]+)`"")
     if (-not $taskMatch.Success) { throw "找不到上游依赖版本：$name" }
@@ -75,6 +82,9 @@ $taskClasses = Join-Path $taskOutput 'classes'
 New-Item -ItemType Directory -Force -Path $taskRun, "$taskClasses/fonts" | Out-Null
 $taskFont = Join-Path $taskSnapshot 'testkit/src/main/resources/fonts/NotoSansSC.ttf'
 Copy-Item -LiteralPath $taskFont -Destination "$taskClasses/fonts/NotoSansSC.ttf"
+foreach ($taskName in $taskGuideFonts) {
+    Copy-Item -LiteralPath (Join-Path $FontDirectory $taskName) -Destination (Join-Path "$taskClasses/fonts" $taskName)
+}
 $taskMain = @'
 import com.muedsa.snapshot.paint.text.TextPainter
 import org.jetbrains.skia.Data

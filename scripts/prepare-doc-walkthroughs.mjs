@@ -44,10 +44,10 @@ for (const page of ['quickstart', 'parser', 'rendering', 'fonts', 'data-template
   }
 }
 const xmlFiles = [];
-for (const page of ['guides/examples', 'guides/parser', 'guides/fonts']) {
+for (const page of ['guides/examples', 'guides/parser', 'guides/fonts', 'reference/parser-tags']) {
   const all = blocks(page, 'xml');
   for (const [i, code] of all.entries()) {
-    if (!code.includes('<Snapshot') || /\burl=/.test(code)) continue;
+    if (!/<Snapshot(?:\s|>)/.test(code) || !code.includes('</Snapshot>') || /\burl=/.test(code)) continue;
     const name = page.replaceAll('/', '-') + '-' + (i + 1);
     writeFileSync(resolve(output, name + '.xml'), code);
     xmlFiles.push(name);

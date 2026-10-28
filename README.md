@@ -262,6 +262,8 @@ git diff --check
 
 当前提供 Windows x64 / Java 17 的本地验证入口，需要 Node.js、PowerShell、相邻 Snapshot 源码以及已缓存的 Kotlin / Skiko / JUnit 依赖。默认读取最新 core / parser JAR（先在 Snapshot 项目构建 `:core:jar :parser:jar`）；也可用 `-FromSource` 直接在本项目的 `.astro/` 中编译当前源码。脚本不联网，不修改相邻仓库；testkit 未发布，因此测试示例始终从它的源码编译。
 
+首次运行前，按[字体指南](https://snapshot.muedsa.com/guides/fonts/#准备字体文件)获取 `Sans2.004` 的 `NotoSansCJKsc-Regular.otf`、`NotoSansCJKsc-Bold.otf` 和许可证，保存到 `.astro/docs-verification/fonts/`，也可用 `-FontDirectory <目录>` 指定已有文件。它们用于验证正文中的多字重注册与 DSL 示例，不提交字体二进制文件。
+
 ```powershell
 # 默认使用 GRADLE_USER_HOME，未设置时使用用户目录下的 .gradle。
 # 按实际路径填写 -GradleCache；例如 D:/.gradle。
@@ -276,7 +278,7 @@ git diff --check
 
 也可指定 `-SnapshotRoot` 和 `-SnapshotVersion`。`-FromSource -CompilerVersion <缓存版本>` 可用于工具链未缓存齐全时的兼容性核对，会明确提示与上游声明版本不同；这种运行不等于使用上游 Gradle 工具链的完整验证。Kotlin / Skiko 版本读取上游版本目录；编译器的辅助依赖目前按 Kotlin 2.4.20 的本地缓存配置，升级工具链时需同步核对。其他系统需要适配对应的 Skiko 原生 runtime，不能直接使用 Windows JAR。
 
-脚本直接抽取公共配置、效果对比及基线指南中的 17 段 Kotlin、Parser 文本页的 4 段 XML，并扩展到 46 个组件/指南片段、11 个完整程序和 7 个完整 DSL 模板。它会实际编译和渲染，并验证关键子节点尺寸/位置、像素断言、CDATA 文本保留，以及 Golden 的 record / verify / update。当前输出在 `.astro/docs-verification/reference/`、`walkthroughs/` 和 `run/`；`walkthroughs/manifest.json` 记录抽取清单。
+脚本直接抽取公共配置、效果对比及基线指南中的 17 段 Kotlin、Parser 文本页的 4 段 XML，并扩展到组件/指南片段、完整程序和带 Snapshot 根标签的 DSL 模板（包括标签参考中的装饰、紧约束与 Raw 内嵌 WidgetSpan 示例）。它会实际编译和渲染，并验证关键子节点尺寸/位置、像素断言、CDATA 文本保留，以及 Golden 的 record / verify / update。当前输出在 `.astro/docs-verification/reference/`、`walkthroughs/` 和 `run/`；`walkthroughs/manifest.json` 记录实际抽取数量与清单。
 
 这不是全站任意代码块执行器：函数签名、配置片段、故意错误示例、网络访问和自定义接口示意不自动执行。新增例子时同步维护抽取清单与运行入口。完整程序保留正文 import 和函数定义，以发现读者复制时会遇到的编译错误。
 
