@@ -7,6 +7,19 @@ sidebar:
 
 `Stack` 用于背景叠加、角标、覆盖层和绝对定位。它先布局非 Positioned 子节点，再根据 parentData 放置 Positioned 子节点。
 
+## 示例
+
+深色底板决定整体为 360×200，蓝色角标为 72×28，其左上角是 `(272,16)`。后写的子节点画在前面的上方。
+
+```kotlin
+Stack(clipBehavior = ClipBehavior.NONE) {
+    Container(width = 360f, height = 200f, color = 0xFF0F172A.toInt())
+    Positioned(right = 16f, top = 16f) {
+        Container(width = 72f, height = 28f, color = 0xFF38BDF8.toInt())
+    }
+}
+```
+
 ## 函数签名
 
 ```kotlin
@@ -34,17 +47,6 @@ fun ChildSlot.Stack(
 - `LOOSE`：放松父约束后传给普通子节点；
 - `EXPAND`：把普通子节点收紧到最大可用尺寸；
 - `PASSTHROUGH`：原样传递父约束。
-
-## 示例
-
-```kotlin
-Stack(clipBehavior = ClipBehavior.NONE) {
-    Container(width = 360f, height = 200f, color = 0xFF0F172A.toInt())
-    Positioned(right = 16f, top = 16f) {
-        Container(width = 72f, height = 28f, color = 0xFF38BDF8.toInt())
-    }
-}
-```
 
 ## 布局越界与绘制越界
 

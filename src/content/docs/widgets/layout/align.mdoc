@@ -5,7 +5,23 @@ sidebar:
   order: 8
 ---
 
-`Align` 使用 `BoxAlignment` 放置单个子节点。它可以填满父级可用空间，也可以通过尺寸因子包裹子节点。
+`Align` 在一个区域里摆放单个内容，例如把角标放在右下角。对齐要有剩余空间才看得出效果；如果盒子和内容一样大，CENTER 与 BOTTOM_RIGHT 的结果会相同。
+
+## 示例
+
+```kotlin
+SizedBox(width = 300f, height = 180f) {
+    Align(alignment = BoxAlignment.BOTTOM_RIGHT) {
+        SizedBox(width = 80f, height = 40f) {
+            ColoredBox(color = 0xFF38BDF8.toInt())
+        }
+    }
+}
+```
+
+蓝色盒子为 80×40，左上角在 `(220,140)`，恰好贴住 300×180 区域的右下角。
+
+`BoxAlignment(-1f, -1f)` 是左上，`(0f, 0f)` 是中心，`(1f, 1f)` 是右下。
 
 ## 函数签名
 
@@ -26,20 +42,6 @@ fun ChildSlot.Align(
 | `widthFactor` | `null` | 非空时，自身宽度尝试取子宽度 × factor |
 | `heightFactor` | `null` | 非空时，自身高度尝试取子高度 × factor |
 | `content` | 空 | 最多一个子 Widget |
-
-## 示例
-
-```kotlin
-SizedBox(width = 300f, height = 180f) {
-    Align(alignment = BoxAlignment.BOTTOM_RIGHT) {
-        SizedBox(width = 80f, height = 40f) {
-            ColoredBox(color = 0xFF38BDF8.toInt())
-        }
-    }
-}
-```
-
-`BoxAlignment(-1f, -1f)` 是左上，`(0f, 0f)` 是中心，`(1f, 1f)` 是右下。
 
 ## 尺寸因子与边界
 

@@ -17,12 +17,12 @@ const examples = references.map(name => {
   const code = blocks(`reference/${name}`, 'kotlin', 1)[0];
   return { name, code: name === 'decoration-image' ? code : `val png = SnapshotPNG {\n${code}\n}`, publish: false };
 });
-// 指南中的两段基线/行内示例也是 SnapshotPNG 内的组件片段。
+// 普通文本、基线、行内对象和富文本均直接抽取自指南。
 const mediaText = blocks('guides/media-text', 'kotlin', 5);
-['text-baseline-row', 'text-baseline-inline'].forEach((name, i) => {
-  examples.push({ name, code: `val png = SnapshotPNG {\n${mediaText[i + 2]}\n}`, publish: false });
+['text-paragraph', 'text-baseline-row', 'text-baseline-inline', 'text-rich'].forEach((name, i) => {
+  examples.push({ name, code: `val png = SnapshotPNG {\n${mediaText[i + 1]}\n}`, publish: false });
 });
-const visualNames = ['box-fit-comparison', 'gradient-comparison', 'inline-alignment-comparison', 'clip-comparison'];
+const visualNames = ['box-fit-comparison', 'gradient-comparison', 'inline-alignment-comparison', 'clip-comparison', 'flex-space-comparison', 'text-baseline-comparison'];
 blocks('guides/visual-reference', 'kotlin', visualNames.length).forEach((code, i) => {
   examples.push({ name: visualNames[i], code, publish: true });
 });
@@ -35,6 +35,7 @@ const calls = examples.map((example, i) =>
   `save("${example.name}", example${i}(), output, if (${example.publish} && updateImages) publicImages else null)`);
 const source = `${visualImports}
 import org.jetbrains.skia.paragraph.DecorationStyle
+import org.jetbrains.skia.FontStyle
 import org.jetbrains.skia.paragraph.StrutStyle
 import org.jetbrains.skia.paragraph.BaselineMode
 import com.muedsa.snapshot.parser.Parser
@@ -58,7 +59,7 @@ fun save(name: String, png: ByteArray, output: File, publish: File? = null, widt
     println("PASS: $name -> " + image.width + "x" + image.height + ", " + png.size + " bytes")
 }
 
-fun main(args: Array<String>) {
+fun renderReferences(args: Array<String>) {
     val output = File(args[0])
     val publicImages = File(args[1])
     val updateImages = args[2] == "true"

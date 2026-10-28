@@ -59,6 +59,8 @@ export default defineConfig({
             { label: "Widget 与布局", slug: "guides/widgets" },
             { label: "绘制、装饰与效果", slug: "guides/painting" },
             { label: "图片、文本与富文本", slug: "guides/media-text" },
+            { label: "字体与跨平台文字", slug: "guides/fonts" },
+            { label: "用业务数据生成图片", slug: "guides/data-templates" },
           ],
         },
         {

@@ -5,7 +5,19 @@ sidebar:
   order: 4
 ---
 
-`LimitedBox` 用于处理无界布局。当父节点某个维度的最大值为 Infinity 时，它才在该维度应用自己的最大值。
+`LimitedBox` 是无界尺寸的后备上限：只有父级没有给某个方向的最大尺寸时，它才接管那个方向。需要始终限制最大宽度时，用 ConstrainedBox 更合适。
+
+## 示例
+
+放在无界根节点时，本例给空 Container 一个 320×180 的范围，Container 会填满它。若父级已经提供有限约束，这两个上限就不参与限制。
+
+```kotlin
+LimitedBox(maxWidth = 320f, maxHeight = 180f) {
+    Container(color = 0xFF1E293B.toInt())
+}
+```
+
+如果父节点已经给出有限最大宽高，LimitedBox 不会进一步缩小它。需要始终生效的最大约束应使用 `ConstrainedBox`。
 
 ## 函数签名
 
@@ -24,13 +36,3 @@ fun ChildSlot.LimitedBox(
 | `maxWidth` | Infinity | 父最大宽度无限时使用的最大宽度 |
 | `maxHeight` | Infinity | 父最大高度无限时使用的最大高度 |
 | `content` | 空 | 最多一个子 Widget |
-
-## 示例
-
-```kotlin
-LimitedBox(maxWidth = 320f, maxHeight = 180f) {
-    Container(color = 0xFF1E293B.toInt())
-}
-```
-
-如果父节点已经给出有限最大宽高，LimitedBox 不会进一步缩小它。需要始终生效的最大约束应使用 `ConstrainedBox`。

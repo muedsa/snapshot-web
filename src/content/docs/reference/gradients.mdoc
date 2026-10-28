@@ -7,6 +7,8 @@ description: LinearGradient、RadialGradient、SweepGradient 的完整参数、�
 
 ## 共用参数
 
+想从左到右变色选 LinearGradient；从中心向外扩散选 RadialGradient；围绕中心转一圈变色选 SweepGradient。`colors` 决定颜色，`stops` 决定每个颜色出现在哪个进度点，例如 `[0f, 0.8f, 1f]` 会把最后一段颜色变化压在末尾 20% 内。
+
 | 参数 | 类型 / 默认值 | 含义与有效输入 |
 | --- | --- | --- |
 | `colors` | `IntArray`，必填 | 至少两个 ARGB 颜色；透明度在最高字节 |

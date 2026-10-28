@@ -5,27 +5,9 @@ sidebar:
   order: 3
 ---
 
-`WidgetSpan` 是 `PlaceholderSpan` 的实现。它把一个 Widget 插入 RichText，参与段落测量、基线对齐与绘制。
+`WidgetSpan` 把一个小组件放进文字行里，例如状态点或徽标。它会随段落换行；如果图标必须始终待在整段文字左侧，应使用 Row + Expanded。
 
-## DSL 签名
-
-```kotlin
-fun TextSpan.WidgetSpan(
-    alignment: PlaceholderAlignment = PlaceholderAlignment.BOTTOM,
-    baseline: BaselineMode? = null,
-    style: TextStyle? = null,
-    content: ChildSlot.() -> Unit,
-)
-```
-
-## 参数
-
-| 参数 | 默认值 | 说明 |
-| --- | --- | --- |
-| `alignment` | `BOTTOM` | 占位盒与文字行的对齐方式 |
-| `baseline` | `null` | 使用基线类 alignment 时的基线类型 |
-| `style` | `null` | 占位 Span 的可继承文本样式 |
-| `content` | 必填 | 构建一个行内 Widget |
+## 使用示例
 
 ```kotlin
 RichText {
@@ -48,3 +30,23 @@ RichText {
 BASELINE 查询子 Widget 的基线：没有真实基线的图片或色块通常使用盒高回退，即以盒底贴到文字基线；它与默认 BOTTOM 的行盒底部对齐不是一回事。DSL `<WidgetSpan>` 使用同样规则，完整示例见[基线与混排](/reference/parser-text/#基线与混排)。
 
 WidgetSpan 会增加段落布局复杂度。简单图标优先使用固定尺寸，避免无限或不稳定约束。
+
+## DSL 签名
+
+```kotlin
+fun TextSpan.WidgetSpan(
+    alignment: PlaceholderAlignment = PlaceholderAlignment.BOTTOM,
+    baseline: BaselineMode? = null,
+    style: TextStyle? = null,
+    content: ChildSlot.() -> Unit,
+)
+```
+
+## 参数
+
+| 参数 | 默认值 | 说明 |
+| --- | --- | --- |
+| `alignment` | `BOTTOM` | 占位盒与文字行的对齐方式 |
+| `baseline` | `null` | 使用基线类 alignment 时的基线类型 |
+| `style` | `null` | 占位 Span 的可继承文本样式 |
+| `content` | 必填 | 构建一个行内 Widget |

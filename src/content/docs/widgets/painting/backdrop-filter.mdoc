@@ -7,6 +7,32 @@ sidebar:
 
 `BackdropFilter` 读取当前区域背后的已绘制内容，应用 `ImageFilter` 后再按 BlendMode 合成，典型用途是毛玻璃。
 
+## 示例
+
+先画蓝黄背景，再在左上方覆盖 240×120 的圆角毛玻璃。能观察到圆角区域内的两色交界变模糊，区域外保持清晰；没有背景时，单独加模糊通常看不到效果。
+
+```kotlin
+Stack {
+    SizedBox(width = 360f, height = 200f) {
+        Row(crossAxisAlignment = CrossAxisAlignment.STRETCH) {
+            Expanded { ColoredBox(color = 0xFF0369A1.toInt()) }
+            Expanded { ColoredBox(color = 0xFFF59E0B.toInt()) }
+        }
+    }
+    ClipRRect(borderRadius = BorderRadius.circular(20f)) {
+        BackdropFilter(
+            imageFilter = ImageFilter.makeBlur(25f, 25f, FilterTileMode.CLAMP),
+        ) {
+            Container(width = 240f, height = 120f, color = 0x33FFFFFF)
+        }
+    }
+}
+```
+
+BackdropFilter 只有背后已有内容时才有视觉效果。通常应配合 ClipRect 或 ClipRRect 限制滤镜区域，否则过滤范围和离屏成本可能过大。
+
+BackdropFilter 会读取子树之外的背景，无法仅凭子节点的绘制边界推断完整作用范围。即使嵌套在 ColorFiltered 内，仍应通过外层裁剪明确限定区域。
+
 ## 函数签名
 
 ```kotlin
@@ -24,22 +50,3 @@ fun ChildSlot.BackdropFilter(
 | `imageFilter` | 必填 | 应用于背景的 Skia ImageFilter |
 | `blendMode` | `SRC_OVER` | 过滤结果的合成模式 |
 | `content` | 空 | 前景子 Widget |
-
-## 示例
-
-```kotlin
-Stack {
-    RawImage(image = background)
-    ClipRRect(borderRadius = BorderRadius.circular(20f)) {
-        BackdropFilter(
-            imageFilter = ImageFilter.makeBlur(25f, 25f, FilterTileMode.CLAMP),
-        ) {
-            Container(width = 240f, height = 120f, color = 0x33FFFFFF)
-        }
-    }
-}
-```
-
-BackdropFilter 只有背后已有内容时才有视觉效果。通常应配合 ClipRect 或 ClipRRect 限制滤镜区域，否则过滤范围和离屏成本可能过大。
-
-BackdropFilter 会读取子树之外的背景，无法仅凭子节点的绘制边界推断完整作用范围。即使嵌套在 ColorFiltered 内，仍应通过外层裁剪明确限定区域。

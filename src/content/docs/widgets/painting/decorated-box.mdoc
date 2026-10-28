@@ -7,6 +7,25 @@ sidebar:
 
 `DecoratedBox` 使用 `Decoration` 绘制颜色、边框、圆角、阴影、渐变或装饰图片。最常用实现是 `BoxDecoration`。
 
+## 使用示例
+
+下例画出 320×180 的深色圆角背景和边框。阴影不计入布局尺寸，直接作为根出图时可能被画布边缘截断；需要完整阴影时，在整个 DecoratedBox 外再加 Padding。内部内容是否被圆角裁掉则由 Clip 组件决定。
+
+```kotlin
+DecoratedBox(
+    decoration = BoxDecoration(
+        color = 0xFF0F172A.toInt(),
+        borderRadius = BorderRadius.circular(20f),
+        border = Border.all(color = 0xFF334155.toInt()),
+        boxShadow = ELEVATION_MAP[8],
+    ),
+) {
+    SizedBox(width = 320f, height = 180f)
+}
+```
+
+`FOREGROUND` 装饰会绘制在子节点上方，可用于蒙层或前景边框。DecoratedBox 本身不会按圆角裁剪子节点；需要裁剪时配合 ClipRRect，或使用 Container 的 `clipBehavior + decoration` 组合。
+
 ## 函数签名
 
 ```kotlin
@@ -39,18 +58,3 @@ fun ChildSlot.DecoratedBox(
 | `gradient` | [Linear、Radial 或 Sweep Gradient](/reference/gradients/) |
 | `backgroundBlendMode` | 背景层混合方式 |
 | `shape` | `RECTANGLE` 或 `CIRCLE` |
-
-```kotlin
-DecoratedBox(
-    decoration = BoxDecoration(
-        color = 0xFF0F172A.toInt(),
-        borderRadius = BorderRadius.circular(20f),
-        border = Border.all(color = 0xFF334155.toInt()),
-        boxShadow = ELEVATION_MAP[8],
-    ),
-) {
-    SizedBox(width = 320f, height = 180f)
-}
-```
-
-`FOREGROUND` 装饰会绘制在子节点上方，可用于蒙层或前景边框。DecoratedBox 本身不会按圆角裁剪子节点；需要裁剪时配合 ClipRRect，或使用 Container 的 `clipBehavior + decoration` 组合。

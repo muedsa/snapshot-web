@@ -5,7 +5,24 @@ sidebar:
   order: 3
 ---
 
-`ConstrainedBox` 把一组额外 `BoxConstraints` 与父节点传入的约束合并，再传给子节点。
+`ConstrainedBox` 用来规定尺寸范围，例如卡片最窄 160、最宽 320，让内容在范围内决定最终大小。它不能推翻父节点的限制：父级已锁定宽度时，最终仍以父级为准。
+
+## 示例
+
+下面给标题 160～320 的宽度和 80～200 的高度范围。标题短时至少留 160 宽，长时最多按 320 换行；父级若已固定尺寸，则该尺寸优先。
+
+```kotlin
+ConstrainedBox(
+    constraints = BoxConstraints(
+        minWidth = 160f,
+        maxWidth = 320f,
+        minHeight = 80f,
+        maxHeight = 200f,
+    ),
+) {
+    Text("宽度会被限制在 160 到 320 之间")
+}
+```
 
 ## 函数签名
 
@@ -22,21 +39,6 @@ fun ChildSlot.ConstrainedBox(
 | --- | --- |
 | `constraints` | 额外的 `minWidth`、`maxWidth`、`minHeight`、`maxHeight` |
 | `content` | 最多一个子 Widget |
-
-## 示例
-
-```kotlin
-ConstrainedBox(
-    constraints = BoxConstraints(
-        minWidth = 160f,
-        maxWidth = 320f,
-        minHeight = 80f,
-        maxHeight = 200f,
-    ),
-) {
-    Text("宽度会被限制在 160 到 320 之间")
-}
-```
 
 ## 约束合并
 

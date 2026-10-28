@@ -5,7 +5,23 @@ sidebar:
   order: 7
 ---
 
-`Padding` 从传给子节点的约束中扣除边距，布局子节点后再把边距加回自身尺寸。
+`Padding` 在内容四周留出空白，适合给文字、图片或整张卡片加内边距。例如，内容是 120×60，左右各留 24、上下各留 16，整体就需要 168×92 的空间。
+
+## 示例
+
+```kotlin
+Padding(padding = EdgeInsets.symmetric(horizontal = 24f, vertical = 16f)) {
+    SizedBox(width = 120f, height = 60f) {
+        ColoredBox(color = 0xFF38BDF8.toInt())
+    }
+}
+```
+
+放进 `SnapshotPNG { … }` 后得到 168×92 的图片，蓝色矩形从 `(24,16)` 开始，占 120×60。Padding 自己不绘制颜色；这里看到的边距使用画布背景色。
+
+如果父级已经锁定整体宽度为 168，左右边距会从这 168 中扣除，留给子节点的宽度是 120，而不是把整体再撑大。只有父约束允许时，Padding 才能按内容加边距的尺寸展开。
+
+需要把背景也画进留白区域时，使用 `Container(color = …, padding = …)`；需要在背景外留白时使用 `Container.margin` 或再包一层 Padding。文本基线布局中，建议把共同留白加在整行外，见[包装基线限制](/reference/text-layout/#三处基线设置的区别)。
 
 ## 函数签名
 
@@ -31,13 +47,3 @@ EdgeInsets.symmetric(vertical = 8f, horizontal = 16f)
 EdgeInsets.only(left = 12f, top = 8f)
 EdgeInsets.fromLTRB(8f, 12f, 16f, 20f)
 ```
-
-## 示例
-
-```kotlin
-Padding(padding = EdgeInsets.symmetric(horizontal = 24f, vertical = 16f)) {
-    ColoredBox(color = 0xFF38BDF8.toInt())
-}
-```
-
-Padding 会扩大自身所需尺寸，但最终仍受父约束限制。外边距在 Snapshot 中没有独立 Widget，`Container.margin` 内部也是使用 Padding 实现。

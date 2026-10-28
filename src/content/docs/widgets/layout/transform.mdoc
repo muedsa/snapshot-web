@@ -7,6 +7,21 @@ sidebar:
 
 `Transform` 对子树应用 `Matrix44CMO`，支持旋转、平移、缩放和组合变换。它只影响绘制坐标，不重新参与布局。
 
+## 旋转示例
+
+```kotlin
+Padding(padding = EdgeInsets.all(32f)) {
+    Transform(
+        transform = computeRotation(0.15f),
+        alignment = BoxAlignment.CENTER,
+    ) {
+        Container(width = 240f, height = 120f, color = 0xFF38BDF8.toInt())
+    }
+}
+```
+
+蓝色矩形绕自身中心旋转约 8.6 度，外层 Padding 给旋转后的四角留出空间。输出为 304×184；去掉 Padding 时根画布仍只有 240×120，旋转后的四角可能落到画布外。
+
 ## 函数签名
 
 ```kotlin
@@ -27,27 +42,20 @@ fun ChildSlot.Transform(
 | `alignment` | 必填，可为 null | 相对自身尺寸计算的变换中心 |
 | `content` | 空 | 最多一个子 Widget |
 
-## 旋转示例
-
-```kotlin
-Transform(
-    transform = computeRotation(0.15f),
-    alignment = BoxAlignment.CENTER,
-) {
-    Container(width = 240f, height = 120f, color = 0xFF38BDF8.toInt())
-}
-```
-
 ## 平移示例
 
 ```kotlin
-Transform(
-    transform = Matrix44CMO.translationValues(24f, 12f, 0f),
-    alignment = null,
-) {
-    Text("translated")
+SizedBox(width = 180f, height = 80f) {
+    Transform(
+        transform = Matrix44CMO.translationValues(24f, 12f, 0f),
+        alignment = null,
+    ) {
+        Text("translated")
+    }
 }
 ```
+
+文字相对原绘制位置向右移 24、向下移 12。外框仍是 180×80，平移不会自动把输出宽高增加 24 和 12。
 
 `Transform.rotate()` 和 `Transform.translate()` 也可以创建 Widget 实例，但在 DSL 中直接传矩阵通常更清晰。
 

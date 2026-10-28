@@ -7,6 +7,18 @@ sidebar:
 
 `ClipRRect` 适合头像卡片、圆角图片和圆角容器。可以直接提供 BorderRadius，也可以由 clipper 完全自定义 RRect。
 
+## 使用示例
+
+```kotlin
+ClipRRect(borderRadius = BorderRadius.circular(24f)) {
+    Container(width = 320f, height = 180f, color = 0xFF38BDF8.toInt())
+}
+```
+
+得到 320×180 的蓝色圆角矩形，四角半径为 24。换成 RawImage 即可裁圆角图片；[本地图片示例](/guides/rendering/#加载本地图片并释放资源)说明了如何创建和释放 Image。
+
+ClipRRect 只负责裁剪，不负责绘制圆角背景或边框；需要视觉装饰时再配合 DecoratedBox。
+
 ## 函数签名
 
 ```kotlin
@@ -26,11 +38,3 @@ fun ChildSlot.ClipRRect(
 | `clipper` | `null` | 根据当前 Size 返回自定义 RRect |
 | `clipBehavior` | `ANTI_ALIAS` | 裁剪策略 |
 | `content` | 空 | 最多一个子 Widget |
-
-```kotlin
-ClipRRect(borderRadius = BorderRadius.circular(24f)) {
-    RawImage(image = sourceImage, width = 320f, height = 180f, fit = BoxFit.COVER)
-}
-```
-
-ClipRRect 只负责裁剪，不负责绘制圆角背景或边框；需要视觉装饰时再配合 DecoratedBox。

@@ -17,6 +17,23 @@ sidebar:
 生产环境应根据业务的信任边界与基础设施，自行实现 [`NetworkImageCache`](#networkimagecache-接口)，在实现中完成安全的网络访问、图片校验以及缓存管理，然后通过 `cache` 参数注入，或注册为全局默认实现。
 {% /aside %}
 
+## 使用示例
+
+将示例 URL 换成自己能访问的图片地址，`example.com/cover.png` 只是占位地址。本例演示如何限制缓存数量与单次下载体积；业务代码通常应复用同一个 cache 实例，否则每次渲染都新建缓存就无法复用已下载的图片。
+
+```kotlin
+CachedNetworkImage(
+    url = "https://example.com/cover.png",
+    width = 320f,
+    height = 180f,
+    fit = BoxFit.COVER,
+    cache = SimpleLimitedNetworkImageCache(
+        maxImageNum = 100,
+        maxSingleImageSize = 5 * 1024 * 1024,
+    ),
+)
+```
+
 ## 函数签名
 
 ```kotlin
@@ -53,19 +70,6 @@ fun ChildSlot.CachedNetworkImage(
 省略 `fit` 时使用 `SCALE_DOWN`，保持比例、只缩不放；若需保留旧版拉伸铺满的效果，显式设置 `fit = BoxFit.FILL`。`scale` 表示像素密度，自然逻辑尺寸为图像像素尺寸除以它，详见 [RawImage](/widgets/image/raw-image/#scale-与逻辑尺寸)。
 
 `repeat` 平铺同样受全局 `ImageRepeatConfig.maxTileCount` 限制，默认单次绘制最多 100,000 个矩形；超限会抛出 `IllegalArgumentException`，与网络缓存限额是两回事。
-
-```kotlin
-CachedNetworkImage(
-    url = "https://example.com/cover.png",
-    width = 320f,
-    height = 180f,
-    fit = BoxFit.COVER,
-    cache = SimpleLimitedNetworkImageCache(
-        maxImageNum = 100,
-        maxSingleImageSize = 5 * 1024 * 1024,
-    ),
-)
-```
 
 ## NetworkImageCache 接口
 

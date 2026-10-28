@@ -3,6 +3,25 @@ title: IndexedStack
 description: 布局全部子节点，只绘制指定索引的子节点。
 ---
 
+`IndexedStack` 适合在几个不同内容之间选择一个输出，同时保持统一的布局区域。例如选择不同状态卡片时，不希望图片尺寸跟着内容切换。
+
+## 使用示例
+
+索引 1 选择蓝色块。整体仍为 200×120（由所有非 Positioned 子项共同确定），蓝色块为 100×80，位于左上角；红色块参与布局但不可见。改成 `index = null` 后整体尺寸不变，内容全部不画。
+
+```kotlin
+IndexedStack(index = 1) {
+    Container(width = 200f, height = 120f, color = 0xFFFF0000.toInt())
+    Container(width = 100f, height = 80f, color = 0xFF0000FF.toInt())
+}
+```
+
+Parser 默认 `alignment="TOP_LEFT"`，与 Kotlin DSL 的 `TOP_START` 不同；可写 `<IndexedStack index="1" fit="EXPAND">…</IndexedStack>`。裸写 `index` 表示 `null`。
+
+裁剪规则与 [Stack](/widgets/layout/stack/#布局越界与绘制越界) 相同：默认 `HARD_EDGE` 根据全部直接子节点的布局矩形累计越界状态，即使越界节点不是当前绘制的 `index`，也可能启用裁剪。阴影、变换或更深子孙的绘制越界不一定触发裁剪；需要无条件限制到容器边界时，外包 `ClipRect`。
+
+## 参数
+
 ```kotlin
 fun ChildSlot.IndexedStack(
     index: Int? = 0,
@@ -15,14 +34,3 @@ fun ChildSlot.IndexedStack(
 ```
 
 `index` 从 0 开始，默认绘制第一个子节点；`null` 不绘制任何子节点。所有子节点仍参与布局和尺寸计算。非空栈索引越界会在布局时出错。`Positioned` 可用于定位子节点，其余参数与 [Stack](/widgets/layout/stack/) 相同。
-
-```kotlin
-IndexedStack(index = 1) {
-    Container(width = 200f, height = 120f, color = 0xFFFF0000.toInt())
-    Container(width = 100f, height = 80f, color = 0xFF0000FF.toInt())
-}
-```
-
-Parser 默认 `alignment="TOP_LEFT"`，与 Kotlin DSL 的 `TOP_START` 不同；可写 `<IndexedStack index="1" fit="EXPAND">…</IndexedStack>`。裸写 `index` 表示 `null`。
-
-裁剪规则与 [Stack](/widgets/layout/stack/#布局越界与绘制越界) 相同：默认 `HARD_EDGE` 根据全部直接子节点的布局矩形累计越界状态，即使越界节点不是当前绘制的 `index`，也可能启用裁剪。阴影、变换或更深子孙的绘制越界不一定触发裁剪；需要无条件限制到容器边界时，外包 `ClipRect`。

@@ -5,7 +5,39 @@ sidebar:
   order: 4
 ---
 
-`ImageEmojiSpan` 基于 WidgetSpan 和 ProviderImage，把图片作为段落占位符。它提供 URL 与 provider 两个重载。
+`ImageEmojiSpan` 把一张图片当作行内表情，放在 RichText 的文字之间。可以传 URL，也可以提供预先加载的 Image；关键布局建议显式设置尺寸和对齐，避免图片来源变化时位置也跟着变。
+
+## 使用示例
+
+`successIcon` 是已加载且尚未关闭的 Skia Image，加载方法见[本地图片示例](/guides/rendering/#加载本地图片并释放资源)。这段文字后插入 24×24 的图片占位盒，并让它在文字行盒中居中。
+
+```kotlin
+RichText {
+    TextSpan(style = TextStyle(fontSize = 24f, fontFamilies = listOf("Noto Sans SC"))) {
+        TextSpan(text = "构建成功 ")
+        ImageEmojiSpan(
+            provider = { successIcon },
+            width = 24f,
+            height = 24f,
+            alignment = PlaceholderAlignment.MIDDLE,
+        )
+    }
+}
+```
+
+{% aside type="danger" title="URL 重载不提供生产级安全访问" %}
+URL 版本会同步访问网络，并使用与 `CachedNetworkImage` 相同的缓存接口。生产环境应注入自行实现的安全 `NetworkImageCache`；完整要求见 [CachedNetworkImage](/widgets/image/cached-network-image/)。
+{% /aside %}
+
+为了稳定字号与基线，建议关键场景显式指定 `width`、`height` 和 `alignment`。
+
+共用字体与字号应放到父 TextSpan，字体需实际安装。未设置尺寸时，图片使用所在 Span 的继承字号，不是旁边那个字符的可见高度。URL 重载、provider 重载与 Parser `<Emoji>` 的默认 alignment 并不完全相同；显式写出对齐方式可避免更换图片来源后位置变化。
+
+`BASELINE` 下普通图片无真实文字基线，通常以占位盒底边对齐；`MIDDLE` 则按文字行盒居中。`imageAlignment` 只在占位盒内定位图像，不能修正字体基线；透明留白和未填满盒子的图片都可能仍显得偏上或偏下。排查与 DSL 示例见[文本基线与混排](/guides/media-text/#文本基线与混排)。
+
+省略 `fit` 时与普通图片一样按 `SCALE_DOWN` 绘制，小图不会自动放大到占位框；要拉伸铺满或保留旧版默认效果，请显式设置 `fit = BoxFit.FILL`。此规则也适用于 Parser 的 `<Emoji>`。
+
+`scale` 必须有限且大于零，表示每个逻辑像素对应的图像像素数；它影响图片的自然逻辑尺寸与采样，不会直接放大文本占位框。详细规则见 [RawImage](/widgets/image/raw-image/#scale-与逻辑尺寸)。
 
 ## URL 重载
 
@@ -40,31 +72,3 @@ provider 重载把 `url`、`noCache`、`cache` 替换为 `provider: () -> Image`
 | `scale` / `opacity` | 图片像素密度与透明度 |
 | `color` / `colorBlendMode` | 图片着色 |
 | `url` / `provider` | 图片来源 |
-
-```kotlin
-RichText {
-    TextSpan(style = TextStyle(fontSize = 24f, fontFamilies = listOf("Noto Sans SC"))) {
-        TextSpan(text = "构建成功 ")
-        ImageEmojiSpan(
-            provider = { successIcon },
-            width = 24f,
-            height = 24f,
-            alignment = PlaceholderAlignment.MIDDLE,
-        )
-    }
-}
-```
-
-{% aside type="danger" title="URL 重载不提供生产级安全访问" %}
-URL 版本会同步访问网络，并使用与 `CachedNetworkImage` 相同的缓存接口。生产环境应注入自行实现的安全 `NetworkImageCache`；完整要求见 [CachedNetworkImage](/widgets/image/cached-network-image/)。
-{% /aside %}
-
-为了稳定字号与基线，建议关键场景显式指定 `width`、`height` 和 `alignment`。
-
-共用字体与字号应放到父 TextSpan，字体需实际安装。未设置尺寸时，图片使用所在 Span 的继承字号，不是旁边那个字符的可见高度。URL 重载、provider 重载与 Parser `<Emoji>` 的默认 alignment 并不完全相同；显式写出对齐方式可避免更换图片来源后位置变化。
-
-`BASELINE` 下普通图片无真实文字基线，通常以占位盒底边对齐；`MIDDLE` 则按文字行盒居中。`imageAlignment` 只在占位盒内定位图像，不能修正字体基线；透明留白和未填满盒子的图片都可能仍显得偏上或偏下。排查与 DSL 示例见[文本基线与混排](/guides/media-text/#文本基线与混排)。
-
-省略 `fit` 时与普通图片一样按 `SCALE_DOWN` 绘制，小图不会自动放大到占位框；要拉伸铺满或保留旧版默认效果，请显式设置 `fit = BoxFit.FILL`。此规则也适用于 Parser 的 `<Emoji>`。
-
-`scale` 必须有限且大于零，表示每个逻辑像素对应的图像像素数；它影响图片的自然逻辑尺寸与采样，不会直接放大文本占位框。详细规则见 [RawImage](/widgets/image/raw-image/#scale-与逻辑尺寸)。

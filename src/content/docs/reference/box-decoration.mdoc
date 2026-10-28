@@ -7,6 +7,8 @@ description: 背景装饰的完整字段、绘制顺序、裁剪规则与 Parser
 
 ## 全部构造参数
 
+做普通卡片先选 `color`、`borderRadius`、`border`；需要渐变时再设 `gradient`，需要悬浮感时加 `boxShadow`。想裁掉圆角外的子内容，还要配置裁剪，不能仅靠背景圆角。
+
 | 参数 | 类型 | 默认值 | 行为 |
 | --- | --- | --- | --- |
 | `color` | `Int?` | null | ARGB 背景色；没有颜色和渐变就不绘制背景填充 |

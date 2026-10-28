@@ -49,7 +49,7 @@ description: Snapshot 常用组件、布局和装饰能力速查。
 | 图片 | [`RawImage`](/widgets/image/raw-image/)、[`ProviderImage`](/widgets/image/provider-image/)、[`CachedNetworkImage`](/widgets/image/cached-network-image/) |
 | 文本与行内对象 | [`Text`](/widgets/text/text/)、[`RichText`](/widgets/text/rich-text/)、[`WidgetSpan`](/widgets/text/widget-span/)、[`ImageEmojiSpan`](/widgets/text/image-emoji-span/) |
 
-以上每个链接都对应一个独立 API 页面，包含用途、当前源码签名、参数、布局或绘制行为、完整示例与注意事项。`TextSpan` 是 `RichText` 使用的行内内容模型，而不是 Widget；它的继承和组合方式在 [RichText](/widgets/text/rich-text/) 页面中说明。
+以上每个链接都对应一个独立 API 页面，包含用途、示例、参数和边界条件。示例通常是组件片段，放进 `SnapshotPNG { … }` 使用；需要完整导入可参考[公共导入](/guides/visual-reference/#代码怎么运行)，需要文件加载等准备工作时看页面说明。`TextSpan` 是 `RichText` 使用的行内内容模型，而不是 Widget；它的继承和组合方式在 [RichText](/widgets/text/rich-text/) 页面中说明。
 
 ## Container 参数
 
@@ -80,7 +80,7 @@ Container 适合组合式写法，但在排查布局时，拆成 `Padding`、`Co
 
 `Row` 主轴水平、`Column` 主轴垂直。`mainAxisAlignment` 控制主轴分布，`crossAxisAlignment` 控制交叉轴位置，`mainAxisSize` 决定自身在主轴上尽量大还是尽量小。
 
-基线对齐需要 `crossAxisAlignment = BASELINE` 和非空 `textBaseline`。在无界主轴内使用 Expanded 会导致无法分配剩余空间，应先由父节点建立有限尺寸。
+Row 中让不同 Text 按基线对齐需要 `crossAxisAlignment = BASELINE` 和非空 `textBaseline`。在无界主轴内使用 Expanded 会导致无法分配剩余空间，应先由父节点建立有限尺寸。
 
 ## Stack 与 Positioned
 

@@ -5,7 +5,22 @@ sidebar:
   order: 13
 ---
 
-`Expanded` 是 `Flexible(fit = FlexFit.TIGHT)` 的便捷形式。它不创建额外 RenderBox，而是把 flex 与 fit 写入子 RenderBox 的 `FlexParentData`。
+`Expanded` 把 Row / Column 的剩余空间分给内容，并要求内容占满自己的份额。常见用途是“左边固定图标，右边文字占剩余宽度”。`flex` 是份额比例，不是像素数。
+
+## 示例
+
+```kotlin
+SizedBox(width = 600f, height = 120f) {
+    Row(crossAxisAlignment = CrossAxisAlignment.STRETCH) {
+        Expanded(flex = 2) { ColoredBox(color = 0xFF38BDF8.toInt()) }
+        Expanded(flex = 1) { ColoredBox(color = 0xFFA78BFA.toInt()) }
+    }
+}
+```
+
+没有其他子项时，600 宽按 2:1 分成 400 和 200；STRETCH 让两个色块都高 120。因此本例可以直接看到两块连续的色带。去掉 STRETCH 后，Expanded 仍只保证宽度，空 ColoredBox 可能没有可见高度。
+
+强制占满只针对主轴。Column 中仍保留父级最大宽度，Row 中仍保留最大高度；只有父 Flex 使用 `crossAxisAlignment = STRETCH` 时，才强制填满交叉轴。文本换行规则见 [Column](/widgets/layout/column/#弹性子节点的宽度与文本换行)。
 
 ## 函数签名
 
@@ -22,21 +37,6 @@ fun Flex.Expanded(
 | --- | --- | --- |
 | `flex` | `1` | 剩余主轴空间的分配权重 |
 | `content` | 空 | 一个子 Widget |
-
-## 示例
-
-```kotlin
-SizedBox(width = 600f, height = 120f) {
-    Row {
-        Expanded(flex = 2) { ColoredBox(color = 0xFF38BDF8.toInt()) }
-        Expanded(flex = 1) { ColoredBox(color = 0xFFA78BFA.toInt()) }
-    }
-}
-```
-
-第一个子节点得到剩余宽度的 2/3，第二个得到 1/3，并且两者必须占满分配到的宽度。
-
-强制占满只针对主轴。Column 中仍保留父级最大宽度，Row 中仍保留最大高度；只有父 Flex 使用 `crossAxisAlignment = STRETCH` 时，才强制填满交叉轴。文本换行规则见 [Column](/widgets/layout/column/#弹性子节点的宽度与文本换行)。
 
 ## 限制
 

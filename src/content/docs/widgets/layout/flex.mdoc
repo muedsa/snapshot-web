@@ -5,7 +5,23 @@ sidebar:
   order: 10
 ---
 
-`Flex` 是 `Row` 与 `Column` 的通用实现。它沿 `direction` 指定的主轴排列多个子节点，并可使用 `Flexible` / `Expanded` 分配剩余空间。
+需要根据参数决定横排还是竖排时，用 `Flex`。方向固定时，直接使用 [Row](/widgets/layout/row/) 或 [Column](/widgets/layout/column/) 更直观。`direction` 所指的排列方向叫主轴，垂直于它的方向叫交叉轴。
+
+## 使用示例
+
+```kotlin
+SizedBox(width = 320f, height = 64f) {
+    Flex(
+        direction = Axis.HORIZONTAL,
+        mainAxisAlignment = MainAxisAlignment.SPACE_BETWEEN,
+    ) {
+        Text("Left")
+        Text("Right")
+    }
+}
+```
+
+两段文字位于 320 宽区域的左右两端。改成 `VERTICAL` 后，它们会分布在 64 高区域的上下两端。空白必须先存在，分布方式才有可见区别；主轴没有有限最大尺寸时，Flex 通常会按内容收缩。
 
 ## 函数签名
 
@@ -40,16 +56,6 @@ fun ChildSlot.Flex(
 ## 主轴分布
 
 `START`、`END`、`CENTER` 将剩余空间放在一侧或两侧；`SPACE_BETWEEN` 只在子节点之间分配；`SPACE_AROUND` 在两端放一半间距；`SPACE_EVENLY` 在所有空隙平均分配。
-
-```kotlin
-Flex(
-    direction = Axis.HORIZONTAL,
-    mainAxisAlignment = MainAxisAlignment.SPACE_BETWEEN,
-) {
-    Text("Left")
-    Text("Right")
-}
-```
 
 ## 约束要求
 

@@ -10,10 +10,20 @@ description: 尺寸、布局、Parser、网络图片、文本和调试的常见�
 | 安装、下载或原生库加载失败 | [安装排错](/guides/installation/#安装排错) |
 | 出图尺寸不对、Flex 无法分配空间 | [约束与布局](/guides/layout/) |
 | 长文本不换行、宽度溢出 | [自适应文本完整示例](/guides/examples/#固定图标与自适应文本) |
+| 中文缺字、图文高低不齐 | [字体配置](/guides/fonts/)与[基线混排](/guides/media-text/#文本基线与混排) |
+| 需要把业务字符串填入模板 | [动态数据与 CDATA](/guides/data-templates/) |
 | 图片没有铺满或密度不对 | [默认适配与迁移](/guides/media-text/#默认适配与迁移) |
 | 语法或属性报错 | [Parser 错误分类](/reference/parser-errors/) |
 | 编辑器没有补全或提示 | [DSL 语言服务](/guides/language-server/) |
 | 找不到文本、渐变或装饰对象的详细参数 | [公共配置阅读入口](/guides/overview/#查找参数与行为) |
+
+## 中文、英文和图标为什么看起来不在同一高度？
+
+相同字号不代表相同字形高度；文本盒包含字体留白，图片还可能带透明边缘。先固定字体，多个 Text 同行用 BASELINE，独立图标与文字用 CENTER，跟随文字换行的图标用 WidgetSpan。不要直接给所有文本加一个固定 Y 偏移，见[混排示例](/guides/media-text/#文本基线与混排)。
+
+## 如何加载自己的图片和中文字体？
+
+图片需要先解码为 Skia Image，不能把文件路径传给 RawImage；完整代码见[本地图片与资源释放](/guides/rendering/#加载本地图片并释放资源)。字体需要在渲染进程中安装或注册，见[字体指南](/guides/fonts/)。公共 Playground 不能直接读取本机文件或字体。
 
 ## 为什么 FADE 没有渐隐，VISIBLE 仍被裁剪？
 
@@ -74,7 +84,7 @@ ColorFiltered 会依据可确定的子树绘制边界限制作用范围；但通
 
 可以。默认管理器已注册 `Expanded`、`Flexible`、`Opacity` 和 `Transform`，也支持常用约束、溢出和基础裁剪标签。完整集合和属性见[标签与属性参考](/reference/parser-tags/)。
 
-新增的 `Flex`、`Spacer`、`IndexedStack`、比例布局、基础滤镜和 `WidgetSpan` 也已可用。
+`Flex`、`Spacer`、`IndexedStack`、比例布局、基础滤镜和 `WidgetSpan` 也在默认标签集合中。
 
 `ClipPath` 也已内置，可通过 SVG 路径字符串、`viewBox` 和填充规则实现复杂裁剪与镂空，详见 [ClipPath 标签参考](/reference/parser-tags/#clippath)。需要按布局尺寸动态计算路径时，可以使用 Kotlin DSL 的 `clipper` 回调。
 
@@ -86,7 +96,7 @@ ColorFiltered 会依据可确定的子树绘制边界限制作用范围；但通
 
 ## 属性报错时，怎样知道正确写法？
 
-包含提交 `a7974dd` 的 Parser 会在属性错误提示中追加实际输入、格式、示例和适用的可用值。例如 `ClipPath.fit` 只提示实际支持的 `FILL` / `CONTAIN`，不是全部图片适配枚举。
+当前 Parser（旧依赖需包含提交 `a7974dd`）会在属性错误提示中追加实际输入、格式、示例和适用的可用值。例如 `ClipPath.fit` 只提示实际支持的 `FILL` / `CONTAIN`，不是全部图片适配枚举。
 
 程序中可读取 `ParseException.attributeDiagnostic`；位置仍读 `pos`，不要拆分 `message`。其中 `attributePresent` 与 `rawValue` 可区分属性缺失、未赋值和空字符串。完整字段与示例见[结构化诊断](/reference/parser-errors/#读取结构化诊断)。在线服务是否返回这些信息取决于后端版本及其响应协议。
 

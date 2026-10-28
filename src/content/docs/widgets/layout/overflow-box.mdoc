@@ -5,7 +5,19 @@ sidebar:
   order: 5
 ---
 
-`OverflowBox` 自身服从父约束，但可以给子节点一套替代的最小/最大尺寸，使子节点大于父盒。
+`OverflowBox` 让内容可以比自己在布局中占的位置更大，适合卡片边缘露出的装饰。父布局仍只给它原来的位置；周围组件不会自动为越界部分让路。
+
+## 示例
+
+下面自身仍占 120×80，但蓝色内容为 240×160，默认居中，所以左上角为 `(-60,-40)`。直接作为根出图时，画布也只有 120×80，画布外的部分自然不可见；要观察外溢，需要把它放在更大的画布里。
+
+```kotlin
+SizedBox(width = 120f, height = 80f) {
+    OverflowBox(maxWidth = 240f, maxHeight = 160f) {
+        Container(width = 240f, height = 160f, color = 0x5538BDF8)
+    }
+}
+```
 
 ## 函数签名
 
@@ -28,16 +40,6 @@ fun ChildSlot.OverflowBox(
 | `minWidth` / `maxWidth` | `null` | 替代的宽度范围；null 时沿用对应父约束 |
 | `minHeight` / `maxHeight` | `null` | 替代的高度范围 |
 | `content` | 空 | 最多一个子 Widget |
-
-## 示例
-
-```kotlin
-SizedBox(width = 120f, height = 80f) {
-    OverflowBox(maxWidth = 240f, maxHeight = 160f) {
-        Container(width = 240f, height = 160f, color = 0x5538BDF8)
-    }
-}
-```
 
 ## 注意事项
 

@@ -3,6 +3,8 @@ title: 图片、文本与富文本
 description: 图片来源与适配、文本基线、中英文与图文混排、TextStyle 和行内图片。
 ---
 
+图片先选“来源”和“如何放进框里”；文字先确定字体与可用宽度，再决定换行和混排。只想解决一个问题时，可以直接跳到[图片适配](#默认适配与迁移)、[普通文本](#普通文本)或[基线与混排](#文本基线与混排)。加载本地图片的完整程序见[资源管理示例](/guides/rendering/#加载本地图片并释放资源)，中文部署见[字体配置](/guides/fonts/)。
+
 ## 图片 Widget
 
 | Widget | 图片来源 |
@@ -73,12 +75,10 @@ RawImage(
 
 ## 普通文本
 
-{% aside type="caution" title="先区分文本基线与组件边缘" %}
+### 先区分文本基线与组件边缘
 Text / RichText 按字体度量和基线排字，布局盒的顶部、底部不等于可见笔画的顶部、底部。同样字号也不保证同样高度：中英文混排可能看起来高低错位；Text 与图标、Image 同行时，盒子已居中或底部已对齐，文字仍可能偏上或偏下；换到另一平台的默认字体后，垂直位置也可能变化。
 
 设计混排布局时应明确要对齐的是文字基线、组件盒，还是可见内容；不要仅靠设置相同的 `fontSize` 或 `height` 判断效果。下面给出推荐写法，度量原理见[文本基线与可见边界](/reference/text-layout/#文本基线与可见边界)，文本模板见[DSL 基线与混排](/reference/parser-text/#基线与混排)。
-{% /aside %}
-
 文本换行需要有限的可用宽度。Row 中通常用 Expanded 包住 Text 或其外层 Column；Column 的弹性子节点会保留父级最大宽度。完整示例见[固定图标与自适应文本](/guides/examples/#固定图标与自适应文本)。
 
 | 需求 | 设置 |
@@ -90,17 +90,19 @@ Text / RichText 按字体度量和基线排字，布局盒的顶部、底部不�
 | 一段文字包含不同样式 | Kotlin 使用 RichText / TextSpan，Parser 嵌套 Text |
 
 ```kotlin
-Text(
-    text = "Hello Snapshot",
-    style = TextStyle(
-        color = 0xFFF8FAFC.toInt(),
-        fontSize = 32f,
-        fontStyle = FontStyle.BOLD,
-        fontFamilies = listOf("Noto Sans SC"),
-    ),
-    maxLines = 2,
-    overflow = TextOverflow.ELLIPSIS,
-)
+SizedBox(width = 320f) {
+    Text(
+        text = "Hello Snapshot，这段较长的标题最多显示两行，超出部分显示省略号。",
+        style = TextStyle(
+            color = 0xFF0F172A.toInt(),
+            fontSize = 32f,
+            fontStyle = FontStyle.BOLD,
+            fontFamilies = listOf("Noto Sans SC"),
+        ),
+        maxLines = 2,
+        overflow = TextOverflow.ELLIPSIS,
+    )
+}
 ```
 
 `Text` 是对单个根 `TextSpan` 的便捷封装。常用参数：对齐方向、换行开关、溢出策略、最大行数、StrutStyle、宽度基准和高度模式。
@@ -164,6 +166,8 @@ Container(width = 420f, padding = com.muedsa.geometry.EdgeInsets.all(16f)) {
 
 文本样式覆盖字体、字号、颜色、字距、词距、高度、装饰线、前景/背景 Paint、阴影、字体特性等。字体查找由 Skia Paragraph 处理；在服务器或 CI 中要确保字体实际存在。
 
+[字体配置指南](/guides/fonts/)给出从 classpath 加载、注册字体并在 Kotlin / DSL 中使用的完整程序。
+
 `fontFamilies = listOf("Noto Sans SC")` 或 Parser 的 `fontFamily="Noto Sans SC"` 只是请求字体名称，不会下载或安装字体。应在实际渲染进程所在的机器或容器中配置字体；浏览器中能显示中文不代表服务端拥有同一套字体。Parser 的多字体写法为 `fontFamily="Noto Sans SC,Arial"`，逗号后不要添加空格。
 
 为了得到跨机器稳定的文本结果：
@@ -181,7 +185,7 @@ Container(width = 420f, padding = com.muedsa.geometry.EdgeInsets.all(16f)) {
 RichText(maxLines = 2, overflow = TextOverflow.ELLIPSIS) {
     TextSpan(
         text = "Snapshot ",
-        style = TextStyle(fontSize = 32f, color = 0xFFFFFFFF.toInt()),
+        style = TextStyle(fontSize = 32f, color = 0xFF0F172A.toInt()),
     )
     TextSpan(
         text = "renders",

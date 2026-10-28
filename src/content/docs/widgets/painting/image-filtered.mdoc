@@ -5,7 +5,19 @@ sidebar:
   order: 5
 ---
 
-`ImageFiltered` 把子树作为输入图像应用 `ImageFilter`，常见用途是模糊、矩阵变换和滤镜链。
+`ImageFiltered` 把子树画好的结果交给图像滤镜，适合模糊图片或整块内容。需要模糊卡片背后的背景时，使用 BackdropFilter。
+
+## 使用示例
+
+```kotlin
+ImageFiltered(
+    imageFilter = ImageFilter.makeBlur(8f, 8f, FilterTileMode.CLAMP),
+) {
+    Container(width = 160f, height = 100f, color = 0xFF38BDF8.toInt())
+}
+```
+
+它处理的是自身子树；要处理已经绘制在后方的内容，使用 [BackdropFilter](/widgets/painting/backdrop-filter/)。模糊会扩展可见像素范围，祖先裁剪可能截掉模糊边缘。
 
 ## 函数签名
 
@@ -24,16 +36,6 @@ fun ChildSlot.ImageFiltered(
 | `imageFilter` | Skia ImageFilter 实例 |
 | `outputBounds` | 默认 `null`；将子树的输入绘制矩形映射为滤镜完整输出矩形，供外层 ColorFiltered 计算作用范围 |
 | `content` | 最多一个子 Widget |
-
-```kotlin
-ImageFiltered(
-    imageFilter = ImageFilter.makeBlur(8f, 8f, FilterTileMode.CLAMP),
-) {
-    RawImage(image = sourceImage)
-}
-```
-
-它处理的是自身子树；要处理已经绘制在后方的内容，使用 [BackdropFilter](/widgets/painting/backdrop-filter/)。模糊会扩展可见像素范围，祖先裁剪可能截掉模糊边缘。
 
 ## 与 ColorFiltered 嵌套
 

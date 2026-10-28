@@ -7,6 +7,8 @@ description: 装饰图片的全部参数、圆角路径、九宫格与图片组�
 
 ## 全部构造参数
 
+需要文字叠在背景照片上时，用 Container 的 BoxDecoration.image；需要图片本身参与 Row / Column 排版时，用 RawImage。前者不会靠源图大小撑开盒子，因此应先给 Container 明确尺寸。
+
 | 参数 | 类型 | 默认值 | 含义 |
 | --- | --- | --- | --- |
 | `image` | `org.jetbrains.skia.Image` | 必填 | 已解码、未关闭的图像；需保持到绘制结束 |

@@ -5,7 +5,21 @@ sidebar:
   order: 4
 ---
 
-`ColorFiltered` 在合成阶段对子树像素应用 `org.jetbrains.skia.ColorFilter`，可实现着色、饱和度、颜色矩阵等效果。
+`ColorFiltered` 改变整个子树绘制后的颜色，例如把一组图形统一着色或转成灰度。颜色滤镜作用于像素；尺寸、布局和文字换行不会因此改变。
+
+## 示例
+
+```kotlin
+val filter = ColorFilter.makeBlend(Color.RED, BlendMode.MODULATE)
+
+ColorFiltered(colorFilter = filter) {
+    Container(width = 160f, height = 100f, color = Color.WHITE)
+}
+```
+
+白色矩形与红色逐通道相乘后变红。`MODULATE` 会逐通道相乘。不同 BlendMode 的语义由 Skia 定义，测试时应采样确定性区域，不要只依赖肉眼判断。
+
+ColorFiltered 改变的是最终颜色，不改变布局、尺寸和命中区域。
 
 ## 函数签名
 
@@ -22,20 +36,6 @@ fun ChildSlot.ColorFiltered(
 | --- | --- |
 | `colorFilter` | Skia ColorFilter 实例 |
 | `content` | 最多一个子 Widget |
-
-## 示例
-
-```kotlin
-val filter = ColorFilter.makeBlend(Color.RED, BlendMode.MODULATE)
-
-ColorFiltered(colorFilter = filter) {
-    RawImage(image = sourceImage)
-}
-```
-
-`MODULATE` 会逐通道相乘。不同 BlendMode 的语义由 Skia 定义，测试时应采样确定性区域，不要只依赖肉眼判断。
-
-ColorFiltered 改变的是最终颜色，不改变布局、尺寸和命中区域。
 
 ## 绘制边界
 

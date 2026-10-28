@@ -5,7 +5,23 @@ sidebar:
   order: 11
 ---
 
-`Row` 等价于 `Flex(direction = Axis.HORIZONTAL)`，主轴为水平，交叉轴为垂直。
+`Row` 把内容排成一行，适合“图标 + 标题”“左侧名称 + 右侧金额”等布局。水平方向叫主轴，垂直方向叫交叉轴；因此 `mainAxisAlignment` 管左右分布，`crossAxisAlignment` 管上下对齐。
+
+## 示例
+
+```kotlin
+SizedBox(width = 480f, height = 64f) {
+    Row(
+        mainAxisAlignment = MainAxisAlignment.SPACE_BETWEEN,
+        crossAxisAlignment = CrossAxisAlignment.CENTER,
+    ) {
+        Text("Snapshot")
+        Text("PNG · JPEG · WebP")
+    }
+}
+```
+
+第一段文字靠左，第二段靠右，两者在 64 高的区域内垂直居中。480 的宽度提供了可分配的空白；如果直接把 Row 放在没有宽度限制的根节点，它会按内容收缩，`SPACE_BETWEEN` 就没有多余空间可分配。
 
 ## 函数签名
 
@@ -35,19 +51,6 @@ fun ChildSlot.Row(
 {% aside type="caution" title="盒居中不等于文字基线对齐" %}
 不同字号、中英文或不同字体的 Text 即使已 CENTER / END 对齐，也可能看起来高低错位。需要文字共用基线时，同时设置 `crossAxisAlignment = BASELINE` 与 `textBaseline = BaselineMode.ALPHABETIC`；多行文本对齐首行基线。无真实基线的普通图片和纯色盒放在顶部（纵向偏移为 0），不会自动把图片底边贴到文字基线。图标与文字的其他组合方式见[混排指南](/guides/media-text/#文本基线与混排)，文字外的纵向 Padding / Align 还需注意[当前包装基线限制](/reference/text-layout/#三处基线设置的区别)。
 {% /aside %}
-
-## 示例
-
-```kotlin
-Row(
-    mainAxisAlignment = MainAxisAlignment.SPACE_BETWEEN,
-    crossAxisAlignment = CrossAxisAlignment.CENTER,
-) {
-    Text("Snapshot")
-    SizedBox(width = 12f)
-    Text("PNG · JPEG · WebP")
-}
-```
 
 ## 与 Expanded 配合
 

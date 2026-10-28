@@ -7,6 +7,8 @@ description: 边框的四边配置、描边位置、圆角工厂及可用组合�
 
 ## BorderSide 全部参数
 
+常见卡片边框直接使用 `Border.all(color = …, width = 1f)`；四角一致用 `BorderRadius.circular(16f)`。只有四条边需要不同样式，或描边必须向外扩展时，才需要单独配置 BorderSide 和 strokeAlign。
+
 | 参数 | 类型 / 默认值 | 含义 |
 | --- | --- | --- |
 | `color` | `Int = Color.BLACK` | ARGB 边框颜色 |

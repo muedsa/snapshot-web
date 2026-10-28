@@ -7,6 +7,22 @@ sidebar:
 
 `ColoredBox` 是最简单的绘制 Widget：先用 ARGB 颜色填充自身区域，再绘制子节点。
 
+## 使用示例
+
+```kotlin
+SizedBox(width = 200f, height = 120f) {
+    ColoredBox(color = 0xFF38BDF8.toInt()) {
+        Center { Text("content") }
+    }
+}
+```
+
+本例得到 200×120 的蓝色区域，文字盒在中央。只写 ColoredBox(color = …) 而没有尺寸约束或有尺寸的子节点，可能得到 0×0，颜色本身不会把盒子撑大。
+
+ColoredBox 不主动决定尺寸，通常由父约束或子节点确定。如果需要同时设置尺寸，使用 SizedBox 或 Container 包裹。
+
+需要边框、圆角、渐变或阴影时使用 [DecoratedBox](/widgets/painting/decorated-box/)。
+
 ## 函数签名
 
 ```kotlin
@@ -22,15 +38,3 @@ fun ChildSlot.ColoredBox(
 | --- | --- |
 | `color` | ARGB Int，例如 `0xFF38BDF8.toInt()` |
 | `content` | 最多一个子 Widget |
-
-```kotlin
-SizedBox(width = 200f, height = 120f) {
-    ColoredBox(color = 0xFF38BDF8.toInt()) {
-        Center { Text("content") }
-    }
-}
-```
-
-ColoredBox 不主动决定尺寸，通常由父约束或子节点确定。如果需要同时设置尺寸，使用 SizedBox 或 Container 包裹。
-
-需要边框、圆角、渐变或阴影时使用 [DecoratedBox](/widgets/painting/decorated-box/)。

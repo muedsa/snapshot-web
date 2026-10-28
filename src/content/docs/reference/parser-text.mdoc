@@ -5,9 +5,9 @@ description: Text、Raw、WidgetSpan 与 Emoji 的基线与混排、完整文本
 
 本页将[标签参考](/reference/parser-tags/#text)中的文本属性展开。属性名和枚举值区分大小写；布尔值请显式写 `"true"` / `"false"`。当前布尔解析仅将忽略大小写的 true 当作真，拼错不一定报错。
 
-{% aside type="caution" title="DSL 也遵循字体基线，不是按字形边缘对齐" %}
+## 从常见任务开始
 `<Text>` 使用与 Kotlin 相同的段落布局。中英文、数字、图标混排时，相同 `fontSize` 不保证可见顶部或底部一致；`<Row crossAxisAlignment="CENTER">` 也只对齐组件盒的中心。服务端默认字体或缺字回退不同，还可能让同一 DSL 在不同平台上出现垂直偏移。请先确定要对齐的对象，再按下方[基线与混排](#基线与混排)选择设置。
-{% /aside %}
+常用配置只需要几项：标题设 `fontSize` / `fontStyle` / `color`；摘要设有限宽度、`maxLines` 和 `overflow="ELLIPSIS"`；不同样式嵌套 Text；需要保留空格时用 Raw。自带字体的配置在渲染服务中完成，见[字体指南](/guides/fonts/)。
 
 ## 作用域与未设置值
 

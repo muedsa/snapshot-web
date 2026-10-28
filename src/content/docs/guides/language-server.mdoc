@@ -3,7 +3,7 @@ title: Snapshot DSL 语言服务
 description: 使用 snapshot-lsp 为类 DOM DSL 提供补全、悬停与实时诊断。
 ---
 
-[`snapshot-lsp`](https://github.com/muedsa/snapshot-lsp) 是 Snapshot 类 DOM DSL 的独立 TypeScript 语言服务。它通过标准 Language Server Protocol（LSP）连接编辑器，既可作为 Node.js 进程通过 stdio 运行，也可在浏览器 Web Worker 中运行。编写 DSL 不需要启动 JVM 渲染器。
+[`snapshot-lsp`](https://github.com/muedsa/snapshot-lsp) 是 Snapshot 类 DOM DSL 的独立 TypeScript 语言服务。它在输入时提示标签、属性和错误，编写 DSL 不需要启动 JVM 渲染器。普通使用者选择下方的 Playground 或 VS Code 即可；自己开发编辑器时，再阅读后面的 LSP（编辑器与语言服务的通信协议）接入说明。
 
 ## 能提供什么
 
@@ -14,15 +14,6 @@ description: 使用 snapshot-lsp 为类 DOM DSL 提供补全、悬停与实时�
 标签和属性名区分大小写。Parser 可能静默忽略未知属性，而语言服务会发出警告，帮助发现拼写错误。
 
 `@muedsa/snapshot-lsp` 从 `0.2.0` 起支持 `ClipPath`：提供必填 `path` 提示、`viewBox` 格式检查，以及 `fit`、`fillRule`、`clipBehavior` 枚举补全。SVG 路径命令的完整语法与坐标有效性由 Parser 校验。使用规则见 [ClipPath 标签参考](/reference/parser-tags/#clippath)。
-
-### 0.2.1 的编辑体验改进
-
-- 在已有属性名中接受补全时保留原赋值、引号和空白；闭合标签按当前位置仍打开的父节点提示，并补齐缺少的 `>`。
-- 改进不完整标签恢复，标签候选同时考虑前后的子节点数量，避免提示重复根节点或超过单子节点限制的内容。
-- 补齐方向、对齐、图片重复、渐变平铺、文本、字体和画笔模式等枚举；补全与诊断使用相同值域，颜色属性别名也按 CSS 颜色检查。
-- 正确处理无引号 URL / 路径中的 `/`，提示完整标签中必填属性缺少值的情况，并允许 Raw 内嵌套 WidgetSpan。
-
-网站已升级到 0.2.1。语言服务升级不会同步升级服务端 Parser，实际渲染能力仍以部署的 Open Snapshot 版本为准。
 
 ## 在线体验
 
@@ -76,7 +67,7 @@ startBrowserWorkerServer(self);
 1. 客户端只有在初始化时显式声明 `textDocument.completion.completionItem.snippetSupport: true`，才会收到含占位符的 snippet；缺省或 false 返回普通文本，例如 `width=""`。
 2. 接受补全时必须同时应用 `textEdit` 和可选的 `additionalTextEdits`。多行属性值使用单行主编辑及不重叠的额外编辑，遗漏后者会残留旧值或换行。不要只取 `insertText` 或按当前单词范围替换。
 
-Monaco 0.56 能应用 snippet，但内置 LSP 客户端默认未声明上述能力。本网站在发送初始化报文时补充 `snippetSupport: true`，保留其他能力字段；补全结果（含额外编辑）仍由 Monaco 原生处理。自行接入时也应确认能力协商与实际编辑器行为一致。
+本网站在发送初始化报文时显式补充 `snippetSupport: true`，保留其他能力字段；补全结果（含额外编辑）仍由 Monaco 原生处理。自行接入时也应确认能力协商与实际编辑器行为一致。
 
 ### 直接使用语言核心
 
@@ -93,6 +84,15 @@ const items = service.completions(text, { line: 0, character: text.length }, und
 ```
 
 扩展目录的 `AttributeSpec.valueType` 可复用内置值域（类型为导出的 `ValueType`），也可用 `values` 显式覆盖候选；Parser 的自定义标签注册仍需单独完成。
+
+## 版本与编辑行为
+
+- 在已有属性名中接受补全时保留原赋值、引号和空白；闭合标签按当前位置仍打开的父节点提示，并补齐缺少的 `>`。
+- 改进不完整标签恢复，标签候选同时考虑前后的子节点数量，避免提示重复根节点或超过单子节点限制的内容。
+- 补齐方向、对齐、图片重复、渐变平铺、文本、字体和画笔模式等枚举；补全与诊断使用相同值域，颜色属性别名也按 CSS 颜色检查。
+- 正确处理无引号 URL / 路径中的 `/`，提示完整标签中必填属性缺少值的情况，并允许 Raw 内嵌套 WidgetSpan。
+
+网站已升级到 0.2.1。语言服务升级不会同步升级服务端 Parser，实际渲染能力仍以部署的 Open Snapshot 版本为准。
 
 ## 与 Parser 的分工
 

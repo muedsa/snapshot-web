@@ -3,6 +3,21 @@ title: 约束、布局与调试
 description: 深入理解 BoxConstraints、Flex、Stack、溢出和布局自省。
 ---
 
+排版不符合预期时，先问三个问题：外层给了多大空间，内容想占多大，剩下的空间放在哪里。不要一开始就同时修改 width、fit、alignment 和 Transform；它们分别管尺寸、图片绘制、位置与绘制变换。
+
+## 从固定画布算起
+
+例如做一张 600×160 的卡片，四周 padding 为 20：留给内容的区域是 560×120。里面放一行，左边图标宽 80，中间间距 16，右边文字就应放进 Expanded，占剩余的 464 宽。这个宽度决定文字什么时候换行。
+
+| 设置 | 直观含义 | 常见误解 |
+| --- | --- | --- |
+| 固定宽度 600 | 这一层需要占 600 宽 | 子节点仍不能突破更严格的父约束 |
+| 最大宽度 600 | 可以比 600 窄 | 不保证提供用于居中的空白 |
+| padding 20 | 从本层可用空间扣除左右各 20 | 不总是在父级固定尺寸之外额外加宽 |
+| alignment CENTER | 在剩余空间里居中 | 不会把内容缩小到能放下 |
+
+完整组合见[固定图标与自适应文本](/guides/examples/#固定图标与自适应文本)。下面再解释这些尺寸是怎样传递的。
+
 ## 父节点给约束，子节点报尺寸
 
 Snapshot 采用与 Flutter 相同的 Box 布局协议：父节点向子节点传递 `BoxConstraints`，子节点必须在范围内选择尺寸，父节点再决定子节点的位置。
@@ -39,6 +54,8 @@ data class BoxConstraints(
 
 ## Flex 布局
 
+Row 的主轴是左右、交叉轴是上下；Column 正好相反。可以先把 `mainAxisAlignment` 读成“沿排列方向分布”，把 `crossAxisAlignment` 读成“横过排列方向对齐”。
+
 `Row` 与 `Column` 都是 `Flex` 的特化：
 
 | 参数 | 作用 |
@@ -67,6 +84,8 @@ SizedBox(width = 600f, height = 160f) {
 {% aside type="caution" title="Flex 子项需要有限的主轴空间" %}
 当 Flex 主轴约束无限时，无法计算可分配的“剩余空间”。请先通过外层 `SizedBox`、`Container` 或 `ConstrainedBox` 提供有限主轴尺寸，再使用 `Expanded` 或紧约束的 `Flexible`。
 {% /aside %}
+
+上例中 Expanded 分到 400 宽，Flexible 最多分到 200，但它只需要 120，于是行尾还剩 80。STRETCH 让两块内容都高 160。Flexible 没用完的份额不会再分给 Expanded；[比例对比图](/guides/visual-reference/#弹性布局的份额)可以直观看到这种区别。
 
 ## Stack 与 Positioned
 
@@ -131,4 +150,14 @@ val transform = child.getTransformTo(ancestor)
 
 `getTransformTo` 描述坐标映射，不计算裁剪后的可见区域，也不是任意两节点间的坐标转换 API。
 
-定位问题时建议按顺序检查：根约束是否有限 → 子节点尺寸是否满足约束 → parentData 是否放在正确父节点下 → 是否被裁剪 → 是否只是绘制透明。
+## 按现象排查
+
+| 看到的现象 | 先检查 |
+| --- | --- |
+| 空图片或尺寸异常 | 根节点是否有有限且大于 0 的宽高 |
+| CENTER / SPACE_BETWEEN 看起来没生效 | 父级是否只给了最大尺寸，实际盒子没有剩余空间 |
+| Row 里的长文本跑出边界 | 用 Expanded / Flexible 给文本有限宽度 |
+| 子组件没有高度 | Expanded 只控制主轴；显式给高度或在 Row 上使用 STRETCH |
+| 阴影、旋转后内容被截掉 | 检查输出画布边界和每一层 Clip / Stack |
+| parentData 类型错误 | Expanded / Positioned 是否直接放在正确父组件下 |
+| 盒子位置正确，文字仍高低不齐 | 看[文本基线](/reference/text-layout/#文本基线与可见边界)，别把字体留白当成布局偏移 |

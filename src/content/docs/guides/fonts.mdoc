@@ -1,0 +1,94 @@
+---
+title: 字体与跨平台文字
+description: 把字体打包进应用，供 Kotlin 与文本 DSL 使用，并排查缺字和基线偏移。
+---
+
+如果本机正常、服务器却出现方框、换行变化或文字上下偏移，先检查渲染进程使用的字体。`fontFamily` 只是字体名称，不会下载字体；网页 CSS 和浏览器字体也不会传给 JVM 或 Open Snapshot 服务。
+
+## 把字体放进应用
+
+选择覆盖所需语言、允许随应用分发的字体，并保留它的许可证。以下示例使用 Noto Sans SC，把字体文件放到 `src/main/resources/fonts/NotoSansSC.ttf`。打包时它会进入 classpath，读取不依赖应用的启动目录。
+
+下面可作为完整的 `Main.kt`，依赖配置沿用[快速开始](/guides/quickstart/)。运行后得到 `font-demo.png`，尺寸为 480×120：
+
+```kotlin
+import com.muedsa.geometry.EdgeInsets
+import com.muedsa.snapshot.SnapshotPNG
+import com.muedsa.snapshot.paint.text.TextPainter
+import com.muedsa.snapshot.paint.text.TextStyle
+import com.muedsa.snapshot.widget.Container
+import com.muedsa.snapshot.widget.text.Text
+import org.jetbrains.skia.Data
+import org.jetbrains.skia.FontMgr
+import org.jetbrains.skia.paragraph.TypefaceFontProvider
+import java.io.File
+
+object AppFonts {
+    const val FAMILY = "AppSans"
+    // 对象随进程保留；渲染期间不要关闭字体或 provider。
+    val typeface = checkNotNull(AppFonts::class.java.getResourceAsStream("/fonts/NotoSansSC.ttf")) {
+        "字体没有打包进应用"
+    }.use { stream ->
+        Data.makeFromBytes(stream.readBytes()).use { data ->
+            checkNotNull(FontMgr.default.makeFromData(data)) { "无法解码字体" }
+        }
+    }
+    private val provider = TypefaceFontProvider().registerTypeface(typeface, FAMILY)
+
+    fun install() {
+        TextPainter.FONT_COLLECTION.setAssetFontManager(provider)
+    }
+}
+
+fun main() {
+    AppFonts.install() // 应用启动时调用，在接收渲染请求之前完成。
+    val png = SnapshotPNG {
+        Container(width = 480f, height = 120f, padding = EdgeInsets.all(24f)) {
+            Text("中文 Agjp 0123", style = TextStyle(
+                fontFamilies = listOf(AppFonts.FAMILY), fontSize = 28f,
+            ))
+        }
+    }
+    File("font-demo.png").writeBytes(png)
+}
+```
+
+`AppSans` 是注册时选定的别名，使用别名可以避免依赖字体文件内部的族名。`TextPainter.FONT_COLLECTION` 是进程级共享对象，应该在启动阶段配置一次；不要按请求来回切换字体管理器。需要多个字体或字重时，将它们注册到同一个 provider，再一次性安装。
+
+仅在 Kotlin 中使用时，也可给 `TextStyle(typeface = AppFonts.typeface)` 直接传字体。`fontFamilies` 更适合与 DSL 共用命名配置。字体不包含的字符仍可能使用系统 fallback；注册一份中文字体不等于锁定了 Emoji、其他语言及所有字重。
+
+## 同一套字体供 DSL 使用
+
+在**运行 Parser 的 JVM** 中先调用 `AppFonts.install()`，再解析：
+
+```xml
+<Snapshot background="#FFFFFF">
+  <Container width="480" height="120" padding="24">
+    <Text fontFamily="AppSans" fontSize="28">中文 Agjp 0123</Text>
+  </Container>
+</Snapshot>
+```
+
+不需要给每个 Text 重复设置字体：外层 Text 的样式会被嵌套 Text / Raw 继承。多个字体用英文逗号分隔，如 `fontFamily="AppSans,AppSymbols"`，逗号后不要加空格。
+
+这个别名只在你配置过的渲染进程里存在。把模板复制到公共 Playground，并不会把本地字体一起上传；公共服务能使用哪些字体取决于服务的部署配置。
+
+## 中英文与图文混排怎样对齐
+
+字体的基线是排字参考线；文字盒还包含上方和下方的度量空间。字号相同、盒子居中，都不保证笔画顶部或底部一致。
+
+| 情况 | 先这样处理 |
+| --- | --- |
+| 一句话里中英文高低不一 | 放进同一个 Text / RichText，统一字体；检查是否缺字回退 |
+| 不同字号的价格与单位 | 使用 Row 的 `BASELINE` + `textBaseline = ALPHABETIC` |
+| 独立图标和标签 | 固定图标尺寸，用 Row 的 `CENTER`；检查图标透明留白 |
+| 图片跟随文字换行 | 用 WidgetSpan / Emoji 的 `MIDDLE` 或明确的基线位置 |
+| 多行文字行距跳动 | 固定字体后再配置 Strut，别先用固定偏移掩盖问题 |
+
+可复制的 Kotlin 示例见[文本基线与混排](/guides/media-text/#文本基线与混排)，DSL 示例见[文本属性详解](/reference/parser-text/#基线与混排)。其中也说明了当前 Padding / Align 基线转发的限制。
+
+## 部署后怎样验证
+
+先用固定输入 `中文 Agjp 0123` 出一张图，再加入实际业务会出现的 Emoji、重音字母、不同字重和长标题。检查缺字、换行点、基线及末行裁剪；最后在实际容器中重复一次。
+
+同一族名可能对应不同版本的字体文件。需要稳定结果时，把字体文件、字体许可证、Snapshot / Skiko 版本和运行平台一起纳入部署记录。测试方法见[测试与 Golden](/guides/testing/)，不要只比较本机浏览器中的显示效果。

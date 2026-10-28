@@ -5,7 +5,26 @@ sidebar:
   order: 2
 ---
 
-`RichText` 接收 `InlineSpan`，或通过 `TextSpan.() -> Unit` DSL 构建 Span 树。它支持样式继承、嵌套 TextSpan、WidgetSpan 与 ImageEmojiSpan。
+`RichText` 在同一段落中混用不同样式，例如“价格 + 加粗金额 + 单位”。用 TextSpan 划分样式片段，子片段继承父片段未覆盖的样式；用 WidgetSpan 插入跟随文字排版的小图标。
+
+## 示例
+
+```kotlin
+RichText(maxLines = 2, overflow = TextOverflow.ELLIPSIS) {
+    TextSpan(
+        text = "Snapshot ",
+        style = TextStyle(color = 0xFF0F172A.toInt(), fontSize = 28f),
+    )
+    TextSpan(
+        text = "renders images",
+        style = TextStyle(color = 0xFF38BDF8.toInt(), fontSize = 28f),
+    )
+}
+```
+
+子 TextSpan 会继承祖先未覆盖的 TextStyle 字段。RichText 内不能直接挂普通 Widget；行内组件必须通过 WidgetSpan 转换为段落占位符。
+
+RenderParagraph 会提取所有 WidgetSpan 子节点，先测量占位 Widget，再把对应 PlaceholderStyle 交给 Skia Paragraph。
 
 ## 函数签名
 
@@ -32,25 +51,6 @@ content: TextSpan.() -> Unit
 ## 参数
 
 段落布局参数与 [Text](/widgets/text/text/) 一致。`text` 是完整 InlineSpan 根节点；DSL 重载会自动创建空根 TextSpan。行高、宽度基准与溢出限制见[段落参考](/reference/text-layout/)，样式字段和清除继承的方法见 [TextStyle](/reference/text-style/)。
-
-## 示例
-
-```kotlin
-RichText(maxLines = 2, overflow = TextOverflow.ELLIPSIS) {
-    TextSpan(
-        text = "Snapshot ",
-        style = TextStyle(color = 0xFFF8FAFC.toInt(), fontSize = 28f),
-    )
-    TextSpan(
-        text = "renders images",
-        style = TextStyle(color = 0xFF38BDF8.toInt(), fontSize = 28f),
-    )
-}
-```
-
-子 TextSpan 会继承祖先未覆盖的 TextStyle 字段。RichText 内不能直接挂普通 Widget；行内组件必须通过 WidgetSpan 转换为段落占位符。
-
-RenderParagraph 会提取所有 WidgetSpan 子节点，先测量占位 Widget，再把对应 PlaceholderStyle 交给 Skia Paragraph。
 
 ## 混排与基线
 

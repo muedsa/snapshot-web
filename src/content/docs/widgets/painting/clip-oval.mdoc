@@ -7,6 +7,18 @@ sidebar:
 
 `ClipOval` 在给定矩形内生成内切椭圆。正方形区域会得到圆形，常用于头像。
 
+## 使用示例
+
+```kotlin
+ClipOval {
+    Container(width = 96f, height = 96f, color = 0xFF38BDF8.toInt())
+}
+```
+
+输出画布仍为 96×96，蓝色部分是直径 96 的圆。将 Container 换成同尺寸 RawImage 即可做头像；图片来源见[加载本地图片](/guides/rendering/#加载本地图片并释放资源)。
+
+要获得正圆，应确保布局宽高相同。ClipOval 不绘制边框；圆形边框可在外层使用 BoxDecoration(shape = CIRCLE)。
+
 ## 函数签名
 
 ```kotlin
@@ -24,11 +36,3 @@ fun ChildSlot.ClipOval(
 | `clipper` | `null` | 返回承载椭圆的外接矩形 |
 | `clipBehavior` | `ANTI_ALIAS` | 裁剪策略 |
 | `content` | 空 | 最多一个子 Widget |
-
-```kotlin
-ClipOval {
-    RawImage(image = avatar, width = 96f, height = 96f, fit = BoxFit.COVER)
-}
-```
-
-要获得正圆，应确保布局宽高相同。ClipOval 不绘制边框；圆形边框可在外层使用 BoxDecoration(shape = CIRCLE)。

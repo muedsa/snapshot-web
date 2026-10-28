@@ -7,6 +7,20 @@ sidebar:
 
 `ClipRect` 按矩形裁剪绘制结果。默认裁剪区域是当前 Widget 的完整布局边界。
 
+## 使用示例
+
+```kotlin
+ClipRect(
+    clipper = { size -> Rect.makeWH(size.width / 2f, size.height) },
+) {
+    Container(width = 240f, height = 120f, color = 0xFF38BDF8.toInt())
+}
+```
+
+输出仍是 240×120，但只看得到左半边 120×120 的蓝色区域。裁剪不会把布局宽度改成 120，也不会使右侧内容自动移过来。
+
+`NONE` 表示不裁剪；`HARD_EDGE` 快但无抗锯齿；`ANTI_ALIAS` 适合曲线边缘；`ANTI_ALIAS_WITH_SAVE_LAYER` 质量更高但成本更大。矩形边缘通常使用 HARD_EDGE 即可。
+
 ## 函数签名
 
 ```kotlin
@@ -24,13 +38,3 @@ fun ChildSlot.ClipRect(
 | `clipper` | `null` | 根据当前 Size 返回自定义 Rect |
 | `clipBehavior` | `HARD_EDGE` | 裁剪质量和图层策略 |
 | `content` | 空 | 最多一个子 Widget |
-
-```kotlin
-ClipRect(
-    clipper = { size -> Rect.makeWH(size.width / 2f, size.height) },
-) {
-    Container(width = 240f, height = 120f, color = 0xFF38BDF8.toInt())
-}
-```
-
-`NONE` 表示不裁剪；`HARD_EDGE` 快但无抗锯齿；`ANTI_ALIAS` 适合曲线边缘；`ANTI_ALIAS_WITH_SAVE_LAYER` 质量更高但成本更大。矩形边缘通常使用 HARD_EDGE 即可。

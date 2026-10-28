@@ -7,6 +7,22 @@ sidebar:
 
 `Center` 等价于 `Align(alignment = BoxAlignment.CENTER)`，用于把单个子节点放在可用空间中央。
 
+## 使用示例
+
+```kotlin
+SizedBox(width = 320f, height = 180f) {
+    Center {
+        Text("居中内容")
+    }
+}
+```
+
+文字盒的中心位于 `(160,90)`；可见字形不一定视觉上完全居中，原因见[文本基线](/reference/text-layout/#文本基线与可见边界)。
+
+需要其他对齐位置时使用 [Align](/widgets/layout/align/)。
+
+尺寸因子必须非负，推荐有限值；null 在有界轴上占满、无界轴上包裹子节点。因子只影响自身期望尺寸，不缩放子节点，最后仍服从父约束。完整边界见 [Align 尺寸因子](/widgets/layout/align/#尺寸因子与边界)。Parser 使用 `<Center widthFactor="2">…</Center>`。
+
 ## 函数签名
 
 ```kotlin
@@ -24,15 +40,3 @@ fun ChildSlot.Center(
 | `widthFactor` | `null` | 非空时，自身宽度尝试取子宽度 × factor |
 | `heightFactor` | `null` | 非空时，自身高度尝试取子高度 × factor |
 | `content` | 空 | 最多一个子 Widget |
-
-```kotlin
-SizedBox(width = 320f, height = 180f) {
-    Center {
-        Text("居中内容")
-    }
-}
-```
-
-需要其他对齐位置时使用 [Align](/widgets/layout/align/)。
-
-尺寸因子必须非负，推荐有限值；null 在有界轴上占满、无界轴上包裹子节点。因子只影响自身期望尺寸，不缩放子节点，最后仍服从父约束。完整边界见 [Align 尺寸因子](/widgets/layout/align/#尺寸因子与边界)。Parser 使用 `<Center widthFactor="2">…</Center>`。

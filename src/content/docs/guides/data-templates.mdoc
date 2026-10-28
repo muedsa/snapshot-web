@@ -1,0 +1,81 @@
+---
+title: 用业务数据生成图片
+description: 用 Kotlin 组织动态布局，或安全地把文本填入 Parser 模板。
+---
+
+做订单卡片、排行榜或分享图时，布局通常固定，标题、价格和列表来自业务数据。已有 Kotlin 应用优先直接传值给 Widget；需要保存或编辑文本模板时，再把数据转换成 DSL。
+
+## Kotlin：直接传入字符串和列表
+
+下面是可放入应用的完整函数，沿用[安装指南](/guides/installation/)的 core 依赖。它返回 480×240 的 PNG，可直接保存或作为 HTTP 响应；标题中即使包含 `<`、`&` 或引号，也只会作为文字绘制：
+
+```kotlin
+import com.muedsa.geometry.EdgeInsets
+import com.muedsa.snapshot.SnapshotPNG
+import com.muedsa.snapshot.paint.text.TextStyle
+import com.muedsa.snapshot.rendering.flex.CrossAxisAlignment
+import com.muedsa.snapshot.paint.text.TextOverflow
+import com.muedsa.snapshot.widget.*
+import com.muedsa.snapshot.widget.text.Text
+
+fun orderCard(title: String, lines: List<String>): ByteArray = SnapshotPNG {
+    Container(width = 480f, height = 240f, padding = EdgeInsets.all(24f)) {
+        Column(crossAxisAlignment = CrossAxisAlignment.START) {
+            Text(title, style = TextStyle(fontSize = 28f), maxLines = 1, overflow = TextOverflow.ELLIPSIS)
+            SizedBox(height = 16f)
+            for (line in lines.take(3)) {
+                Text(line, style = TextStyle(fontSize = 18f), maxLines = 1, overflow = TextOverflow.ELLIPSIS)
+                SizedBox(height = 8f)
+            }
+        }
+    }
+}
+```
+
+`lines.take(3)` 是本例的产品选择：画布固定，只展示前三条。实际业务要明确超出内容是分页、截断还是增高，不能期待固定画布自动容纳任意列表。中文部署还需[配置字体](/guides/fonts/)。
+
+## 文本模板：把业务文字放进 CDATA
+
+Parser 不是模板引擎，不执行变量、循环或表达式。字符串插值由你的应用负责。它也不做 HTML 实体解码，因此不能照搬 `&lt;`、`&amp;` 作为转义方案。
+
+最稳妥的文本插入位置是 `<Text>` / `<Raw>` 的 CDATA 内容。字符串中的 `]]>` 会提前结束 CDATA，必须拆成相邻的两个 CDATA 段：
+
+```kotlin
+import com.muedsa.snapshot.parser.Parser
+import java.io.StringReader
+
+fun dslText(value: String): String =
+    "<![CDATA[" + value.replace("]]>", "]]]]><![CDATA[>") + "]]>"
+
+fun templateCard(title: String): ByteArray {
+    require(title.length <= 200) { "标题过长" }
+    val source = """
+        <Snapshot background="#FFFFFF" type="png">
+          <Container width="480" height="120" padding="24">
+            <Text fontSize="28" maxLines="1" overflow="ELLIPSIS"><Raw>${dslText(title)}</Raw></Text>
+          </Container>
+        </Snapshot>
+    """.trimIndent()
+    return Parser().parse(StringReader(source)).snapshot()
+}
+```
+
+例如 `templateCard("A < B & C ]]> D")` 会把整段内容当作文字，既不创建额外标签，也不丢失 `]]>`。这里用 Raw 保留业务文本的首尾空格；普通 Text 会 trim。整个标题仍受单行省略和画布宽度限制。
+
+## 属性值应先校验，再格式化
+
+CDATA 只适用于文本内容，不能用于属性值。不要把任意业务字符串直接拼进 `color="…"`、`url="…"`、SVG 路径或标签名。
+
+| 数据 | 推荐处理 |
+| --- | --- |
+| 宽高、字号、间距 | 转成数值，检查有限性和业务范围，再输出 |
+| 对齐、fit、字体 | 从应用允许的固定选项中选择 |
+| 颜色 | 在应用中解析并输出统一的 CSS 格式；DSL 8 位十六进制为 `#RRGGBBAA` |
+| URL / 图片 | 先检查来源、访问权限和体积；复杂来源可在 Kotlin 中预加载 Image |
+| 多行、多列、可选块 | 由应用生成固定结构；或直接用 Kotlin 的循环与条件组合 Widget |
+
+如果属性确实需要包含任意引号或特殊字符，优先改用 Kotlin API，不要猜测 Parser 是否支持某种 HTML 转义。文本安全插入也不能替代服务端的请求大小、图片访问和渲染资源限制，详见[错误处理与扩展](/reference/parser-errors/)。
+
+## 用边界数据检查模板
+
+除了正常数据，至少试一次空标题、很长的中文标题、中英文混排、含 `<` / `&` / `]]>` 的文本，以及超出预期条数的列表。检查输出尺寸和截断是否符合产品需求，测试方法见[测试指南](/guides/testing/)。

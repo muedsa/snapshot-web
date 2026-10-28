@@ -3,6 +3,8 @@ title: 渲染入口与输出
 description: Snapshot、SnapshotImage、编码函数以及自定义 Surface 的完整说明。
 ---
 
+只需要保存图片或返回 HTTP 响应时，从 `SnapshotPNG` 开始：它返回普通字节数组。需要继续在 Skia 上画内容、复用结果或精确控制原生资源释放时，使用 `Snapshot` 获取 Surface。下面先说明如何选入口，再介绍画布尺寸和资源管理。
+
 ## 渲染入口总览
 
 所有入口位于 `com.muedsa.snapshot`：
@@ -72,6 +74,39 @@ SnapshotPNG { Row {} }      // layout size is empty
 ```
 
 无子节点、无约束的 `Container` 会被限制为零尺寸；空 `Row` 也会收缩到零。给根节点或内容明确的非零尺寸即可。
+
+## 加载本地图片并释放资源
+
+组件页中的 `image` / `sourceImage` 指已解码的 Skia Image，不是文件路径。下面是完整程序：将 `photo.png` 放在启动目录，输出 320×180 的 `card.png`。本地资源不会经过网络缓存。
+
+```kotlin
+import com.muedsa.snapshot.Snapshot
+import com.muedsa.snapshot.paint.BoxFit
+import com.muedsa.snapshot.widget.RawImage
+import org.jetbrains.skia.EncodedImageFormat
+import org.jetbrains.skia.Image
+import java.io.File
+
+fun main() {
+    Image.makeFromEncoded(File("photo.png").readBytes()).use { photo ->
+        Snapshot {
+            RawImage(image = photo, width = 320f, height = 180f, fit = BoxFit.COVER)
+        }.use { surface ->
+            surface.makeImageSnapshot().use { result ->
+                checkNotNull(result.encodeToData(EncodedImageFormat.PNG)).use { data ->
+                    File("card.png").writeBytes(data.bytes)
+                }
+            }
+        }
+    }
+}
+```
+
+从外向内是源图片、绘制 Surface、结果 Image、编码 Data；`use` 会在结束或异常时按相反顺序关闭。复制出的 `ByteArray` 不需要关闭。源 Image 必须一直有效到绘制结束；`ProviderImage` 在构造 Widget 时调用 provider，也不能刚返回对象就把它关闭。
+
+当前 `SnapshotPNG` 等便捷入口没有对内部所有原生对象显式使用 `use`。高频服务需要确定释放时机时，可采用上面的显式流程。这个流程负责你持有的对象，不代表应用中的字体、图片缓存及所有内部绘制对象都已统一释放；共享字体和缓存图片应按各自生命周期管理，不能每个请求用完就关闭仍被其他请求使用的对象。
+
+JPEG 没有 Alpha 通道；需要透明背景时选择 PNG / WebP 并设置 `background = Color.TRANSPARENT`。需要控制编码质量时，在上例的 `encodeToData` 中显式设置 `quality`，不要把图片尺寸或 `scale` 当成编码质量。
 
 ## 自定义 Surface
 

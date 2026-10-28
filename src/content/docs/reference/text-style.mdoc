@@ -5,6 +5,10 @@ description: 完整的文本样式参数、继承规则、画笔优先级、字�
 
 `com.muedsa.snapshot.paint.text.TextStyle` 用于 Text、TextSpan 和 WidgetSpan。它描述字形样式，不负责整段的换行、最大行数或对齐；这些行为见[段落与行高](/reference/text-layout/)。Parser 写法见[文本属性详解](/reference/parser-text/)。
 
+## 先选你需要的设置
+
+标题通常先设 `fontSize`、`fontStyle` 和 `color`；服务器中文先[加载字体](/guides/fonts/)，再设 `fontFamilies`。段落太宽要改外层宽度或 `maxLines`，不是 TextStyle；行内图标太高要改占位盒对齐，不是字距。下方表格保留全部字段，普通卡片无需一次配完。
+
 ## 默认值与继承
 
 全部 19 个构造参数的声明默认值都是 `null`：表示不覆盖祖先同名字段，**不是清除样式**。根节点最后与 Snapshot 的默认样式合并：黑色、字号 `14f`；其余未指定项交给 Skia。字体最终取决于运行环境。

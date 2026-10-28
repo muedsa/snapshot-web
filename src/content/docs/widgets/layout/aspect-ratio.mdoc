@@ -5,14 +5,9 @@ description: 根据父约束和目标宽高比确定布局尺寸。
 
 `AspectRatio` 让宽度与高度尽可能满足指定比值，同时仍遵守父约束。
 
-```kotlin
-fun ChildSlot.AspectRatio(
-    aspectRatio: Float,
-    content: AspectRatio.() -> Unit = {},
-)
-```
+适合让封面保持 16:9、头像保持 1:1。它改变布局框；图片在框内怎样缩放仍由图片的 `fit` 决定。
 
-`aspectRatio` 是宽度除以高度，必须是有限正数。父节点至少需要给出一个有界的最大宽度或高度；双轴无界时无法计算尺寸。若父约束与比例冲突，最终以父约束为准，子节点填满计算出的尺寸。
+## 使用示例
 
 ```kotlin
 ConstrainedBox(constraints = BoxConstraints(maxWidth = 240f, maxHeight = 160f)) {
@@ -22,4 +17,17 @@ ConstrainedBox(constraints = BoxConstraints(maxWidth = 240f, maxHeight = 160f)) 
 }
 ```
 
+本例选择宽 240，再由 `240 ÷ 2` 得到高 120，最终蓝色区域为 240×120。若外层直接锁死为 240×160，比例就不能同时满足，组件会服从父级的 240×160。
+
 Parser 对应 `<AspectRatio aspectRatio="2">…</AspectRatio>`，最多一个子节点。
+
+## 参数
+
+```kotlin
+fun ChildSlot.AspectRatio(
+    aspectRatio: Float,
+    content: AspectRatio.() -> Unit = {},
+)
+```
+
+`aspectRatio` 是宽度除以高度，必须是有限正数。父节点至少需要给出一个有界的最大宽度或高度；双轴无界时无法计算尺寸。若父约束与比例冲突，最终以父约束为准，子节点填满计算出的尺寸。

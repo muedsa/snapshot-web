@@ -3,6 +3,12 @@ title: 绘制、装饰与效果
 description: BoxDecoration、渐变、阴影、裁剪、透明度和滤镜。
 ---
 
+先确定要改变什么：卡片自己的背景用 BoxDecoration，子树整体变淡用 Opacity，裁掉边缘用 Clip，模糊前景用 ImageFiltered，模糊已经画好的背景用 BackdropFilter。它们可以组合，但顺序会改变结果。
+
+下面的卡片示例放进 `SnapshotPNG { … }`，会得到 420×220 的渐变卡片。padding 为文字留白；圆角只改变装饰轮廓，**不会自动裁掉内部图片**。需要内容也沿圆角裁剪时，给 Container 设置 `clipBehavior` 或在内容外包 ClipRRect。
+
+阴影会画到卡片外，但不会自动扩大输出画布；想保留完整阴影，应在卡片外再留足 Padding。实际效果见[裁剪对比](/guides/visual-reference/)。
+
 ## BoxDecoration
 
 `BoxDecoration` 是最常用的视觉装饰对象，可组合：
@@ -30,7 +36,9 @@ Container(
         borderRadius = BorderRadius.circular(28f),
         boxShadow = ELEVATION_MAP.getValue(8),
     ),
-) { /* content */ }
+) {
+    Text("Snapshot", style = TextStyle(color = 0xFFFFFFFF.toInt(), fontSize = 28f))
+}
 ```
 
 `shape = CIRCLE` 时不要同时设置矩形圆角。设置 `backgroundBlendMode` 时必须提供 color 或 gradient，否则 BoxDecoration 构造时会抛异常；仅有 image 也不满足这个条件。
@@ -90,7 +98,7 @@ ImageFiltered(
     imageFilter = ImageFilter.makeBlur(8f, 8f, FilterTileMode.CLAMP),
     outputBounds = blurImageFilterBounds(8f, 8f),
 ) {
-    RawImage(image = source)
+    Container(width = 160f, height = 100f, color = 0xFF38BDF8.toInt())
 }
 ```
 

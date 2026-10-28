@@ -5,7 +5,24 @@ sidebar:
   order: 12
 ---
 
-`Column` 等价于 `Flex(direction = Axis.VERTICAL)`，主轴为垂直，交叉轴为水平。
+`Column` 把标题、说明、按钮等从上到下排列。这里主轴是上下方向，交叉轴是左右方向；`mainAxisAlignment` 管上下分布，`crossAxisAlignment` 管左右对齐。需要文字靠左时显式选择 START。
+
+## 示例
+
+这是一列按内容收缩的标题和说明，两段文字之间留 8 的空白，左边缘对齐。文本的实际高度由字体决定，MIN 不代表固定高度。
+
+```kotlin
+Column(
+    mainAxisSize = MainAxisSize.MIN,
+    crossAxisAlignment = CrossAxisAlignment.START,
+) {
+    Text("标题")
+    SizedBox(height = 8f)
+    Text("说明文字")
+}
+```
+
+在无界高度中使用 Expanded 会导致无法计算剩余高度。若要创建占满固定高度的列，先用 `SizedBox(height = ...)` 或 Container 提供边界。
 
 ## 函数签名
 
@@ -31,21 +48,6 @@ fun ChildSlot.Column(
 - `crossAxisAlignment` 控制水平方向对齐；
 - `textDirection` 影响水平 start/end；
 - `verticalDirection` 决定从上到下或从下到上排列。
-
-## 示例
-
-```kotlin
-Column(
-    mainAxisSize = MainAxisSize.MIN,
-    crossAxisAlignment = CrossAxisAlignment.START,
-) {
-    Text("标题")
-    SizedBox(height = 8f)
-    Text("说明文字")
-}
-```
-
-在无界高度中使用 Expanded 会导致无法计算剩余高度。若要创建占满固定高度的列，先用 `SizedBox(height = ...)` 或 Container 提供边界。
 
 ## 弹性子节点的宽度与文本换行
 

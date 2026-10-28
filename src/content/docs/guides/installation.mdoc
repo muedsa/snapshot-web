@@ -9,10 +9,10 @@ Snapshot 是 JVM 项目，图形能力来自 JetBrains Skiko。当前仓库的�
 
 | 项目 | 当前值 | 说明 |
 | --- | --- | --- |
-| Gradle Wrapper | 9.8.0 | 请优先使用仓库内的 `gradlew` / `gradlew.bat` |
+| Gradle Wrapper | 9.8.1 | 请优先使用仓库内的 `gradlew` / `gradlew.bat` |
 | Java toolchain | 11 | Kotlin 编译目标由根构建脚本统一配置 |
 | CI JDK | 17 | GitHub Actions 使用 Temurin 17 |
-| Kotlin | 2.4.20 | 定义于 `gradle/libs.versions.toml` |
+| Kotlin | 2.4.21 | 定义于 `gradle/libs.versions.toml` |
 | Skiko | `0.0.0-SNAPSHOT` | 来自 JetBrains Compose dev 仓库 |
 | Snapshot | `0.0.0-SNAPSHOT` | 当前持续发布的快照版本 |
 
@@ -26,7 +26,7 @@ Skiko 使用滚动快照版本，因此同一个坐标在不同时间可能对�
 | --- | --- | --- |
 | `:core` | `snapshot-core` | Widget、约束布局、绘制、文本、图片缓存与编码 |
 | `:parser` | `snapshot-parser` | 类 DOM 文本解析；传递依赖 `core` |
-| `:testkit` | `snapshot-testkit` | 布局、像素和 Golden 测试工具；主要服务仓库内部测试 |
+| `:testkit` | 未发布（本地模块） | 布局、像素和 Golden 测试工具；外部应用的接入见[测试指南](/guides/testing/#需要-testkit-时怎样接入) |
 
 `core` 将 `skiko-awt` 作为 `api` 依赖，因此 `Color`、`BlendMode`、`ImageFilter` 等 Skia 类型会出现在公开 API 中。
 
@@ -97,10 +97,17 @@ dependencies {
 当使用方和 Snapshot 源码在同一台机器开发时，可在 `settings.gradle.kts` 中加入：
 
 ```kotlin
-includeBuild("../snapshot")
+includeBuild("../snapshot") {
+    dependencySubstitution {
+        substitute(module("com.muedsa.snapshot:snapshot-core")).using(project(":core"))
+        substitute(module("com.muedsa.snapshot:snapshot-parser")).using(project(":parser"))
+    }
+}
 ```
 
-之后仍然使用 `com.muedsa.snapshot:snapshot-core` 坐标，Gradle 会将其替换为本地构建。
+之后仍然使用前文的 `snapshot-core` / `snapshot-parser` 依赖坐标。替换规则会让 Gradle 构建相邻源码，不再下载这两个 Snapshot 包；Skiko 及其他依赖仍需从配置的仓库解析。
+
+这里不能只写 `includeBuild("../snapshot")`：源码子项目名是 `core` / `parser`，发布的 artifact 名却是 `snapshot-core` / `snapshot-parser`，所以需要显式告诉 Gradle 它们的对应关系。平台 runtime 仍由使用方声明。
 
 {% /tabitem %}
 
@@ -150,7 +157,7 @@ includeBuild("../snapshot")
 | 原生库加载失败或 `UnsatisfiedLinkError` | 是否声明与运行环境 OS / CPU 架构匹配的 `skiko-awt-runtime-*`；API 与 runtime 版本是否一致 |
 | 同为快照版本但 API 与文档不符 | 执行 `./gradlew build --refresh-dependencies` 刷新，并核对实际解析的依赖版本 |
 | 找不到 `MainKt` 或入口方法 | 是否应用 `application` 插件、配置主类，并将代码放入 `fun main()`；若有 package，主类需带包名 |
-| 能生成图片但中文缺字 | 在实际渲染环境安装或配置支持中文的字体，参见[字体与排版](/guides/media-text/#textstyle) |
+| 能生成图片但中文缺字 | 在实际渲染环境安装或配置支持中文的字体，参见[字体加载完整程序](/guides/fonts/) |
 
 Windows PowerShell 中将 `./gradlew` 替换为 `.\gradlew.bat`。若依赖由 `settings.gradle.kts` 集中管理，将仓库配置放到该项目的 `dependencyResolutionManagement.repositories` 中。
 

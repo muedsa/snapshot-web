@@ -5,7 +5,20 @@ sidebar:
   order: 16
 ---
 
-`Positioned` 是 Stack / IndexedStack 专用的 ParentDataWidget，不创建独立 RenderBox。它把定位参数写入子节点的 `StackParentData`。
+`Positioned` 把角标、浮层或底部条放到 Stack 中的指定位置。例如 `right = 16f, top = 16f` 表示离 Stack 右边和上边各 16。它不参与撑大 Stack，底层背景或父约束需要先给 Stack 尺寸。
+
+## 使用示例
+
+```kotlin
+Stack {
+    Container(width = 400f, height = 240f)
+    Positioned(left = 20f, right = 20f, bottom = 16f, height = 48f) {
+        ColoredBox(color = 0xFF38BDF8.toInt())
+    }
+}
+```
+
+本例横条左上角为 `(20,176)`，尺寸为 360×48：宽度由 `400 - 20 - 20` 得到，顶部由 `240 - 16 - 48` 得到。定位参数中的数值都是逻辑像素。
 
 ## 函数签名
 
@@ -31,15 +44,6 @@ fun Stack.Positioned(
 | `content` | 一个子 Widget |
 
 每个轴最多指定三项中的两项：`left`、`right`、`width` 最多两个；垂直轴相同。给出两边时尺寸由边距推导；给出一边和尺寸时位置明确；只给尺寸时按 Stack alignment 放置。
-
-```kotlin
-Stack {
-    Container(width = 400f, height = 240f)
-    Positioned(left = 20f, right = 20f, bottom = 16f, height = 48f) {
-        ColoredBox(color = 0xFF38BDF8.toInt())
-    }
-}
-```
 
 ## 其他构造方式
 

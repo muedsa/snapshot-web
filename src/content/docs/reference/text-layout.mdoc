@@ -5,6 +5,8 @@ description: 文本基线与可见边界、字体度量、StrutStyle、段落参
 
 Text 和 RichText 共用段落布局参数。字体与字形样式见 [TextStyle](/reference/text-style/)，文本模板对应[Parser 文本属性](/reference/parser-text/)。
 
+先区分三个问题：文字在哪里换行由可用宽度决定；一行有多高由字体、样式和 Strut 决定；不同内容上下怎样放由基线或盒对齐决定。先看[实际对比图](/guides/visual-reference/#不同字号的垂直对齐)，再按下面的参数查具体规则。
+
 ## 文本基线与可见边界
 
 {% aside type="caution" title="文本不能按普通矩形的可见边缘理解" %}

@@ -5,7 +5,30 @@ sidebar:
   order: 14
 ---
 
-`Flexible` 通过 parentData 参与 Flex 剩余空间分配。
+`Flexible` 给内容分配一个可用份额，但默认允许内容比这个份额小。适合短标题保持自然宽度、长标题最多占一定宽度；如果无论内容多少都要填满份额，使用 Expanded。
+
+## 使用示例
+
+```kotlin
+SizedBox(width = 600f, height = 120f) {
+    Row(crossAxisAlignment = CrossAxisAlignment.STRETCH) {
+        Flexible(flex = 1, fit = FlexFit.LOOSE) {
+            SizedBox(width = 80f) { ColoredBox(color = 0xFF38BDF8.toInt()) }
+        }
+        Flexible(flex = 2, fit = FlexFit.TIGHT) {
+            ColoredBox(color = 0xFFA78BFA.toInt())
+        }
+    }
+}
+```
+
+600 宽按 1:2 分成最多 200 和固定 400。第一个子项只取 80，第二个取 400，剩下的 120 留在行尾，不会再次分给第二个子项。两块颜色的高度由 STRETCH 固定为 120。`TIGHT` 与 Expanded 相同，`LOOSE` 只给上限。
+
+份额只影响主轴，不解除交叉轴最大约束。Column 中的文本仍按父级最大宽度换行；非 `STRETCH` 对齐允许更窄，`STRETCH` 才强制填满宽度。Row 中对应保留最大高度，详见 [Column](/widgets/layout/column/#弹性子节点的宽度与文本换行)。
+
+{% aside type="caution" title="Flexible 只能放在 Flex 中" %}
+`Flexible` 的 DSL 签名是 `fun Flex.Flexible(...)`。它必须是 `Flex` 的直接子节点；`Row` 和 `Column` 都继承自 `Flex`，因此上面的写法有效。外层 `SizedBox` 为 Row 提供有限宽度，使主轴剩余空间可以计算。
+{% /aside %}
 
 ## 函数签名
 
@@ -24,24 +47,3 @@ fun Flex.Flexible(
 | `flex` | `1` | 剩余空间分配权重 |
 | `fit` | `LOOSE` | `LOOSE` 允许更小；`TIGHT` 强制填满 |
 | `content` | 空 | 一个子 Widget |
-
-```kotlin
-SizedBox(width = 600f, height = 120f) {
-    Row {
-        Flexible(flex = 1, fit = FlexFit.LOOSE) {
-            SizedBox(width = 80f) { ColoredBox(color = 0xFF38BDF8.toInt()) }
-        }
-        Flexible(flex = 2, fit = FlexFit.TIGHT) {
-            ColoredBox(color = 0xFFA78BFA.toInt())
-        }
-    }
-}
-```
-
-`TIGHT` 与 Expanded 行为相同；`LOOSE` 只给出最大可用份额，子节点可以选择更小尺寸。
-
-份额只影响主轴，不解除交叉轴最大约束。Column 中的文本仍按父级最大宽度换行；非 `STRETCH` 对齐允许更窄，`STRETCH` 才强制填满宽度。Row 中对应保留最大高度，详见 [Column](/widgets/layout/column/#弹性子节点的宽度与文本换行)。
-
-{% aside type="caution" title="Flexible 只能放在 Flex 中" %}
-`Flexible` 的 DSL 签名是 `fun Flex.Flexible(...)`。它必须是 `Flex` 的直接子节点；`Row` 和 `Column` 都继承自 `Flex`，因此上面的写法有效。外层 `SizedBox` 为 Row 提供有限宽度，使主轴剩余空间可以计算。
-{% /aside %}

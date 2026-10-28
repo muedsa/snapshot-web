@@ -5,7 +5,28 @@ sidebar:
   order: 1
 ---
 
-`Container` 是 Snapshot 中最常用的组合 Widget。它本身会根据参数组装 `Align`、`Padding`、`ColoredBox`、`DecoratedBox`、`ConstrainedBox` 和 `Transform` 等基础 Widget。
+`Container` 适合做一张完整的卡片：用 width / height 定尺寸，padding 留内部空白，decoration 加背景和边框，alignment 摆放内容。只需要其中一项时，也可以用 SizedBox、Padding 等更小的组件。
+
+## 示例
+
+这张卡片背景为 360×180，margin 四边各 12，所以根输出为 384×204。padding 四边各 24，内容区为 312×132；文字在内容区靠左并垂直居中。当前 Container 不会自动把边框宽度加到 padding 中，边框较粗时应自行增加留白。
+
+```kotlin
+Container(
+    width = 360f,
+    height = 180f,
+    padding = EdgeInsets.all(24f),
+    margin = EdgeInsets.all(12f),
+    alignment = BoxAlignment.CENTER_LEFT,
+    decoration = BoxDecoration(
+        color = 0xFF0F172A.toInt(),
+        borderRadius = BorderRadius.circular(20f),
+        border = Border.all(color = 0xFF334155.toInt()),
+    ),
+) {
+    Text("Snapshot", style = TextStyle(color = 0xFFF8FAFC.toInt(), fontSize = 28f))
+}
+```
 
 ## 函数签名
 
@@ -50,25 +71,6 @@ fun ChildSlot.Container(
 Container 从内到外大致按以下顺序组合：子节点 → 对齐 → padding → 颜色/裁剪/背景装饰 → 前景装饰 → 约束 → margin → transform。
 
 `width` 和 `height` 会通过 `constraints.tighten()` 收紧现有约束。父节点给出的更严格约束仍然有效。
-
-## 示例
-
-```kotlin
-Container(
-    width = 360f,
-    height = 180f,
-    padding = EdgeInsets.all(24f),
-    margin = EdgeInsets.all(12f),
-    alignment = BoxAlignment.CENTER_LEFT,
-    decoration = BoxDecoration(
-        color = 0xFF0F172A.toInt(),
-        borderRadius = BorderRadius.circular(20f),
-        border = Border.all(color = 0xFF334155.toInt()),
-    ),
-) {
-    Text("Snapshot", style = TextStyle(color = 0xFFF8FAFC.toInt(), fontSize = 28f))
-}
-```
 
 ## 限制与常见问题
 

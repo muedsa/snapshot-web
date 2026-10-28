@@ -164,3 +164,68 @@ val png = SnapshotPNG {
 ```
 
 裁剪不会给内容预留空间，也不会扩大输出画布。需要外部阴影时，将阴影装饰留在裁剪组件外侧，详见 [BoxShadow](/reference/box-shadow/)。
+
+## 弹性布局的份额
+
+![上行 Expanded 按 2 比 1 填满 600 宽，下行 Flexible 只使用 80 宽，右侧剩余 120](/examples/flex-space-comparison.png)
+
+灰色底板是 600×64。第一行两份 Expanded 按 2:1 分成 400 和 200，恰好填满；第二行 Flexible 原本可用 200，但只取 80，另一项仍是 400，末尾留下 120。空出来的份额不会重新分配。
+
+```kotlin
+val png = SnapshotPNG {
+    Padding(padding = EdgeInsets.all(20f)) {
+        Column(mainAxisSize = MainAxisSize.MIN, crossAxisAlignment = CrossAxisAlignment.START) {
+            Text("Expanded: 400 + 200", style = TextStyle(fontSize = 18f))
+            SizedBox(height = 8f)
+            SizedBox(width = 600f, height = 64f) {
+                Row(crossAxisAlignment = CrossAxisAlignment.STRETCH) {
+                    Expanded(flex = 2) { ColoredBox(color = 0xFF0369A1.toInt()) }
+                    Expanded(flex = 1) { ColoredBox(color = 0xFFF59E0B.toInt()) }
+                }
+            }
+            SizedBox(height = 20f)
+            Text("Flexible: 80 + 400 + 120 empty", style = TextStyle(fontSize = 18f))
+            SizedBox(height = 8f)
+            Container(width = 600f, height = 64f, color = 0xFFE2E8F0.toInt()) {
+                Row(crossAxisAlignment = CrossAxisAlignment.STRETCH) {
+                    Flexible { Container(width = 80f, color = 0xFF0369A1.toInt()) }
+                    Expanded(flex = 2) { ColoredBox(color = 0xFFF59E0B.toInt()) }
+                }
+            }
+        }
+    }
+}
+```
+
+## 不同字号的垂直对齐
+
+![相同的中文、英文字母和数字，以 CENTER、END、BASELINE 三种方式排列](/examples/text-baseline-comparison.png)
+
+每行都使用同一套字体和相同的三个 Text：中文 20、Agjp 40、数字 28。CENTER 对齐文字盒的中心，END 对齐盒底，BASELINE 对齐首行的 ALPHABETIC 基线。观察 `g` / `j` 下伸部分：它们可以低于基线，所以笔画底部不必齐平。
+
+生成这张图时注册了 Noto Sans SC；自行运行前按[字体指南](/guides/fonts/)配置相同字体，并补充 `import org.jetbrains.skia.paragraph.BaselineMode`。此处 Text 直接放在 Row 中，共同 padding 放在整组之外，避免纵向包装偏移影响当前基线转发。
+
+```kotlin
+val png = SnapshotPNG {
+    Padding(padding = EdgeInsets.all(20f)) {
+        Column(mainAxisSize = MainAxisSize.MIN, crossAxisAlignment = CrossAxisAlignment.START) {
+            for (align in listOf(CrossAxisAlignment.CENTER, CrossAxisAlignment.END, CrossAxisAlignment.BASELINE)) {
+                Text(align.name, style = TextStyle(fontSize = 16f))
+                SizedBox(height = 6f)
+                Container(width = 420f, height = 76f, color = 0xFFE2E8F0.toInt()) {
+                    Row(crossAxisAlignment = align, textBaseline = BaselineMode.ALPHABETIC) {
+                        Text("中文", style = TextStyle(fontSize = 20f, fontFamilies = listOf("Noto Sans SC")))
+                        SizedBox(width = 16f)
+                        Text("Agjp", style = TextStyle(fontSize = 40f, fontFamilies = listOf("Noto Sans SC")))
+                        SizedBox(width = 16f)
+                        Text("128", style = TextStyle(fontSize = 28f, fontFamilies = listOf("Noto Sans SC")))
+                    }
+                }
+                SizedBox(height = 18f)
+            }
+        }
+    }
+}
+```
+
+这张图用于比较对齐方式，不承诺每个平台的字形边缘完全一致。纯色盒和图片没有真实文字基线，不能直接套用最后一行；推荐组合见[图文混排指南](/guides/media-text/#文本基线与混排)。

@@ -3,7 +3,27 @@ title: 核心概念
 description: 理解 Widget、约束布局与 Skia 渲染流程。
 ---
 
-## 一条清晰的渲染管线
+可以把 Snapshot 想成一个按规则摆放盒子的排版器：先决定每个盒子能有多大，再把文字、图片和装饰画进去。开始写页面时，只需要分清“谁决定尺寸”“谁负责排列”“谁负责绘制”。
+
+## 先看一个有明确尺寸的组合
+
+下面是 `SnapshotPNG { … }` 内的组件片段。外层固定 320×180；四周留 24，内容区就剩 272×132；Column 把两个文本从上到下排列：
+
+```kotlin
+Container(width = 320f, height = 180f, padding = EdgeInsets.all(24f)) {
+    Column(crossAxisAlignment = CrossAxisAlignment.START) {
+        Text("订单已完成")
+        SizedBox(height = 12f)
+        Text("感谢使用 Snapshot")
+    }
+}
+```
+
+Container、Column、Text 都是 **Widget（组件）**。嵌套关系称为“Widget 树”：外层是父节点，里面的是子节点。这里 Container 只接一个 Column；Column 可以接多个 Text 和间隔盒。
+
+**约束**是父节点允许子节点选择的尺寸范围。若父节点要求宽度恰好 100，子节点请求 200 也不能自行突破；要允许越界，需要专门的 OverflowBox 等组件。详细计算见[布局指南](/guides/layout/)。
+
+## 从组件到图片
 
 ```text
 Widget 树 → RenderBox 树 → 布局尺寸 → Skia Canvas → PNG / JPEG / WebP

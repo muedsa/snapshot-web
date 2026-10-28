@@ -5,7 +5,15 @@ sidebar:
   order: 2
 ---
 
-`SizedBox` 使用 `BoxConstraints.tightFor()` 收紧指定维度。它既可限制子节点尺寸，也可以在没有子节点时创建固定间距。
+`SizedBox` 用于指定宽高，也常用作空白间隔：Row 中用 width 留横向空白，Column 中用 height 留纵向空白。它不绘制背景；需要颜色时再加 ColoredBox 或改用 Container。
+
+## 使用示例
+
+```kotlin
+SizedBox(width = 240f, height = 80f) {
+    ColoredBox(color = 0xFF38BDF8.toInt())
+}
+```
 
 ## 函数签名
 
@@ -34,12 +42,6 @@ Column {
     Text("第一行")
     SizedBox(height = 16f)
     Text("第二行")
-}
-```
-
-```kotlin
-SizedBox(width = 240f, height = 80f) {
-    ColoredBox(color = 0xFF38BDF8.toInt())
 }
 ```
 

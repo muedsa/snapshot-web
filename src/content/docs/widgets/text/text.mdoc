@@ -5,11 +5,31 @@ sidebar:
   order: 1
 ---
 
-`Text` 是 RichText 的便捷封装。它把字符串和可选 TextStyle 包装成根 TextSpan，再交给段落布局器。
+`Text` 显示一段文字，适合标题、说明和标签。通常先设置字体、字号、颜色，再根据可用宽度选择换行或省略号。一段文字需要多种颜色或字重时使用 RichText。
 
 {% aside type="caution" title="Text 的基线不是组件底边" %}
 文字按字体度量排版，布局盒包含的空间不等于可见字形；相同字号下，中英文和不同字体也可能看起来高低不齐。与其他 Text 同行时优先考虑 Row BASELINE；与图标 / Image 同行时要明确选择盒居中还是行内占位对齐。跨平台还应固定字体与缺字回退。多行 Text 对外提供首行基线，详见[文本基线与混排](/guides/media-text/#文本基线与混排)及 [DSL 写法](/reference/parser-text/#基线与混排)。
 {% /aside %}
+
+## 使用示例
+
+```kotlin
+SizedBox(width = 240f) {
+    Text(
+        text = "Hello Snapshot，这是一段长标题",
+        style = TextStyle(
+            color = 0xFF0F172A.toInt(),
+            fontSize = 32f,
+            fontStyle = FontStyle.BOLD,
+            fontFamilies = listOf("Noto Sans SC"),
+        ),
+        maxLines = 1,
+        overflow = TextOverflow.ELLIPSIS,
+    )
+}
+```
+
+宽度固定为 240，长标题只占一行，末尾显示省略号。字体需先[安装或注册](/guides/fonts/)；去掉宽度约束后，文字可能按完整内容展开，省略号就没有触发条件。
 
 ## 函数签名
 
@@ -42,20 +62,6 @@ fun ChildSlot.Text(
 | `strutStyle` | `null` | 统一行高与字体度量的 Strut 配置 |
 | `textWidthBasis` | `PARENT` | 段落宽度按父宽或最长行计算 |
 | `textHeightMode` | `null` | Skia Paragraph 高度处理模式 |
-
-```kotlin
-Text(
-    text = "Hello Snapshot",
-    style = TextStyle(
-        color = 0xFFF8FAFC.toInt(),
-        fontSize = 32f,
-        fontStyle = FontStyle.BOLD,
-        fontFamilies = listOf("Noto Sans SC"),
-    ),
-    maxLines = 1,
-    overflow = TextOverflow.ELLIPSIS,
-)
-```
 
 ## TextStyle 主要字段
 

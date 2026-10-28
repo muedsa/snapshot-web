@@ -12,7 +12,7 @@
 站点目前包含：
 
 - 产品落地页与能力展示；
-- 安装、快速开始、渲染、布局、绘制、图片、文本与测试指南；
+- 安装、快速开始、渲染、布局、绘制、图片、文本、字体配置、业务数据模板与测试指南；
 - 39 个独立 Widget API 页面，包含源码签名、参数、行为、示例和限制；
 - TextStyle、段落与行高、装饰、边框、阴影、背景图片和渐变的公共配置参考；
 - 类 DOM Parser 的标签、属性、文本样式详解、错误处理与扩展说明；
@@ -27,7 +27,7 @@ Widget API 按布局、绘制与效果、图片、文本四组自动生成侧边
 - [Starlight](https://starlight.astro.build/)
 - [Markdoc](https://markdoc.dev/)
 - Tailwind CSS 4
-- [Monaco Editor](https://github.com/microsoft/monaco-editor) 0.56，用于在线 Playground
+- [Monaco Editor](https://github.com/microsoft/monaco-editor) 0.57，用于在线 Playground
 - [snapshot-lsp](https://github.com/muedsa/snapshot-lsp)，Playground 的 DSL 语言服务（LSP over Web Worker）
 - pnpm
 
@@ -60,10 +60,10 @@ pnpm install
 启动开发服务器：
 
 ```bash
-pnpm dev
+pnpm exec astro dev --background
 ```
 
-默认访问地址为 <http://localhost:4321>。
+默认访问地址为 <http://localhost:4321>。用 `pnpm exec astro dev status` 查看状态，`pnpm exec astro dev logs` 查看日志，`pnpm exec astro dev stop` 停止后台服务。
 
 执行生产构建：
 
@@ -82,7 +82,7 @@ pnpm preview
 | 命令 | 用途 |
 | --- | --- |
 | `pnpm install` | 安装项目依赖 |
-| `pnpm dev` | 启动本地开发服务器 |
+| `pnpm exec astro dev --background` | 启动本地开发服务器 |
 | `pnpm build` | 构建静态站点并生成搜索索引与 Sitemap |
 | `pnpm preview` | 预览 `dist/` 中的生产构建 |
 | `pnpm docs:test` | 运行参数覆盖检查器的单元测试 |
@@ -128,7 +128,7 @@ src/playground/
 ├── render-diagnostics.ts       # 服务端错误协议、属性提示与请求版本绑定的定位
 ├── snapshot-language.ts        # snapshot 语言的 Monarch 词法、注释/括号配置与深浅两套主题
 ├── snapshot-lsp-client.ts      # 用 Monaco 自带的 monaco.lsp 客户端连接语言服务
-├── snapshot-lsp-capabilities.ts # 为 Monaco 0.56 补充 snippet 能力声明
+├── snapshot-lsp-capabilities.ts # 显式补充 LSP snippet 能力声明
 └── snapshot-lsp.worker.ts      # 在 Worker 中启动 @muedsa/snapshot-lsp/browser
 ```
 
@@ -136,7 +136,7 @@ Monaco 与语言服务只在访问 `/playground/` 时懒加载；编辑器主题
 
 当前使用 `@muedsa/snapshot-lsp@0.2.1`。升级包时同步更新 `package.json`、`pnpm-lock.yaml` 和 `pnpm-workspace.yaml` 中的 `minimumReleaseAgeExclude`，不要仅修改版本号而保留旧锁文件。
 
-0.2.1 按客户端能力决定是否返回 snippet。Monaco 0.56 支持占位符，但内置 LSP 客户端未声明 `snippetSupport`，因此本项目在初始化报文中补充该能力。补全结果仍交给 Monaco 原生处理，包括多行属性值的 `additionalTextEdits`；不要再注册一套重复的补全提供器。升级 Monaco 时需重新确认此适配是否仍有必要。
+0.2.1 按客户端能力决定是否返回 snippet。本项目在初始化报文中显式补充 `snippetSupport`，确保语言服务知道编辑器支持占位符。补全结果仍交给 Monaco 原生处理，包括多行属性值的 `additionalTextEdits`；不要再注册一套重复的补全提供器。升级 Monaco 时需重新确认此适配是否仍有必要。
 
 无引号 URL 中的 `/` 是属性值的一部分。自闭合标签应写成 `<Image url=https://example.com/a.png />`，或使用引号 `<Image url="https://example.com/a.png"/>`。高亮只负责着色，语法与取值诊断由 LSP 提供，最终渲染仍以服务端 Parser 为准。
 
@@ -191,13 +191,13 @@ sidebar:
 
 这四个目录已在 `astro.config.mjs` 中配置自动侧边栏。使用 `sidebar.order` 控制同一分类内的显示顺序，无需手动新增导航项。
 
-每个 Widget 页面应尽量包含：
+读者应先看到“这个组件能解决什么问题”和一个常用例子，再查签名与参数。内部实现和少见边界放在后面。不要用“写入 parentData”等实现术语代替用途说明；先解释效果，再按需要介绍术语。每个 Widget 页面应包含：
 
 1. 用途和适用场景；
 2. 与当前 Snapshot 源码一致的函数签名；
 3. 参数及默认值；
 4. 布局或绘制行为；
-5. 可以独立理解的 Kotlin 示例；
+5. 可以独立理解的 Kotlin 示例：说明放在哪里运行、外部变量从哪里来，以及输出尺寸或可见效果；
 6. 父节点要求、约束条件和常见错误。
 
 对象型参数不应只写类型名。TextStyle、BoxDecoration 等公共配置单独放在 `reference/`，组件页链接到对应参考，避免复制多份容易漂移的长表。公共配置页应包含：
@@ -260,20 +260,25 @@ git diff --check
 
 ### 验证公共配置示例与更新对比图
 
-当前提供 Windows x64 / Java 17 的本地验证入口，需要 Node.js、PowerShell、相邻 Snapshot 的最新 core / parser JAR，以及已缓存的 Kotlin / Skiko 依赖。先在 Snapshot 项目构建 `:core:jar :parser:jar`；脚本本身不会联网、构建或修改相邻仓库。
+当前提供 Windows x64 / Java 17 的本地验证入口，需要 Node.js、PowerShell、相邻 Snapshot 源码以及已缓存的 Kotlin / Skiko / JUnit 依赖。默认读取最新 core / parser JAR（先在 Snapshot 项目构建 `:core:jar :parser:jar`）；也可用 `-FromSource` 直接在本项目的 `.astro/` 中编译当前源码。脚本不联网，不修改相邻仓库；testkit 未发布，因此测试示例始终从它的源码编译。
 
 ```powershell
 # 默认使用 GRADLE_USER_HOME，未设置时使用用户目录下的 .gradle。
 # 按实际路径填写 -GradleCache；例如 D:/.gradle。
 ./scripts/verify-doc-examples.ps1 -GradleCache D:/.gradle
 
-# 确认需要更新文档配图时，才覆盖 public/examples 中的四张参数对比图。
+# 不依赖上游 JAR，直接验证当前源码；仍需要本地缓存齐全。
+./scripts/verify-doc-examples.ps1 -GradleCache D:/.gradle -FromSource
+
+# 确认需要更新文档配图时，才覆盖 public/examples 中的六张参数对比图。
 ./scripts/verify-doc-examples.ps1 -GradleCache D:/.gradle -UpdateImages
 ```
 
-也可指定 `-SnapshotRoot` 和 `-SnapshotVersion`。Kotlin / Skiko 版本读取上游版本目录；编译器的辅助依赖目前按 Kotlin 2.4.20 的本地缓存配置，升级工具链时需同步核对。其他系统需要适配对应的 Skiko 原生 runtime，不能直接使用 Windows JAR。
+也可指定 `-SnapshotRoot` 和 `-SnapshotVersion`。`-FromSource -CompilerVersion <缓存版本>` 可用于工具链未缓存齐全时的兼容性核对，会明确提示与上游声明版本不同；这种运行不等于使用上游 Gradle 工具链的完整验证。Kotlin / Skiko 版本读取上游版本目录；编译器的辅助依赖目前按 Kotlin 2.4.20 的本地缓存配置，升级工具链时需同步核对。其他系统需要适配对应的 Skiko 原生 runtime，不能直接使用 Windows JAR。
 
-脚本直接抽取 7 篇公共配置页与效果对比页中的 11 段 Kotlin，以及 Parser 文本页的 2 段 XML，编译并实际渲染。输出放在 `.astro/docs-verification/reference/`，两段 XML 还会检查声明的 480×200 尺寸。其他文档示例不在这个运行器的检查范围内。
+脚本直接抽取公共配置、效果对比及基线指南中的 17 段 Kotlin、Parser 文本页的 4 段 XML，并扩展到 46 个组件/指南片段、11 个完整程序和 7 个完整 DSL 模板。它会实际编译和渲染，并验证关键子节点尺寸/位置、像素断言、CDATA 文本保留，以及 Golden 的 record / verify / update。当前输出在 `.astro/docs-verification/reference/`、`walkthroughs/` 和 `run/`；`walkthroughs/manifest.json` 记录抽取清单。
+
+这不是全站任意代码块执行器：函数签名、配置片段、故意错误示例、网络访问和自定义接口示意不自动执行。新增例子时同步维护抽取清单与运行入口。完整程序保留正文 import 和函数定义，以发现读者复制时会遇到的编译错误。
 
 运行成功只代表这些示例可以执行，不等于视觉正确。更新图片后仍需打开输出检查文字缺字、对齐、裁剪和效果说明，并在网页中检查深浅主题与窄屏阅读。固定字体环境以减少图片差异；本地成功不代表线上 Open Snapshot 已部署同样版本。
 
@@ -285,10 +290,10 @@ git diff --check
 
 仓库提供多阶段构建的 `Dockerfile`：第一阶段使用 Node.js 和 pnpm 构建站点，第二阶段只保留 Nginx 与静态文件。
 
-构建镜像：
+先在当前终端环境中配置具有包读取权限的 `GITHUB_TOKEN`，再用 BuildKit secret 构建镜像；不要通过 build-arg 或直接写入 Dockerfile 传递令牌：
 
 ```bash
-docker build -t snapshot-web .
+docker build --secret id=npm_token,env=GITHUB_TOKEN -t snapshot-web .
 ```
 
 在本机启动：
@@ -305,8 +310,9 @@ docker run --rm -p 8080:80 snapshot-web
 - 自定义 404 页面及正确的 404 状态；
 - Astro 哈希资源的长期缓存；
 - Pagefind 搜索资源的短期缓存；
-- Gzip 压缩和基础响应头；
-- 容器健康检查。
+- Gzip 压缩和基础响应头。
+
+当前 Dockerfile 未配置 HEALTHCHECK。如部署平台需要健康探测，可为容器的 HTTP 根路径另行配置探针。
 
 ### 使用 GitHub Actions 发布到 GHCR
 

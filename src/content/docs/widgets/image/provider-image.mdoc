@@ -5,7 +5,25 @@ sidebar:
   order: 2
 ---
 
-`ProviderImage` 接收 `() -> Image`。当前实现会在 Widget 构造时立即调用 provider，并把结果传给 RawImage；它不是异步或绘制阶段懒加载组件。
+`ProviderImage` 让你用函数提供图片，适合接入已有图片仓库或缓存。函数在构造 Widget 时立即调用，因此下载和解码也会阻塞这次调用；它不会在后台异步加载。
+
+## 使用示例
+
+先把 `cover.png` 放到程序启动目录。这里的 `Files` / `Path` 分别是 `java.nio.file.Files` / `java.nio.file.Path`，`Image` 是 `org.jetbrains.skia.Image`；不要与 Skia 的 Path 混淆。需要显式管理返回图片的生命周期时，可在外部解码并保留对象，见[资源管理示例](/guides/rendering/#加载本地图片并释放资源)。
+
+```kotlin
+ProviderImage(
+    width = 320f,
+    height = 180f,
+    fit = BoxFit.COVER,
+) {
+    Image.makeFromEncoded(Files.readAllBytes(Path.of("cover.png")))
+}
+```
+
+provider 中的异常会直接中止 Widget 构造。重复渲染相同图片时，应在外部复用解码结果或实现缓存，避免每次重新读取与解码。
+
+`scale` 是像素密度，与 RawImage 一样必须是有限正数，自然逻辑尺寸为图像像素尺寸除以 `scale`；provider 在构造 Widget 时立即执行，不会等到布局或绘制阶段。
 
 ## 函数签名
 
@@ -33,17 +51,3 @@ fun ChildSlot.ProviderImage(
 | 参数 | 说明 |
 | --- | --- |
 | `provider` | 返回非空 Skia Image；构造 ProviderImage 时执行 |
-
-```kotlin
-ProviderImage(
-    width = 320f,
-    height = 180f,
-    fit = BoxFit.COVER,
-) {
-    Image.makeFromEncoded(Files.readAllBytes(Path.of("cover.png")))
-}
-```
-
-provider 中的异常会直接中止 Widget 构造。重复渲染相同图片时，应在外部复用解码结果或实现缓存，避免每次重新读取与解码。
-
-`scale` 是像素密度，与 RawImage 一样必须是有限正数，自然逻辑尺寸为图像像素尺寸除以 `scale`；provider 在构造 Widget 时立即执行，不会等到布局或绘制阶段。
