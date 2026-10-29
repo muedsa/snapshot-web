@@ -16,6 +16,8 @@ Snapshot 把布局描述渲染成图片。第一次使用可以先在 Playground
 | 调整尺寸、对齐或裁剪 | [约束、布局与调试](/guides/layout/) | [按用途选择 Widget](/guides/widgets/) |
 | 中文缺字、部署后字体不同 | [字体与跨平台文字](/guides/fonts/) | [文本基线与混排](/guides/media-text/#文本基线与混排) |
 | 把订单、标题或列表画成图 | [用业务数据生成图片](/guides/data-templates/) | [测试与 Golden](/guides/testing/) |
+| 多个页面共用卡片、标签或订单行 | [编写可复用组件](/guides/reusable-components/) | [自定义 Parser 标签](/reference/parser-errors/#自定义标签) |
+| 让 AI 辅助生成布局或排查错误 | [使用 AI 辅助开发](/guides/ai-development/) | Markdown 文档入口与可复制提示词 |
 | 图片结果不符合预期 | [常见问题](/reference/faq/) | [解析错误与扩展](/reference/parser-errors/) |
 
 ## Kotlin DSL 与文本模板怎么选
@@ -44,6 +46,17 @@ Snapshot 把布局描述渲染成图片。第一次使用可以先在 Playground
 2. **布局与绘制分开。** Transform、阴影和滤镜可能画到布局框外；用 Clip 组件明确限定绘制范围。
 3. **文本需要宽度约束才能按预期换行。** 在 Row 里通常用 Expanded 为文本分配剩余宽度；在 Column 里保留父级最大宽度。
 4. **编辑器诊断不等于渲染验证。** LSP 检查语法和部分属性，Parser、图片解码与布局在实际运行时完成。
+
+## 从示例走到业务代码
+
+先固定一张图的尺寸并让最小示例出图，再逐步替换内容，通常比一次接入所有数据更容易排错：
+
+1. 从[完整模板](/guides/examples/)或[快速开始](/guides/quickstart/)选一个接近目标的布局，确认输出尺寸。
+2. 替换一组真实数据，明确长标题、缺图、空值和超长列表的处理方式，见[业务数据模板](/guides/data-templates/)。
+3. 把重复结构提取成[组合函数](/guides/reusable-components/)或[自定义标签](/reference/parser-errors/#自定义标签)，保留尺寸与字体约定。
+4. 检查最长文本、混排和裁剪，再给稳定的结果加[布局或图像测试](/guides/testing/)。
+
+如果组件明明写了宽高却没有按预期显示，先看[紧约束与宽松约束的对比](/guides/layout/#有上限不等于固定尺寸)。如果模板解析成功但出图失败，按[解析、建树、渲染三个阶段](/reference/parser-errors/#每一步成功意味着什么)定位问题。
 
 ## 查找参数与行为
 

@@ -9,6 +9,7 @@ description: 尺寸、布局、Parser、网络图片、文本和调试的常见�
 | --- | --- |
 | 安装、下载或原生库加载失败 | [安装排错](/guides/installation/#安装排错) |
 | 出图尺寸不对、Flex 无法分配空间 | [约束与布局](/guides/layout/) |
+| 子组件写了 width / height 仍占满父盒 | [紧约束与 Align](/guides/layout/#有上限不等于固定尺寸) |
 | 长文本不换行、宽度溢出 | [自适应文本完整示例](/guides/examples/#固定图标与自适应文本) |
 | 中文缺字、图文高低不齐 | [字体配置](/guides/fonts/)与[基线混排](/guides/media-text/#文本基线与混排) |
 | 需要把业务字符串填入模板 | [动态数据与 CDATA](/guides/data-templates/) |
@@ -16,6 +17,16 @@ description: 尺寸、布局、Parser、网络图片、文本和调试的常见�
 | 语法或属性报错 | [Parser 错误分类](/reference/parser-errors/) |
 | 编辑器没有补全或提示 | [DSL 语言服务](/guides/language-server/) |
 | 找不到文本、渐变或装饰对象的详细参数 | [公共配置阅读入口](/guides/overview/#查找参数与行为) |
+| 需要复用业务组件或模板标签 | [组合函数](/guides/reusable-components/)与[标签注册](/reference/parser-errors/#自定义标签) |
+| 想给 AI 提供准确的文档与示例 | [AI 辅助开发](/guides/ai-development/) |
+
+## 为什么子组件写了宽高，却仍然占满父组件？
+
+父级如果传来固定尺寸，子节点就没有缩小的余地。例如 200×100 的 SizedBox 直接包住 80×40 的 Container，Container 仍会得到 200×100。中间加入 Align 后，Align 保留外层尺寸，并允许内容选择较小尺寸；完整对比见[有上限，不等于固定尺寸](/guides/layout/#有上限不等于固定尺寸)。
+
+## 可以缓存一棵 Widget 树，修改参数后继续出图吗？
+
+推荐复用数据和构建函数，每次重新建树。Widget 槽位和部分属性可变，某些配置还会在构造时转换；例如修改 `Container.width` 不会自动重新生成其 `constraints`。同时不要把 RenderBox 在多个请求间并发共享。完整建议见[数据变化时重新建树](/guides/reusable-components/#数据变化时重新建树)。
 
 ## 中文、英文和图标为什么看起来不在同一高度？
 

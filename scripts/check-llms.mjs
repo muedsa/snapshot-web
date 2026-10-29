@@ -124,8 +124,8 @@ for (const [name, markdown] of documents) {
   }
 }
 for (const [set, required] of [
-  ['kotlin', ['guides/quickstart.md', 'widgets/text/text.md', 'reference/text-style.md']],
-  ['dsl', ['guides/parser.md', 'reference/parser-tags.md', 'reference/parser-errors.md']],
+  ['kotlin', ['guides/quickstart.md', 'guides/reusable-components.md', 'guides/ai-development.md', 'widgets/text/text.md', 'reference/text-style.md']],
+  ['dsl', ['guides/parser.md', 'guides/ai-development.md', 'reference/parser-tags.md', 'reference/parser-errors.md']],
 ]) {
   for (const name of required) {
     check(outputs.get(`_llms-txt/${set}.txt`)?.includes(documents.get(name)), `${set} 合集: 缺少 ${name}`);

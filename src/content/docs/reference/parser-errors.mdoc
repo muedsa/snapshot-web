@@ -219,35 +219,94 @@ fun render(source: String): ByteArray =
 
 `parse()` 使用 `@Synchronized`，同一 Parser 的解析调用会依次执行；但返回元素后的 `createWidget()` / `snapshot()` 并未被这把锁串行化。上面的 `render()` 函数因此不是整个渲染流程的同步封装。应用仍需独立控制渲染并发，且复用期间不要并发修改 `WidgetParserManager` 或共享全局配置。
 
+### 每一步成功意味着什么
+
+| 调用 | 已完成的工作 | 还不能保证的事 |
+| --- | --- | --- |
+| `parse(reader)` | 读取标签结构，创建 Element 树，校验根标签属性 | 子标签属性合法、图片能下载、布局能完成 |
+| `element.createWidget()` | 解析子标签属性并构建 Widget；网络图片可能已在此阶段同步加载 | 根尺寸有限、文本布局正确、绘制和编码成功 |
+| `element.snapshot()` | 重新建 Widget 树，完成布局、绘制和图片编码 | 图片内容符合业务预期，需要查看结果和测试 |
+
+不要把 `createWidget()` 当成没有副作用的纯校验器：它可能访问网络、解码图片。先调用它，再调用 `snapshot()`，也不会自动复用刚才的 Widget；通常直接对一次 `snapshot()` 调用捕获错误即可。
+
+返回的 Element 树保存可变属性和子节点，不是不可变的模板缓存。根标签的 `type`、`background`、`debug` 在解析时已经读取；之后修改 `attrs` 不会自动更新这些值。动态数据应在生成源文本时填入，再重新解析，见[业务数据模板](/guides/data-templates/)。
+
 ## 自定义标签
 
-`WidgetParserManager.withDefaults()` 每次返回独立的默认注册表；也可通过 `copy()` 复制已有配置。不要使用已弃用的全局 `DEFAULT_MANAGER`：
+当一组固定样式需要在多个模板中复用，可以把它注册为标签。下面是使用 `snapshot-parser` 依赖的完整程序：新增 `<MyCard variant="small|large">`，固定宽 320，高度分别为 96 / 144，四周 padding 为 16；内容使用已有的 Text、Column 等标签。
 
 ```kotlin
-val manager = WidgetParserManager.withDefaults().also { it.register(MyCardParser()) }
+import com.muedsa.geometry.EdgeInsets
+import com.muedsa.snapshot.parser.ContainerMode
+import com.muedsa.snapshot.parser.Element
+import com.muedsa.snapshot.parser.Parser
+import com.muedsa.snapshot.parser.attr.AttributeValueInfo
+import com.muedsa.snapshot.parser.attr.required.RequiredStringAttrDefine
+import com.muedsa.snapshot.parser.widget.WidgetParser
+import com.muedsa.snapshot.parser.widget.WidgetParserManager
+import com.muedsa.snapshot.widget.Container
+import com.muedsa.snapshot.widget.Widget
+import java.io.File
+import java.io.StringReader
 
-class MyParser : Parser(manager)
-```
-
-一个标签解析器需要声明标签名、容器模式和 Widget 构建逻辑：
-
-```kotlin
 class MyCardParser : WidgetParser {
     override val id: String = "MyCard"
     override val containerMode = ContainerMode.SINGLE
 
+    private val variantAttr = RequiredStringAttrDefine(
+        name = "variant",
+        valueInfo = AttributeValueInfo.choices(listOf("small", "large")),
+    ) { attr, value ->
+        require(value == "small" || value == "large") {
+            "Attr [${attr.name}] must be small or large"
+        }
+    }
+
     override fun buildWidget(element: Element): Widget {
+        val variant = WidgetParser.parseAttrValue(variantAttr, element.attrs)
         return Container(
             width = 320f,
+            height = if (variant == "small") 96f else 144f,
             padding = EdgeInsets.all(16f),
+            color = 0xFFF1F5F9.toInt(),
         ).also { WidgetParser.createWidgetForChildElement(it, element.children) }
     }
 }
+
+fun main() {
+    val manager = WidgetParserManager.withDefaults().also {
+        it.register(MyCardParser())
+    }
+    val parser = Parser(manager)
+    val source = """
+        <Snapshot background="#FFFFFF" type="png">
+          <MyCard variant="small">
+            <Text fontSize="20" color="#0F172A">Reusable card</Text>
+          </MyCard>
+        </Snapshot>
+    """.trimIndent()
+    val bytes = parser.parse(StringReader(source)).snapshot()
+    File("custom-card.png").writeBytes(bytes)
+}
 ```
 
-`ContainerMode.NONE` 禁止子节点，`SINGLE` 最多一个，`MULTIPLE` 允许多个。属性应通过 `AttrDefine` 和 `WidgetParser.parseAttrValue` 解析，以保留位置跟踪和统一异常格式。
+运行后生成 320×96 的 `custom-card.png`。将 `variant` 改为 `large` 得到 320×144；改为 `medium` 或删除该属性，会在 `snapshot()` 建树时得到带属性位置和候选值的 `ParseException`。
 
-新增普通 Widget 标签只需注册 Parser；新增 Text 内的行内 Span 类型还需要扩展 `Element.parseInlineSpan()` 的分支。
+`buildWidget()` 返回一个 Widget 对象，`createWidgetForChildElement()` 再把子标签转换为组件并挂载。这里的 Container 是构造器；在普通函数中只创建对象，不会自动挂到某个外部 DSL 上。
+
+| 容器模式 | 可以写哪些子节点 | 常见用途 |
+| --- | --- | --- |
+| `NONE` | 不允许 | 图片等叶子标签 |
+| `SINGLE` | 0 或 1 个 | 卡片、背景、裁剪包装 |
+| `MULTIPLE` | 多个 | 自定义排列容器，返回的 Widget 也必须能容纳多个子节点 |
+
+`SINGLE` 不代表必须有一个子节点。若组件要求恰好一个，应在 `buildWidget()` 中额外校验数量。MyCard 可以为空；需要多段内容时，在它里面放一个 Column。声明容器模式也不会自动添加排版逻辑。
+
+`WidgetParserManager.withDefaults()` 每次创建独立的注册表和内置解析器，不要修改已弃用的全局 `DEFAULT_MANAGER`。`copy()` 只复制注册表，里面的 WidgetParser 对象仍是同一批引用；自定义解析器应避免保存“当前请求”等可变状态。`register()` 会替换同名标签，业务标签应使用清晰且不与内置标签冲突的名称。
+
+属性通过 `AttrDefine` 和 `WidgetParser.parseAttrValue` 解析，可以保留位置与统一异常格式。候选值只是说明，实际校验由上例的 `require` 执行；仅写 `AttributeValueInfo.choices()` 不会限制输入。
+
+这些自定义标签只在你配置的 Parser 实例中有效，不会自动出现在公共 Playground 或已部署服务中。编辑器补全也需要单独扩展 [LSP 标签目录](/guides/language-server/#与-parser-的分工)。新增 Text 内的行内 Span 类型还需要扩展 `Element.parseInlineSpan()` 的分支，不能仅靠普通标签注册完成。
 
 ### 自定义属性的填写说明
 

@@ -40,6 +40,42 @@ data class BoxConstraints(
 | `loose(size)` | 最小为 0，最大为给定尺寸 |
 | `expand(width, height)` | 尽可能扩张，未指定维度默认为无限 |
 
+### 有上限，不等于固定尺寸
+
+“有界”只表示最大值有限；“紧约束”表示最小值和最大值相等。两者的区别直接决定子组件的 `width` 是否有选择余地：
+
+| 父级给出的宽度范围 | 子节点请求宽 80 | 子节点请求宽 300 |
+| --- | --- | --- |
+| 0 到 200（有界、宽松） | 可以取 80 | 最多取 200 |
+| 200 到 200（紧约束） | 仍须取 200 | 仍须取 200 |
+| 0 到无限（无界） | 可以取 80 | 可以取 300，但不能计算“填满剩余宽度” |
+
+这里说的是普通 SizedBox / Container 接收约束时的结果。OverflowBox 等组件会改变传给子节点的约束，不能用它们推断所有组件都能自行越界。
+
+下面两个模板都输出 200×100，却画出不同大小的蓝色矩形。第一个模板把固定约束直接传给 Container，因此 `width="80" height="40"` 不会把蓝色区域缩小：
+
+```xml
+<Snapshot background="#FFFFFF">
+  <SizedBox width="200" height="100">
+    <Container width="80" height="40" color="#38BDF8" />
+  </SizedBox>
+</Snapshot>
+```
+
+若希望保留大画布，让蓝色矩形按自己的尺寸居中，需要在中间加 Align。Align 自身占满 200×100，但会放松传给子节点的最小尺寸，蓝色矩形才有空间选择 80×40：
+
+```xml
+<Snapshot background="#FFFFFF">
+  <SizedBox width="200" height="100">
+    <Align alignment="CENTER">
+      <Container width="80" height="40" color="#38BDF8" />
+    </Align>
+  </SizedBox>
+</Snapshot>
+```
+
+第二个模板的蓝色左上角为 `(60,30)`。Kotlin 中对应 `SizedBox { Align { Container(...) } }`；也可以给外层 Container 设置 `alignment`，让它内部生成 Align。仅将 `width` 改得更小无法解除父级的紧约束。
+
 ## Container 的组合顺序
 
 `Container` 不是单一 RenderBox，而是按属性组合多个 Widget。大致顺序为：子节点 → 对齐 → padding → 颜色/裁剪/装饰 → 约束 → margin → transform。

@@ -1,0 +1,81 @@
+---
+title: 使用 AI 辅助开发
+description: 为 AI 工具提供按需读取的文档入口，明确 Kotlin 与 Parser 模板的区别，并验证生成结果。
+---
+
+让 AI 帮你写 Snapshot 布局时，先告诉它使用 **Kotlin API 还是 Parser 文本模板**，再提供对应文档。Snapshot 的布局方式与 Flutter 相近，但不能直接复制 Flutter、HTML 或 CSS 的组件和属性。
+
+## 给工具哪些文档
+
+将 [llms.txt](https://snapshot.muedsa.com/llms.txt) 作为起点。它是索引，工具可以按任务读取几篇相关页面，不必每次加载整个网站。
+
+| 入口 | 适合的任务 |
+| --- | --- |
+| [文档索引](https://snapshot.muedsa.com/llms.txt) | 查找单页和主题合集 |
+| [Kotlin 合集](https://snapshot.muedsa.com/_llms-txt/kotlin.txt) | JVM 接入、组件组合、布局与绘制 |
+| [Parser DSL 合集](https://snapshot.muedsa.com/_llms-txt/dsl.txt) | 生成 `.snapshot` 模板、查询标签和属性、定位错误 |
+| [全文合集](https://snapshot.muedsa.com/llms-full.txt) | 确实需要全站内容，且工具允许较大上下文时 |
+| [精简合集](https://snapshot.muedsa.com/llms-small.txt) | 不需要首页、源码索引和视觉对比页时；它仍保留大部分正文，并非短摘要 |
+
+单页 Markdown 与网页使用同一份正文。例如 [Parser 标签参考](/reference/parser-tags/)对应 [parser-tags.md](https://snapshot.muedsa.com/reference/parser-tags.md)：把文档路径末尾的 `/` 替换为 `.md` 即可。首页使用 `/index.md`；Playground 和 404 没有 Markdown 版本。
+
+工具无法访问网络时，可以打开单页 Markdown，把相关内容提供给它。`llms.txt` 不会自动让所有 AI 工具读取本站；需要由你提供入口，或由工具主动发现和读取。
+
+## 生成 Parser 模板
+
+以下提示词可以直接使用，也可以替换尺寸和业务内容：
+
+```text
+请用 Snapshot Parser 文本 DSL 生成一张 640×360 的订单摘要卡片。
+
+先读取 https://snapshot.muedsa.com/llms.txt，并按需读取：
+- https://snapshot.muedsa.com/guides/parser.md
+- https://snapshot.muedsa.com/reference/parser-tags.md
+- https://snapshot.muedsa.com/reference/parser-text.md
+- https://snapshot.muedsa.com/guides/data-templates.md
+
+使用白色背景、一个标题、三条订单信息和右下角的总金额。
+根节点提供明确尺寸，长标题最多两行，金额必须完整显示。
+只使用文档列出的标签和属性，不假设支持 HTML/CSS、Flutter Widget 或模板表达式。
+颜色使用 Parser 支持的 CSS 写法；说明使用的字体及其部署要求。
+先用文字说明布局尺寸如何分配，再提供完整的 <Snapshot> 根模板。
+若能调用渲染工具，请实际渲染并检查图片；否则明确说明尚未运行。
+```
+
+保存为 `.snapshot` 后，用 [VS Code 扩展或 Playground](/guides/language-server/)检查语法，再实际运行。标签存在不代表任意组合都有效：Expanded 必须是 Flex 的直接子节点；文本在 Row 中也需要有限宽度才会按预期换行。
+
+如果通过 Open Snapshot 等 HTTP 服务出图，另外向 AI 提供**该服务**的接口文档：请求方式、路径、允许的图片来源、资源限制和错误字段由服务决定。本站的 Parser 说明不能代替服务接口契约。
+
+## 生成 Kotlin 代码
+
+Kotlin 任务可以这样描述：
+
+```text
+请在已有 Kotlin/JVM 应用中编写 Snapshot 分享卡片函数，返回 PNG 字节。
+目标尺寸 720×360，输入标题和三条统计数据；长标题需要省略，背景为白色。
+
+先读取 https://snapshot.muedsa.com/llms.txt，重点查阅：
+- https://snapshot.muedsa.com/guides/quickstart.md
+- https://snapshot.muedsa.com/guides/reusable-components.md
+- https://snapshot.muedsa.com/guides/rendering.md
+- https://snapshot.muedsa.com/reference/text-style.md
+
+请给出完整 import 与函数，用 ChildSlot 组合组件。
+颜色使用 Kotlin ARGB Int，尺寸使用 Float；说明调用方需要提供的字体或图片。
+沿用项目现有依赖，不虚构版本、类型或可下载的 testkit 坐标。
+补充输出尺寸、长文本和空数据的验证方法，并区分已经执行与建议执行的检查。
+```
+
+传入业务字符串时优先直接调用 Kotlin API。生成 Parser 模板的应用应使用[CDATA 文本插入方式](/guides/data-templates/#文本模板把业务文字放进-cdata)，不要把任意字符串直接拼进标签或属性。
+
+## 验证生成结果
+
+按下面的顺序检查，错误更容易定位：
+
+1. **查 API。** 确认标签、参数及默认值属于当前入口。Kotlin 的 `0x80FF0000.toInt()` 与 Parser 的 `#FF000080` 都表示半透明红色，字节顺序却不同；两者默认画布背景也不同。
+2. **编译或检查模板。** Kotlin 先编译；DSL 先看 LSP 提示，再执行 Parser。`parse()` 成功只代表读取了元素树，不能证明图片可以生成。
+3. **实际渲染。** 检查字体、图片解码和布局。服务端引擎可能落后于文档和编辑器版本；遇到未知标签时先核对版本。
+4. **看图片。** 检查文本基线、长文字截断、透明边缘、裁剪和留白。“请求成功”或“得到 PNG”不代表内容符合要求。
+5. **保留回归。** 用最长标题、空值、中英文混排等边界数据复测；稳定后加入[布局、像素或 Golden 测试](/guides/testing/)。
+
+报错时给 AI 提供最小模板、实际引擎版本、位置与结构化诊断；效果不对时，再补上输出图片和预期效果。优先让它解释原因并修改相关部分，避免同时改动所有尺寸、字体和对齐参数。

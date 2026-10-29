@@ -1,0 +1,136 @@
+---
+title: 编写可复用组件
+description: 用 Kotlin 函数组合业务组件，说明尺寸约定、DSL 挂载与对象复用的边界。
+---
+
+一张图里多次出现订单行、价格标签或信息卡片时，可以把现有 Widget 的组合提取为 Kotlin 函数。通常不需要继承 Widget，也不需要自己实现 RenderBox。
+
+## 从一行订单开始
+
+下面是完整的 `Main.kt`，沿用[快速开始](/guides/quickstart/)的 core 依赖。运行后得到 `520 × 144` 的 `order-lines.png`。`OrderLine` 负责一行的外观，`main()` 负责画布和各行之间的距离。
+
+```kotlin
+import com.muedsa.geometry.EdgeInsets
+import com.muedsa.snapshot.SnapshotPNG
+import com.muedsa.snapshot.paint.text.TextOverflow
+import com.muedsa.snapshot.paint.text.TextStyle
+import com.muedsa.snapshot.rendering.flex.CrossAxisAlignment
+import com.muedsa.snapshot.widget.*
+import com.muedsa.snapshot.widget.text.Text
+import org.jetbrains.skia.paragraph.Alignment
+import java.io.File
+
+data class OrderLineData(val title: String, val amount: String)
+
+fun ChildSlot.OrderLine(item: OrderLineData) {
+    Container(
+        height = 48f,
+        padding = EdgeInsets.symmetric(horizontal = 12f),
+        color = 0xFFF1F5F9.toInt(),
+    ) {
+        Row(crossAxisAlignment = CrossAxisAlignment.CENTER) {
+            Expanded {
+                Text(
+                    item.title,
+                    style = TextStyle(fontSize = 18f, color = 0xFF0F172A.toInt()),
+                    maxLines = 1,
+                    overflow = TextOverflow.ELLIPSIS,
+                )
+            }
+            SizedBox(width = 12f)
+            SizedBox(width = 96f) {
+                Text(
+                    item.amount,
+                    style = TextStyle(fontSize = 18f, color = 0xFF0F172A.toInt()),
+                    textAlign = Alignment.RIGHT,
+                    maxLines = 1,
+                    overflow = TextOverflow.ELLIPSIS,
+                )
+            }
+        }
+    }
+}
+
+fun main() {
+    val items = listOf(
+        OrderLineData("Snapshot guide", "29.00"),
+        OrderLineData("A longer title that should fit on one line", "128.00"),
+    )
+    val bytes = SnapshotPNG {
+        Container(width = 520f, height = 144f, padding = EdgeInsets.all(18f)) {
+            Column(crossAxisAlignment = CrossAxisAlignment.STRETCH) {
+                items.forEachIndexed { index, item ->
+                    if (index > 0) SizedBox(height = 12f)
+                    OrderLine(item)
+                }
+            }
+        }
+    }
+    File("order-lines.png").writeBytes(bytes)
+}
+```
+
+这个组件的尺寸约定是：**调用方提供有限宽度，组件请求 48 的高度。** 示例的内容区宽 `520 - 18 × 2 = 484`，两行加间距高 `48 × 2 + 12 = 108`，正好放入画布。行内扣除左右 padding、间距和金额区后，标题最多得到 `484 - 24 - 12 - 96 = 352` 的宽度。
+
+金额区也有单行省略，过长金额不会挤占标题。如果业务上金额必须完整显示，应预先校验长度、加宽金额区或改变布局，而不是依靠省略号隐藏重要数字。这里用英文使示例不依赖中文字体；换成中文前请按[字体指南](/guides/fonts/)配置字体。
+
+## 为什么接收者是 ChildSlot
+
+`fun ChildSlot.OrderLine(...)` 表示“向当前父节点添加一个订单行”。它返回 `Unit`，函数内的 `Container { … }` 已经完成挂载；调用方只需写 `OrderLine(item)`，不用再调用 `attach()`。
+
+单子节点容器只允许挂一个组件。要显示多行，应先放一个 Column，再在 Column 中调用多次 OrderLine。直接在 `SnapshotPNG { … }`、Container 或 Padding 中连续添加两个组件都会超过单子槽位的容量。
+
+也可以用普通函数返回 Widget 对象，再显式挂载。下面是另一份完整程序：工厂函数放在顶层，`attach` 放在 `SnapshotPNG { … }` 中，得到 80×40 的 `color-block.png`：
+
+```kotlin
+import com.muedsa.snapshot.SnapshotPNG
+import com.muedsa.snapshot.widget.Container
+import com.muedsa.snapshot.widget.Widget
+import java.io.File
+
+fun makeColorBlock(): Widget = Container(
+    width = 80f,
+    height = 40f,
+    color = 0xFF38BDF8.toInt(),
+)
+
+fun main() {
+    val bytes = SnapshotPNG { attach(makeColorBlock()) }
+    File("color-block.png").writeBytes(bytes)
+}
+```
+
+有无子节点 lambda 并不能单独区分构造器和 DSL 扩展函数；同名调用还取决于当前作用域。编写普通工厂时，明确返回 `Widget`；编写组合函数时，使用 `ChildSlot` 接收者，并让内部 DSL 负责挂载。不要把两种方式混在一起重复添加同一个节点。
+
+## Expanded 和 Positioned 放在哪里
+
+组件的内容与“它在父布局里占多少空间”分开处理通常更好用。例如通用的 `ChildSlot.ProfileCard(...)` 可以放在 Column、Stack 或根节点中；需要平分一行时，由调用方在 Row 中用 Expanded 包住它。
+
+`Expanded` / `Flexible` / `Spacer` 的 DSL 接收者是 `Flex`；`Positioned` 则是 `Stack` 或 `IndexedStack`。它们不能藏在一个任意 `ChildSlot` 函数里，假定调用者一定提供了正确的父节点。确实只供 Flex 使用的组合函数可以声明为 `fun Flex.…`，并在说明中写明这一限制。
+
+正确的层级是 `Row → Expanded → Padding → 内容`，而不是 `Row → Padding → Expanded → 内容`。同样，角标应是 `Stack → Positioned → Container`。Kotlin DSL 会阻止部分错误的作用域调用；手动构造 Widget 或编写 Parser 模板时，仍需自己保证这些直接父子关系。
+
+## 数据变化时重新建树
+
+Snapshot 是一次性图片渲染库，没有状态驱动的 UI 重绘机制。修改业务数据后，重新调用组件函数并生成图片。已经输出的 PNG 字节不会随 Widget 属性变化而更新。
+
+| 对象 | 推荐用法 | 原因 |
+| --- | --- | --- |
+| 业务数据、布局函数 | 跨多次出图复用 | 每次用当次数据调用，容易测试和维护 |
+| Widget 树 | 默认每次出图重新创建 | 槽位和部分属性可变；重复向同一容器挂载会报错 |
+| RenderBox | 在一次布局/绘制流程内使用 | 保存约束、尺寸、parentData 和绘制状态；不应由多个请求同时操作 |
+| Parser | 配置稳定时可以复用 | 仅 `parse()` 串行化，不会同时锁住渲染过程，见[实例生命周期](/reference/parser-errors/#parser-实例生命周期) |
+| 字体、图片缓存 | 按应用的生命周期管理 | 不要提前关闭其他渲染仍在使用的原生对象，见[资源管理](/guides/rendering/#加载本地图片并释放资源) |
+
+尤其不要把 `Container.width` / `height` 的赋值当成重新布局 API：这两个值在构造时被合并进 `constraints`，之后修改同名字段不会自动重新生成约束。重新构造组件更直观，也能避免复用时混入上一次的配置。
+
+## 为组件留下可检验的约定
+
+像上面的 OrderLine，说明有限宽度、期望高度、长标题和超长金额的行为，就比只说“可复用订单组件”更有帮助。至少检查：
+
+- 放进不同宽度的父容器后，标题是否仍能换行或省略；
+- 空字符串、长文本和不同字体是否挤压关键内容；
+- 重复调用是否生成独立节点，是否意外共享可变状态；
+- 父约束不足时，是允许裁剪、改变高度，还是由业务拒绝这组数据。
+
+用[布局断言](/guides/testing/#在自己的应用里写第一个测试)验证尺寸，用渲染图检查文字和留白。如果组件需要在文本模板中使用，再注册[自定义 Parser 标签](/reference/parser-errors/#自定义标签)；Kotlin 函数不会自动成为 DSL 标签。

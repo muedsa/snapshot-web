@@ -34,6 +34,8 @@ fun orderCard(title: String, lines: List<String>): ByteArray = SnapshotPNG {
 
 `lines.take(3)` 是本例的产品选择：画布固定，只展示前三条。实际业务要明确超出内容是分页、截断还是增高，不能期待固定画布自动容纳任意列表。中文部署还需[配置字体](/guides/fonts/)。
 
+当同一种行、金额区或卡片需要重复使用时，把它提取为 `ChildSlot` 组合函数，让调用方负责画布、列表数量与间距，见[编写可复用组件](/guides/reusable-components/)。
+
 ## 文本模板：把业务文字放进 CDATA
 
 Parser 不是模板引擎，不执行变量、循环或表达式。字符串插值由你的应用负责。它也不做 HTML 实体解码，因此不能照搬 `&lt;`、`&amp;` 作为转义方案。

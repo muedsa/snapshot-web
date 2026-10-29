@@ -38,7 +38,7 @@ export default defineConfig({
               label: "Kotlin",
               description: "Kotlin 接入、布局绘制、Widget 与公共配置参考。",
               paths: [
-                "guides/{overview,installation,quickstart,rendering,concepts,layout,widgets,painting,media-text,fonts,data-templates,testing}",
+                "guides/{overview,installation,quickstart,rendering,concepts,layout,widgets,reusable-components,painting,media-text,fonts,data-templates,testing,ai-development}",
                 "widgets/**",
                 "reference/{text-style,text-layout,box-decoration,borders,box-shadow,decoration-image,gradients,enums,faq}",
               ],
@@ -47,7 +47,7 @@ export default defineConfig({
               label: "DSL",
               description: "Parser 模板语法、标签属性、错误处理与语言服务。",
               paths: [
-                "guides/{overview,parser,examples,language-server,fonts,data-templates}",
+                "guides/{overview,parser,examples,language-server,fonts,data-templates,ai-development}",
                 "reference/{parser-tags,parser-text,parser-errors,enums,faq}",
               ],
             },
@@ -77,6 +77,7 @@ export default defineConfig({
           items: [
             { label: "概览", slug: "index" },
             { label: "文档导读", slug: "guides/overview" },
+            { label: "使用 AI 辅助开发", slug: "guides/ai-development" },
             { label: "在线 Playground", link: "/playground/" },
             { label: "快速开始", slug: "guides/quickstart" },
             { label: "安装与构建", slug: "guides/installation" },
@@ -96,6 +97,7 @@ export default defineConfig({
           label: "Widget 指南",
           items: [
             { label: "Widget 与布局", slug: "guides/widgets" },
+            { label: "编写可复用组件", slug: "guides/reusable-components" },
             { label: "绘制、装饰与效果", slug: "guides/painting" },
             { label: "图片、文本与富文本", slug: "guides/media-text" },
             { label: "字体与跨平台文字", slug: "guides/fonts" },

@@ -13,6 +13,7 @@
 
 - 产品落地页与能力展示；
 - 安装、快速开始、渲染、布局、绘制、图片、文本、字体配置、业务数据模板与测试指南；
+- 可复用业务组件、自定义 Parser 标签的完整程序，以及面向 AI 工具的阅读入口与开发流程；
 - 39 个独立 Widget API 页面，包含源码签名、参数、行为、示例和限制；
 - TextStyle、段落与行高、装饰、边框、阴影、背景图片和渐变的公共配置参考；
 - 类 DOM Parser 的标签、属性、文本样式详解、错误处理与扩展说明；
@@ -108,6 +109,8 @@ pnpm preview
 | `/_llms-txt/dsl.txt` | Parser 模板、标签属性、错误处理与语言服务 |
 
 例如，快速开始的网页是 `https://snapshot.muedsa.com/guides/quickstart/`，Markdown 地址为 `https://snapshot.muedsa.com/guides/quickstart.md`。内容较多时，优先读取索引并按需选择单页或主题合集。
+
+面向使用者的入口、提示词与结果验证流程位于[使用 AI 辅助开发](https://snapshot.muedsa.com/guides/ai-development/)。新增开发指南时，同时维护侧边栏和 `customSets.paths`，避免网页有内容而相应主题合集遗漏。
 
 插件配置位于 `astro.config.mjs`。当前固定使用 `@rttnd/starlight-llms-txt@0.7.0`，它支持本项目的 Astro 7 / Starlight 版本及单页 Markdown 导出。采用渲染后的 HTML 转换正文：提示框保留标题和说明，Tabs 展开为带标签的列表，表格和代码块保留为 Markdown；不直接暴露 Markdoc 组件标签。仅移除网页标题旁的辅助链接，不压缩代码空白或删除提示。正文中的站内链接仍指向网页，可通过索引找到对应 Markdown。
 

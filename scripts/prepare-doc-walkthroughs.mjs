@@ -23,8 +23,12 @@ snippets.push({ name: 'layout-flex', code: blocks('guides/layout')[1] });
 snippets.push({ name: 'painting-card', code: blocks('guides/painting')[0] });
 
 const programs = [];
-for (const page of ['quickstart', 'parser', 'rendering', 'fonts', 'data-templates', 'testing']) {
-  for (const code of blocks('guides/' + page).filter(code => code.startsWith('import '))) {
+for (const page of ['quickstart', 'parser', 'rendering', 'fonts', 'data-templates', 'testing', 'reusable-components', 'reference/parser-errors']) {
+  const sourcePage = page.startsWith('reference/') ? page : 'guides/' + page;
+  // 错误参考还包含诊断 API 片段；这里只执行带 main 的完整自定义标签程序。
+  const completePrograms = blocks(sourcePage).filter(code => code.startsWith('import ')
+    && (page !== 'reference/parser-errors' || /fun main\(/.test(code)));
+  for (const code of completePrograms) {
     const pkg = `docs.program${programs.length}`;
     const filename = `Program${programs.length}.kt`;
     writeFileSync(resolve(output, filename), `package ${pkg}\n${code}`);
@@ -44,7 +48,7 @@ for (const page of ['quickstart', 'parser', 'rendering', 'fonts', 'data-template
   }
 }
 const xmlFiles = [];
-for (const page of ['guides/examples', 'guides/parser', 'guides/fonts', 'reference/parser-tags']) {
+for (const page of ['guides/examples', 'guides/parser', 'guides/fonts', 'guides/layout', 'reference/parser-tags']) {
   const all = blocks(page, 'xml');
   for (const [i, code] of all.entries()) {
     if (!/<Snapshot(?:\s|>)/.test(code) || !code.includes('</Snapshot>') || /\burl=/.test(code)) continue;
@@ -57,6 +61,10 @@ const imports = blocks('guides/visual-reference', 'text')[0];
 const pixelCode = blocks('guides/testing').find(code => code.startsWith('Snapshot {'));
 if (!pixelCode) throw new Error('缺少像素断言示例');
 const fonts = programs.find(p => p.page === 'fonts');
+const reusable = programs.find(p => p.page === 'reusable-components');
+const customParser = programs.find(p => p.page === 'reference/parser-errors');
+const constraintTemplates = xmlFiles.filter(name => name.startsWith('guides-layout-'));
+if (constraintTemplates.length !== 2) throw new Error('缺少紧约束与 Align 的两个对比模板');
 writeFileSync(resolve(output, 'Walkthroughs.kt'), `${imports}
 import com.muedsa.snapshot.material.ELEVATION_MAP
 import com.muedsa.snapshot.rendering.ClipBehavior
@@ -65,6 +73,9 @@ import com.muedsa.snapshot.rendering.box.RenderColoredBox
 import com.muedsa.snapshot.paint.text.TextOverflow
 import com.muedsa.snapshot.rendering.text.RenderParagraph
 import com.muedsa.snapshot.parser.Parser
+import com.muedsa.snapshot.parser.ParseException
+import com.muedsa.snapshot.parser.widget.WidgetParserManager
+import ${reusable.pkg}.OrderLine as documentationOrderLine
 import org.jetbrains.skia.*
 import org.jetbrains.skia.paragraph.BaselineMode
 import java.io.File
@@ -102,6 +113,45 @@ fun walkthroughs(output: File) {
     check(!baseline.exists() || baseline.delete())
     System.setProperty("snapshotTest.goldenRoot", File("golden").absolutePath)
     ${programs.map(p => p.entry + '\n    println("PASS: ' + p.page + ' / ' + p.pkg + '")').join('\n    ')}
+    // 验证业务组件的实际布局约定：金额宽 96、标题宽 352，而不只检查 PNG 可编码。
+    val orderLine = rootLayout {
+        SizedBox(width = 484f, height = 48f) {
+            documentationOrderLine(${reusable.pkg}.OrderLineData("A long order title", "128.00"))
+        }
+    }
+    orderLine.assertSize(484f, 48f)
+    orderLine.findType<RenderParagraph> {
+        val plain = StringBuffer()
+        it.text.computeToPlainText(plain)
+        plain.toString() == "128.00"
+    }!!.let { assertApproxEq(it.size.width, 96f) }
+    orderLine.findType<RenderParagraph> {
+        val plain = StringBuffer()
+        it.text.computeToPlainText(plain)
+        plain.toString() == "A long order title"
+    }!!.let { assertApproxEq(it.size.width, 352f) }
+    val cardParser = Parser(WidgetParserManager.withDefaults().also { it.register(${customParser.pkg}.MyCardParser()) })
+    for ((variant, height) in listOf("small" to 96f, "large" to 144f)) {
+        val card = cardParser.parse(StringReader("<Snapshot><MyCard variant='" + variant + "'/></Snapshot>"))
+        rootLayout { attach(card.createWidget()) }.assertSize(320f, height)
+    }
+    for (attribute in listOf("variant='medium'", "")) {
+        try {
+            cardParser.parse(StringReader("<Snapshot><MyCard " + attribute + "/></Snapshot>")).createWidget()
+            error("自定义属性应拒绝无效或缺失的 variant")
+        } catch (error: ParseException) {
+            check(error.attributeDiagnostic?.attributeName == "variant")
+            check(error.attributeDiagnostic?.valueInfo?.allowedValues == listOf("small", "large"))
+        }
+    }
+    // 直接使用文档中的 DSL，验证父紧约束与 Align 放松约束后的尺寸、位置。
+    ${constraintTemplates.map((name, i) => `run {
+        val element = Parser().parse(StringReader(File(output, "${name}.xml").readText()))
+        val tree = rootLayout { attach(element.createWidget()) }
+        tree.assertSize(200f, 100f)
+        tree.findType<RenderColoredBox> { it.color == 0xFF38BDF8.toInt() }!!
+            .assertGlobalRect(${i === 0 ? '0f, 0f, 200f, 100f' : '60f, 30f, 80f, 40f'})
+    }`).join('\n    ')}
     // 验证文本插入保留危险分隔符，而不只检查输出可编码。
     val raw = " A < B & C ]]> D "
     val escaped = ${programs.find(p => p.page === 'data-templates' && p.entry.includes('templateCard')).pkg}.dslText(raw)
@@ -113,7 +163,7 @@ fun walkthroughs(output: File) {
     val parser = Parser()
     ${xmlFiles.map(name => `save("${name}", parser.parse(StringReader(File(output, "${name}.xml").readText())).snapshot(), output)`).join('\n    ')}
     image.close()
-    println("PASS: 子节点几何、像素采样、指南程序和 Golden record/verify/update")
+    println("PASS: 子节点几何、复用组件、Parser 扩展与属性诊断、像素采样、指南程序和 Golden record/verify/update")
 }
 `);
 writeFileSync(resolve(output, 'manifest.json'), JSON.stringify({ snippets: snippets.map(s => s.name), programs, xmlFiles }, null, 2));

@@ -31,6 +31,8 @@ Widget 树 → RenderBox 树 → 布局尺寸 → Skia Canvas → PNG / JPEG / W
 
 `Widget` 是描述配置，`RenderBox` 是布局与绘制的执行体。调用 `SnapshotPNG` 时，Snapshot 会先创建 RenderBox 树，再从根节点开始传递约束，最后根据布局结果创建 Surface 并绘制。
 
+这里没有浏览器 DOM 或状态驱动的重绘。数据变化后应重新调用渲染函数；把重复布局提取为 Kotlin 函数即可复用，完整示例见[编写可复用组件](/guides/reusable-components/)。
+
 ## Widget 树
 
 | 类型 | 子节点 | 典型组件 |
@@ -63,6 +65,8 @@ fun ChildSlot.profileCard() {
 ### ParentDataWidget
 
 `Expanded`、`Flexible`、`Positioned` 不创建独立 RenderBox，而是把数据写入子 RenderBox 的 parentData。父级 Flex 或 Stack 在布局时读取这些数据。这就是它们必须作为对应父节点直接子级的原因。
+
+实际组合时，把负责父布局参数的节点放在外面，例如 `Row → Expanded → Padding → Text`。如果写成 `Row → Padding → Expanded → Text`，Expanded 的直接父级就变成了 Padding，Flex 无法按预期读取它的权重。`Positioned` 同理，应写成 `Stack → Positioned → 内容`。
 
 ## 约束模型
 
