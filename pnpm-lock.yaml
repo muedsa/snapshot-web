@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@astrojs/markdoc':
-        specifier: ^2.1.1
-        version: 2.1.1(@types/react@19.3.0)(astro@7.4.4(@types/node@24.13.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))(react@19.3.0)
+        specifier: ^2.1.2
+        version: 2.1.2(@types/react@19.3.0)(astro@7.4.4(@types/node@24.13.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))(react@19.3.0)
       '@astrojs/react':
         specifier: ^7.1.2
         version: 7.1.2(@types/node@24.13.5)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(jiti@2.7.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(yaml@2.9.1)
@@ -19,7 +19,7 @@ importers:
         version: 0.42.8(astro@7.4.4(@types/node@24.13.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
       '@astrojs/starlight-markdoc':
         specifier: ^0.7.0
-        version: 0.7.0(@astrojs/markdoc@2.1.1(@types/react@19.3.0)(astro@7.4.4(@types/node@24.13.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))(react@19.3.0))(@astrojs/starlight@0.42.8(astro@7.4.4(@types/node@24.13.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)))
+        version: 0.7.0(@astrojs/markdoc@2.1.2(@types/react@19.3.0)(astro@7.4.4(@types/node@24.13.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))(react@19.3.0))(@astrojs/starlight@0.42.8(astro@7.4.4(@types/node@24.13.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)))
       '@muedsa/snapshot-lsp':
         specifier: ^0.2.1
         version: 0.2.1
@@ -146,8 +146,8 @@ packages:
   '@astrojs/internal-helpers@0.13.0':
     resolution: {integrity: sha512-20jxQqnSmpskcGyad7N5l6Xf1gz0UCa6lNde44bEBdaXGpncEYfAZJ142r2ZgzBaG4dUyzGmhqZWv1INU2eiHQ==}
 
-  '@astrojs/markdoc@2.1.1':
-    resolution: {integrity: sha512-dVnKKo2DreEsqY4Agxr4f6EwF3+Q+DvwAIzlxW9mMtNtssPa2BWDZzT6NYhW/fgOIzjAkg4b9L7TOuEwo4BrzQ==}
+  '@astrojs/markdoc@2.1.2':
+    resolution: {integrity: sha512-NfdsVZoopdjT8/DuUEHxbzgC9P+ch1g1Jk0gnAPT/ClB19Rds5NjgSHQx+8W8ROPNceKn+E8zNK8ys7rOva4/A==}
     engines: {node: '>=22.23.4'}
     peerDependencies:
       astro: ^7.4.0
@@ -165,10 +165,6 @@ packages:
     peerDependenciesMeta:
       '@astrojs/markdown-remark':
         optional: true
-
-  '@astrojs/prism@4.1.1':
-    resolution: {integrity: sha512-sXlAXJX6t4QfuLg+CuCDzpg7NoxWcyb4paFprgtFppLeisCBmh935h+tJ5CWXfsXEoW2IDy/ihbRMtiu28Chjw==}
-    engines: {node: '>=22.23.4'}
 
   '@astrojs/prism@4.1.2':
     resolution: {integrity: sha512-jMrUEpFDarDO1KWPvVc9eSa8DSfwBlwEOHwX+8zvZQpiqXRGDxFnOXHsYqV6DP7w+0qIgTr98gS1GdQlm8ypWg==}
@@ -2337,10 +2333,10 @@ snapshots:
       unified: 11.0.5
       yaml: 2.9.1
 
-  '@astrojs/markdoc@2.1.1(@types/react@19.3.0)(astro@7.4.4(@types/node@24.13.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))(react@19.3.0)':
+  '@astrojs/markdoc@2.1.2(@types/react@19.3.0)(astro@7.4.4(@types/node@24.13.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))(react@19.3.0)':
     dependencies:
       '@astrojs/internal-helpers': 0.13.0
-      '@astrojs/prism': 4.1.1
+      '@astrojs/prism': 4.1.2
       '@markdoc/markdoc': 0.5.10(@types/react@19.3.0)(react@19.3.0)
       astro: 7.4.4(@types/node@24.13.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)
       github-slugger: 2.0.0
@@ -2363,10 +2359,6 @@ snapshots:
       '@astrojs/markdown-satteri': 0.4.6
       astro: 7.4.4(@types/node@24.13.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)
       es-module-lexer: 2.3.2
-
-  '@astrojs/prism@4.1.1':
-    dependencies:
-      prismjs: 1.30.0
 
   '@astrojs/prism@4.1.2':
     dependencies:
@@ -2404,9 +2396,9 @@ snapshots:
       sitemap: 9.0.1
       zod: 4.6.7
 
-  '@astrojs/starlight-markdoc@0.7.0(@astrojs/markdoc@2.1.1(@types/react@19.3.0)(astro@7.4.4(@types/node@24.13.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))(react@19.3.0))(@astrojs/starlight@0.42.8(astro@7.4.4(@types/node@24.13.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)))':
+  '@astrojs/starlight-markdoc@0.7.0(@astrojs/markdoc@2.1.2(@types/react@19.3.0)(astro@7.4.4(@types/node@24.13.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))(react@19.3.0))(@astrojs/starlight@0.42.8(astro@7.4.4(@types/node@24.13.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)))':
     dependencies:
-      '@astrojs/markdoc': 2.1.1(@types/react@19.3.0)(astro@7.4.4(@types/node@24.13.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))(react@19.3.0)
+      '@astrojs/markdoc': 2.1.2(@types/react@19.3.0)(astro@7.4.4(@types/node@24.13.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))(react@19.3.0)
       '@astrojs/starlight': 0.42.8(astro@7.4.4(@types/node@24.13.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
 
   '@astrojs/starlight@0.42.8(astro@7.4.4(@types/node@24.13.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))':
