@@ -134,7 +134,7 @@ fun main() {
 | --- | --- |
 | 一句话里中英文高低不一 | 放进同一个 Text / RichText，统一字体；检查是否缺字回退 |
 | 不同字号的价格与单位 | 使用 Row 的 `BASELINE` + `textBaseline = ALPHABETIC` |
-| 独立图标和标签 | 固定图标尺寸，用 Row 的 `CENTER`；检查图标透明留白 |
+| 图标与标签文字同行 | 优先放进同一段落的 WidgetSpan，固定图标尺寸并显式设置 `MIDDLE`；检查透明留白 |
 | 图片跟随文字换行 | 用 WidgetSpan / Emoji 的 `MIDDLE` 或明确的基线位置 |
 | 多行文字行距跳动 | 固定字体后再配置 Strut，别先用固定偏移掩盖问题 |
 

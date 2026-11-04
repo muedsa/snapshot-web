@@ -32,10 +32,15 @@ description: 为 AI 工具提供按需读取的文档入口，明确 Kotlin 与 
 - https://snapshot.muedsa.com/guides/parser.md
 - https://snapshot.muedsa.com/reference/parser-tags.md
 - https://snapshot.muedsa.com/reference/parser-text.md
+- https://snapshot.muedsa.com/guides/text-alignment.md
 - https://snapshot.muedsa.com/guides/data-templates.md
 
 使用白色背景、一个标题、三条订单信息和右下角的总金额。
 根节点提供明确尺寸，长标题最多两行，金额必须完整显示。
+胶囊、按钮优先用容器 alignment="CENTER" 对齐；Stack + Positioned 优先定位完整组件。
+不要用 (容器高 - fontSize) / 2 或固定的中英文偏移表定位文字。
+同行图标优先放进同一个 Text，用 WidgetSpan alignment="MIDDLE" 并明确图标尺寸。
+独立文本按需使用 BASELINE；实际渲染后放大检查局部。
 只使用文档列出的标签和属性，不假设支持 HTML/CSS、Flutter Widget 或模板表达式。
 颜色使用 Parser 支持的 CSS 写法；说明使用的字体及其部署要求。
 先用文字说明布局尺寸如何分配，再提供完整的 <Snapshot> 根模板。
@@ -43,6 +48,8 @@ description: 为 AI 工具提供按需读取的文档入口，明确 Kotlin 与 
 ```
 
 保存为 `.snapshot` 后，用 [VS Code 扩展或 Playground](/guides/language-server/)检查语法，再实际运行。标签存在不代表任意组合都有效：Expanded 必须是 Flex 的直接子节点；文本在 Row 中也需要有限宽度才会按预期换行。
+
+AI 容易把每个字块拆成独立 Positioned，再按字号猜坐标。标签和按钮应优先整体定位，让内部布局负责对齐；确实要绝对定位文字时，读取[实际段落高度与墨迹边界的计算方法](/guides/text-alignment/#必须绝对定位时怎样计算)，不要虚构字体度量。文字盒居中后仍需检查可见字形，不应只以“已使用 CENTER”作为验收结论。
 
 如果通过 Open Snapshot 等 HTTP 服务出图，另外向 AI 提供**该服务**的接口文档：请求方式、路径、允许的图片来源、资源限制和错误字段由服务决定。本站的 Parser 说明不能代替服务接口契约。
 

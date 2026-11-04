@@ -8,7 +8,7 @@ sidebar:
 `Text` 显示一段文字，适合标题、说明和标签。通常先设置字体、字号、颜色，再根据可用宽度选择换行或省略号。一段文字需要多种颜色或字重时使用 RichText。
 
 {% aside type="caution" title="Text 的基线不是组件底边" %}
-文字按字体度量排版，布局盒包含的空间不等于可见字形；相同字号下，中英文和不同字体也可能看起来高低不齐。与其他 Text 同行时优先考虑 Row BASELINE；与图标 / Image 同行时要明确选择盒居中还是行内占位对齐。跨平台还应固定字体与缺字回退。多行 Text 对外提供首行基线，详见[文本基线与混排](/guides/media-text/#文本基线与混排)及 [DSL 写法](/reference/parser-text/#基线与混排)。
+文字按字体度量排版，布局盒包含的空间不等于可见字形；相同字号下，中英文和不同字体也可能看起来高低不齐。与其他独立 Text 同行时优先考虑 Row BASELINE；小图标与文字同行时，Kotlin 优先改用 RichText + WidgetSpan，DSL 则在 Text 中嵌入 WidgetSpan，并明确图标尺寸和行内对齐。跨平台还应固定字体与缺字回退。多行 Text 对外提供首行基线，详见[文本基线与混排](/guides/media-text/#文本基线与混排)及 [DSL 写法](/reference/parser-text/#基线与混排)。
 {% /aside %}
 
 ## 使用示例

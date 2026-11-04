@@ -38,7 +38,7 @@ export default defineConfig({
               label: "Kotlin",
               description: "Kotlin 接入、布局绘制、Widget 与公共配置参考。",
               paths: [
-                "guides/{overview,installation,quickstart,rendering,concepts,layout,widgets,reusable-components,painting,media-text,fonts,data-templates,testing,ai-development}",
+                "guides/{overview,installation,quickstart,rendering,concepts,layout,widgets,reusable-components,painting,media-text,text-alignment,fonts,data-templates,testing,ai-development}",
                 "widgets/**",
                 "reference/{text-style,text-layout,box-decoration,borders,box-shadow,decoration-image,gradients,enums,faq}",
               ],
@@ -47,7 +47,7 @@ export default defineConfig({
               label: "DSL",
               description: "Parser 模板语法、标签属性、错误处理与语言服务。",
               paths: [
-                "guides/{overview,parser,examples,language-server,fonts,data-templates,ai-development}",
+                "guides/{overview,parser,examples,language-server,text-alignment,fonts,data-templates,ai-development}",
                 "reference/{parser-tags,parser-text,parser-errors,enums,faq}",
               ],
             },
@@ -100,6 +100,7 @@ export default defineConfig({
             { label: "编写可复用组件", slug: "guides/reusable-components" },
             { label: "绘制、装饰与效果", slug: "guides/painting" },
             { label: "图片、文本与富文本", slug: "guides/media-text" },
+            { label: "文字垂直居中与胶囊标签", slug: "guides/text-alignment" },
             { label: "字体与跨平台文字", slug: "guides/fonts" },
             { label: "用业务数据生成图片", slug: "guides/data-templates" },
           ],

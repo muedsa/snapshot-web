@@ -109,12 +109,15 @@ SizedBox(width = 320f) {
 
 ## 文本基线与混排
 
+如果遇到“胶囊里的中文偏下”或“用 Stack + Positioned 算位置后仍不居中”，先看[文字垂直居中与胶囊标签](/guides/text-alignment/)。字号不是文字高度；容器居中、基线对齐和可见笔画居中解决的是不同问题。
+
 | 场景 | 推荐做法 | 仍需检查 |
 | --- | --- | --- |
 | 一句话里的中文、英文、数字，或仅颜色/字重不同 | 使用一个 Text；不同样式放进同一个 RichText 的 TextSpan，统一父级字体 | 字体缺字后的 fallback，以及不同字形本身的视觉高度 |
 | 多个独立 Text 同行，尤其字号不同 | `Row(crossAxisAlignment = BASELINE, textBaseline = ALPHABETIC)` | 对齐的是各段首行基线，多行文本的底部不会一起对齐 |
-| 独立图标 / 图片与文字组成按钮或标签 | 固定图标盒尺寸，使用 `Row(crossAxisAlignment = CENTER)`；长文本再用 Expanded 提供宽度 | 这是盒居中；图片透明边缘和字体留白仍影响视觉中心 |
-| 图标 / 图片需要跟随文字换行 | 使用 WidgetSpan / ImageEmojiSpan，显式指定尺寸与 `alignment`；可先试 MIDDLE | 对齐文字行盒，不保证图标内容与每个字的笔画上下边缘齐平 |
+| 图标与文字同行，包括按钮或标签 | 优先在同一个 RichText / Text 中使用 WidgetSpan，显式指定图标尺寸与 `alignment = MIDDLE`，外层容器居中整个段落 | 图标参与文本排版；图片透明边缘和字体留白仍影响视觉中心 |
+| 图标 / 图片需要跟随文字换行 | 同样使用 WidgetSpan / ImageEmojiSpan，显式指定尺寸与 `alignment` | 对齐文字行盒，不保证图标内容与每个字的笔画上下边缘齐平 |
+| 图片独占一栏，旁边是多行文字区域 | 使用 Row 分别布局；文字用 Expanded 获得有限宽度 | 按区域选择 CENTER / START，而不是按行内图标处理 |
 | 多行中英文、不同字号造成行距跳动 | 固定字体集合，再配置 StrutStyle | Strut 控制行度量，不会改写字形；强制行高过小可能重叠或被裁剪 |
 
 ### 独立文字按基线对齐

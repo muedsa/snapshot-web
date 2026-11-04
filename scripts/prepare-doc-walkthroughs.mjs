@@ -48,7 +48,7 @@ for (const page of ['quickstart', 'parser', 'rendering', 'fonts', 'data-template
   }
 }
 const xmlFiles = [];
-for (const page of ['guides/examples', 'guides/parser', 'guides/fonts', 'guides/layout', 'reference/parser-tags']) {
+for (const page of ['guides/examples', 'guides/parser', 'guides/fonts', 'guides/layout', 'guides/text-alignment', 'reference/parser-tags']) {
   const all = blocks(page, 'xml');
   for (const [i, code] of all.entries()) {
     if (!/<Snapshot(?:\s|>)/.test(code) || !code.includes('</Snapshot>') || /\burl=/.test(code)) continue;
@@ -65,6 +65,8 @@ const reusable = programs.find(p => p.page === 'reusable-components');
 const customParser = programs.find(p => p.page === 'reference/parser-errors');
 const constraintTemplates = xmlFiles.filter(name => name.startsWith('guides-layout-'));
 if (constraintTemplates.length !== 2) throw new Error('缺少紧约束与 Align 的两个对比模板');
+const textAlignmentTemplates = xmlFiles.filter(name => name.startsWith('guides-text-alignment-'));
+if (textAlignmentTemplates.length !== 2) throw new Error('缺少文字垂直居中的两个完整模板');
 writeFileSync(resolve(output, 'Walkthroughs.kt'), `${imports}
 import com.muedsa.snapshot.material.ELEVATION_MAP
 import com.muedsa.snapshot.rendering.ClipBehavior
@@ -159,10 +161,27 @@ fun walkthroughs(output: File) {
     val plain = StringBuffer()
     (tree.createWidget().createRenderBox() as RenderParagraph).text.computeToPlainText(plain)
     check(plain.toString() == raw) { "CDATA 拼接没有原样保留输入文字" }
-    ${fonts.pkg}.AppFonts.install()
+    // XML 示例同时使用 AppSans 与 Noto Sans SC；将两者显式绑定到同一份固定字体，避免系统 fallback。
+    val templateFonts = org.jetbrains.skia.paragraph.TypefaceFontProvider()
+    for (family in listOf(${fonts.pkg}.AppFonts.FAMILY, "Noto Sans SC")) {
+        templateFonts.registerTypeface(${fonts.pkg}.AppFonts.regular, family)
+        templateFonts.registerTypeface(${fonts.pkg}.AppFonts.bold, family)
+    }
+    TextPainter.FONT_COLLECTION.setAssetFontManager(templateFonts)
+    // 断言的是文字组件盒居中，不能把它冒充为可见笔画的光学居中。
+    ${textAlignmentTemplates.map((name, i) => `run {
+        val element = Parser().parse(StringReader(File(output, "${name}.xml").readText()))
+        val tree = rootLayout { attach(element.createWidget()) }
+        tree.assertSize(${i === 0 ? '240f, 192f' : '200f, 44f'})
+        val paragraph = checkNotNull(tree.findType<RenderParagraph> { true })
+        check(paragraph.size.height > 0f && paragraph.size.height <= 44f)
+        assertApproxEq(paragraph.absoluteOffset.y + paragraph.size.height / 2f, ${i === 0 ? '146f' : '22f'})
+        ${i === 0 ? 'assertApproxEq(paragraph.absoluteOffset.x + paragraph.size.width / 2f, 80f)' : ''}
+    }`).join('\n    ')}
     val parser = Parser()
     ${xmlFiles.map(name => `save("${name}", parser.parse(StringReader(File(output, "${name}.xml").readText())).snapshot(), output)`).join('\n    ')}
     image.close()
+    java.lang.ref.Reference.reachabilityFence(templateFonts)
     println("PASS: 子节点几何、复用组件、Parser 扩展与属性诊断、像素采样、指南程序和 Golden record/verify/update")
 }
 `);

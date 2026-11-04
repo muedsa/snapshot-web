@@ -9,6 +9,10 @@ description: Text、Raw、WidgetSpan 与 Emoji 的基线与混排、完整文本
 `<Text>` 使用与 Kotlin 相同的段落布局。中英文、数字、图标混排时，相同 `fontSize` 不保证可见顶部或底部一致；`<Row crossAxisAlignment="CENTER">` 也只对齐组件盒的中心。服务端默认字体或缺字回退不同，还可能让同一 DSL 在不同平台上出现垂直偏移。请先确定要对齐的对象，再按下方[基线与混排](#基线与混排)选择设置。
 常用配置只需要几项：标题设 `fontSize` / `fontStyle` / `color`；摘要设有限宽度、`maxLines` 和 `overflow="ELLIPSIS"`；不同样式嵌套 Text；需要保留空格时用 Raw。自带字体的配置在渲染服务中完成，见[字体指南](/guides/fonts/)。
 
+{% aside type="caution" title="胶囊内的文字不要按字号计算 top" %}
+`Positioned.top` 定位子组件布局盒，`fontSize` 不是行盒或字形高度。优先把整个胶囊放进一个 Positioned，再用 Container 的 `alignment="CENTER"` 居中文字。Text 不支持 `width` / `align`；宽度由外层布局提供，水平对齐属性为 `textAlign`。完整模板、混排选择与测量公式见[文字垂直居中与胶囊标签](/guides/text-alignment/)。
+{% /aside %}
+
 ## 作用域与未设置值
 
 | 配置 | 最外层 Text | 嵌套 Text / Raw | WidgetSpan |
@@ -49,13 +53,13 @@ description: Text、Raw、WidgetSpan 与 Emoji 的基线与混排、完整文本
 | 多个独立文字组件共用基线 | `<Row crossAxisAlignment="BASELINE" textBaseline="ALPHABETIC">` | 对齐各子组件的真实基线；多行 Text 使用首行基线 |
 | 同一句话里的多种样式 | 一个外层 `<Text>`，内部嵌套 `<Text>` / `<Raw>` | 共享段落；共同字体、字号放在外层，空格用 Raw 保留 |
 | 选择文字样式基线模式 | `<Text baselineMode="ALPHABETIC">` | 不等于 Row 的 textBaseline，也不会让兄弟组件自动对齐 |
-| 图标随文字换行、与行盒居中 | `<WidgetSpan alignment="MIDDLE">` 或 `<Emoji alignment="MIDDLE" …>` | 显式指定内部 Widget 或 Emoji 的宽高；`MIDDLE` 不是 `CENTER` |
+| 图标与文字同行，包括胶囊标签或跟随正文换行 | 优先在同一个 Text 中使用 `<WidgetSpan alignment="MIDDLE">`；图片也可用 `<Emoji alignment="MIDDLE" …>` | 显式指定内部 Widget 或 Emoji 的宽高；`MIDDLE` 不是 `CENTER` |
 | 图标底边落在文字基线上 | `alignment="ABOVE_BASELINE" baseline="ALPHABETIC"` | 与 `BOTTOM` 的行盒底部对齐不同 |
 | 稳定多行的支撑度量 | 在最外层 `<Text>` 上配置 `strutFontFamily`、`strutFontSize`、`strutHeight`、`strutHeightOverridden` | Strut 不会继承文本字体；通常先保持 `strutHeightForced="false"` |
 
 `ALPHABETIC` 是中英文、数字混排的常用起点；`IDEOGRAPHIC` 是另一种字体基线，不是自动纠正中文高低差的开关。同一行中应统一选择，再检查实际字体的结果。三组基线参数的区别与多行限制见[基线设置参考](/reference/text-layout/#三处基线设置的区别)。
 
-独立 `<Image>` 与 `<Text>` 组成一行标签时，可为 Image 设置固定宽高，并使用 `<Row crossAxisAlignment="CENTER">` 做盒居中。普通图片没有真实文字基线，不要期望改成 Row BASELINE 就会自动把图片底边放到文字基线上；需要这种语义时使用行内 WidgetSpan / Emoji。
+同行的状态图标应优先放进 Text 的 WidgetSpan，让图标和文字由同一个段落排版，见[胶囊标签示例](/guides/text-alignment/#中英文与图标怎样组合)。图片需要独占一栏、与文字区域分别布局时，可用 Row 做区域对齐。普通图片没有真实文字基线，Row BASELINE 不会自动把图片底边放到文字基线上；需要这种语义时使用行内 WidgetSpan / Emoji。
 
 ### 示例：不同字号的独立文字
 

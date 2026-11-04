@@ -12,6 +12,7 @@ description: 尺寸、布局、Parser、网络图片、文本和调试的常见�
 | 子组件写了 width / height 仍占满父盒 | [紧约束与 Align](/guides/layout/#有上限不等于固定尺寸) |
 | 长文本不换行、宽度溢出 | [自适应文本完整示例](/guides/examples/#固定图标与自适应文本) |
 | 中文缺字、图文高低不齐 | [字体配置](/guides/fonts/)与[基线混排](/guides/media-text/#文本基线与混排) |
+| 胶囊中文偏下，手写 top 很难调准 | [文字垂直居中与胶囊标签](/guides/text-alignment/) |
 | 需要把业务字符串填入模板 | [动态数据与 CDATA](/guides/data-templates/) |
 | 图片没有铺满或密度不对 | [默认适配与迁移](/guides/media-text/#默认适配与迁移) |
 | 语法或属性报错 | [Parser 错误分类](/reference/parser-errors/) |
@@ -30,7 +31,11 @@ description: 尺寸、布局、Parser、网络图片、文本和调试的常见�
 
 ## 中文、英文和图标为什么看起来不在同一高度？
 
-相同字号不代表相同字形高度；文本盒包含字体留白，图片还可能带透明边缘。先固定字体，多个 Text 同行用 BASELINE，独立图标与文字用 CENTER，跟随文字换行的图标用 WidgetSpan。不要直接给所有文本加一个固定 Y 偏移，见[混排示例](/guides/media-text/#文本基线与混排)。
+相同字号不代表相同字形高度；文本盒包含字体留白，图片还可能带透明边缘。先固定字体，多个独立 Text 同行用 BASELINE；同行图标优先放进 Text / RichText 的 WidgetSpan，明确尺寸并设置 MIDDLE。只有图片与文本是独立布局区域时才按盒对齐。不要直接给所有文本加一个固定 Y 偏移，见[混排示例](/guides/media-text/#文本基线与混排)。
+
+## 为什么胶囊里的中文偏下，设置 CENTER 也不一定完全解决？
+
+`fontSize` 不是 Text 的高度，`Positioned.top` 也不是字形顶边。先把背景和文字组合成一个容器，用 `alignment="CENTER"` 对齐文字盒；这可以避免手算位置的误差，但字体上下留白仍可能不对称。需要让可见笔画的上下边距相等时，应按实际字体测量整段墨迹边界，不能统一套用某个行高倍数或偏移常数。完整模板和校准公式见[文字垂直居中](/guides/text-alignment/)。
 
 ## 如何加载自己的图片和中文字体？
 
