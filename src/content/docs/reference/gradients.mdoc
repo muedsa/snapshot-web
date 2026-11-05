@@ -81,7 +81,7 @@ Container(width = 320f, height = 160f, decoration = BoxDecoration(
 | --- | --- | --- |
 | 渐变类 | `gradientType` | 必须显式给 LINEAR / RADIAL / SWEEP |
 | `colors` | `gradientColors` | 必填，CSS 颜色列表；函数内逗号不拆分颜色 |
-| `stops` | `gradientStops` | 不设置为等距；逗号分隔数字，允许相同位置 |
+| `stops` | `gradientStops` | 不设置为等距；空白或逗号分隔数字，不混用，允许相同位置；新简写需包含 2026-11-05 更新的 Parser |
 | `tileMode` | `gradientTileMode` | CLAMP |
 | `GradientRotation` | `gradientRotation` | 不设置则不旋转；有限弧度 |
 | `begin` / `end` | `gradientBegin` / `gradientEnd` | CENTER_LEFT / CENTER_RIGHT，仅 LINEAR |

@@ -12,7 +12,7 @@ const examples = [
     height="420"
     padding="48"
     color="#0F172A"
-    border="1 SOLID #334155"
+    border="1 #334155"
     borderRadius="32">
     <Column crossAxisAlignment="START" mainAxisAlignment="CENTER">
       <Text color="#38BDF8" fontSize="18" fontStyle="BOLD">SNAPSHOT PLAYGROUND</Text>
@@ -22,9 +22,9 @@ const examples = [
       <Text color="#94A3B8" fontSize="24">Widget tree → Layout → Skia → Image</Text>
       <Container height="36" />
       <Container
-        padding="(12,20)"
+        padding="12 20"
         color="#082F49"
-        border="1 SOLID #0EA5E9"
+        border="1 #0EA5E9"
         borderRadius="24">
         <Text color="#BAE6FD" fontSize="17">PNG · JPEG · WebP</Text>
       </Container>
@@ -72,6 +72,40 @@ const examples = [
       </Column>
     </Positioned>
   </Stack>
+</Snapshot>`,
+  },
+  {
+    id: 'attribute-syntax',
+    label: '属性简写',
+    source: `<Snapshot type="png" background="#F1F5F9" debug="false">
+  <Container width="720" height="420" padding="32">
+    <Container padding="28 32" border="1 #CBD5E1" borderRadius="28 / 20"
+      gradientType="linear" gradientBegin="-1 -1" gradientEnd="1 1"
+      gradientColors="#FFFFFF,#E0F2FE,#ECFDF5" gradientStops="0 .6 1"
+      boxShadow="0 8 18 #0F172A14">
+      <Column crossAxisAlignment="start" mainAxisAlignment="center">
+        <Text fontFamily="Noto Sans CJK SC" fontSize="14" color="#0369A1"
+          fontStyle="bold" decoration="underline">SNAPSHOT DSL</Text>
+        <SizedBox height="16" />
+        <Text fontFamily="Noto Sans CJK SC" fontSize="36" fontStyle="bold"
+          color="#0F172A">更简洁的属性写法</Text>
+        <SizedBox height="12" />
+        <Text fontFamily="Noto Sans CJK SC, Noto Color Emoji" fontSize="18"
+          color="#475569" softWrap="true">空白边距 · 椭圆圆角 · 变换函数</Text>
+        <SizedBox height="28" />
+        <Transform matrix="translate(2,0) rotate(-2deg)" alignment="center-left">
+          <Container padding="10 18" color="#075985" borderRadius="22 / 18">
+            <Text fontFamily="Noto Sans CJK SC" fontSize="18" color="#FFFFFF">
+              <WidgetSpan alignment="middle">
+                <Container width="12" height="12" color="#86EFAC" borderRadius="6" />
+              </WidgetSpan>
+              <Raw> 已更新 Parser</Raw>
+            </Text>
+          </Container>
+        </Transform>
+      </Column>
+    </Container>
+  </Container>
 </Snapshot>`,
   },
 ];
@@ -213,6 +247,8 @@ const examplesJson = JSON.stringify(examples).replace(/</g, '\\u003c');
     匿名调用受频率限制，请避免连续快速运行；接入方式见
     <a href="/guides/language-server/">DSL 语言服务指南</a>，语法详情见
     <a href="/reference/parser-tags/">标签与属性参考</a>。
+    编辑器使用 LSP 0.3.0；公开服务已支持空白边距、变换函数等新语法，可选择“属性简写”示例体验，详见
+    <a href="/guides/language-server/#语法版本与在线渲染">语法版本与在线渲染说明</a>。
   </p>
 </section>
 

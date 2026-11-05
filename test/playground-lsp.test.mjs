@@ -11,6 +11,14 @@ const requireLsp = createRequire(import.meta.resolve('@muedsa/snapshot-lsp'));
 const { TextDocument } = requireLsp('vscode-languageserver-textdocument');
 const installedVersion = JSON.parse(readFileSync(new URL('../package.json', import.meta.resolve('@muedsa/snapshot-lsp')), 'utf8')).version;
 
+test('Playground 内置模板仍通过已安装 LSP 的静态检查', () => {
+  const source = readFileSync(new URL('../src/components/SnapshotPlayground.astro', import.meta.url), 'utf8');
+  const examples = [...source.matchAll(/source: `([\s\S]*?)`,/g)];
+  assert.equal(examples.length, 4);
+  const service = new SnapshotLanguageService();
+  for (const [, text] of examples) assert.deepEqual(service.diagnostics(text), []);
+});
+
 function connect(t, prepareMessage = message => message) {
   const worker = new Worker(new URL('./fixtures/snapshot-lsp.worker.mjs', import.meta.url));
   const messages = [], waiters = new Set();
@@ -76,6 +84,13 @@ for (const snippetSupport of [true, false, undefined]) {
     assert.ok(width);
     assert.equal(width.insertTextFormat, snippetSupport === true ? 2 : 1);
     assert.equal(width.textEdit.newText, snippetSupport === true ? 'width="${1}"' : 'width=""');
+    const booleanText = '<Snapshot deb';
+    const booleanUri = client.open(booleanText, 'inmemory://snapshot/boolean-completion.snapshot');
+    const booleans = await client.request('textDocument/completion', { textDocument: { uri: booleanUri }, position: { line: 0, character: booleanText.length } });
+    const debug = booleans.find(item => item.label === 'debug');
+    assert.ok(debug);
+    assert.equal(debug.insertTextFormat, snippetSupport === true ? 2 : 1);
+    assert.equal(debug.textEdit.newText, snippetSupport === true ? 'debug="${1:true}"' : 'debug="true"');
   });
 }
 
@@ -121,6 +136,97 @@ test('浏览器入口诊断可随编辑恢复，颜色别名同时支持悬停',
     textDocument: { uri, version: 2 }, contentChanges: [{ text: '<Snapshot><Text foregroundColor="red"/></Snapshot>' }],
   });
   assert.deepEqual((await diagnostics(2)).params.diagnostics, []);
+});
+
+test('Playground Worker 接受十类新属性语法，并在悬停中解释迁移规则', async t => {
+  const client = connect(t, withSnapshotLspCapabilities);
+  await initialize(client);
+  const text = `<Snapshot type=" PNG " debug=" FALSE ">
+  <Container padding="8 16" margin="1 2 3 4" alignment="top-left"
+    border="2 rgb(255 0 0 / 50%)" borderLeft="none" borderRadius="12 / 6"
+    gradientType="linear" gradientBegin="-1 0" gradientEnd="1,0"
+    gradientColors="rgb(255,0,0),green,blue" gradientStops="0 .5 1"
+    boxShadow="0 2 red 4" transform="translate(12,8) rotate(30deg) scale(1.2)">
+    <Column mainAxisAlignment="space-between">
+      <Text fontFamily="Arial, Noto Sans" strutFontFamily="Arial, Noto Sans"
+        fontStyle="bold-italic" decoration="underline line-through"
+        textShadow="0 2 red 4" softWrap subpixel=" true ">中文 PDF 😀</Text>
+      <Transform matrix="none" origin="4 -2" alignment="(0 0)">
+        <ClipRRect borderRadiusBottomRight="(12,6)"><SizedBox width="20" height="10"/></ClipRRect>
+      </Transform>
+      <ClipPath path="M0 0 L20 0 L10 10 Z" fit="contain" fillRule="even-odd">
+        <Padding padding="(1,2,3,4)"><SizedBox width="20" height="10"/></Padding>
+      </ClipPath>
+    </Column>
+  </Container>
+</Snapshot>`;
+  const uri = client.open(text);
+  const diagnostics = await client.waitFor(message => message.method === 'textDocument/publishDiagnostics' && message.params.uri === uri);
+  assert.deepEqual(diagnostics.params.diagnostics, []);
+  const document = TextDocument.create(uri, 'snapshot', 1, text);
+  for (const [attribute, pattern] of [['padding', /旧.*左.*上.*右.*下/], ['transform', /右乘.*右侧.*先/], ['softWrap', /裸属性.*true/]]) {
+    const hover = await client.request('textDocument/hover', { textDocument: { uri }, position: document.positionAt(text.indexOf(attribute) + 1) });
+    assert.match(hover.contents.value, pattern);
+  }
+});
+
+test('Playground Worker 的复合 snippet、自动引号和装饰列表补全保留周边内容', async t => {
+  const client = connect(t, withSnapshotLspCapabilities);
+  await initialize(client);
+  const prefix = '<Snapshot><Container padd';
+  const prefixUri = client.open(prefix);
+  const templates = await client.request('textDocument/completion', { textDocument: { uri: prefixUri }, position: { line: 0, character: prefix.length } });
+  const padding = templates.find(item => item.label === 'padding');
+  assert.equal(padding.insertTextFormat, 2);
+  assert.equal(padding.textEdit.newText, 'padding="${1:8}"');
+
+  for (const [index, [marked, label, expected]] of [
+    ['<Snapshot><Container padding=|8 width="20"/></Snapshot>', '8 16', '<Snapshot><Container padding="8 16" width="20"/></Snapshot>'],
+    ['<Snapshot><Text decoration="underline li|" text="中文😀"/></Snapshot>', 'LINE_THROUGH', '<Snapshot><Text decoration="underline LINE_THROUGH" text="中文😀"/></Snapshot>'],
+    ['<Snapshot><Text decoration="underline, li|"/></Snapshot>', 'LINE_THROUGH', '<Snapshot><Text decoration="underline, LINE_THROUGH"/></Snapshot>'],
+    ['<Snapshot><Text textDirection="\r\n r|\r\nBAD"/></Snapshot>', 'RTL', '<Snapshot><Text textDirection="RTL"/></Snapshot>'],
+  ].entries()) {
+    const offset = marked.indexOf('|'), text = marked.replace('|', '');
+    const uri = client.open(text, `inmemory://snapshot/new-completion-${index}.snapshot`);
+    const document = TextDocument.create(uri, 'snapshot', 1, text);
+    const items = await client.request('textDocument/completion', { textDocument: { uri }, position: document.positionAt(offset) });
+    const item = items.find(candidate => candidate.label === label);
+    assert.ok(item, marked);
+    assert.equal(item.textEdit.range.start.line, item.textEdit.range.end.line);
+    const edited = TextDocument.applyEdits(document, [item.textEdit, ...(item.additionalTextEdits ?? [])]);
+    assert.equal(edited, expected);
+    assert.deepEqual(new SnapshotLanguageService().diagnostics(edited), []);
+    if (marked.includes('decoration')) {
+      assert.ok(!items.some(candidate => ['UNDERLINE', 'NONE'].includes(candidate.label)));
+    }
+  }
+});
+
+test('Playground Worker 的严格布尔诊断随多行增量编辑清除，裸属性仍合法', async t => {
+  const client = connect(t, withSnapshotLspCapabilities);
+  await initialize(client);
+  const text = '<Snapshot>\n  <Text text="中文😀" softWrap="yes"/>\n</Snapshot>';
+  const uri = client.open(text);
+  const diagnostics = version => client.waitFor(message => message.method === 'textDocument/publishDiagnostics' && message.params.uri === uri && message.params.version === version);
+  const error = (await diagnostics(1)).params.diagnostics.find(item => item.code === 'invalid-boolean');
+  assert.ok(error);
+  const document = TextDocument.create(uri, 'snapshot', 1, text);
+  assert.equal(document.getText(error.range), 'yes');
+  client.notify('textDocument/didChange', {
+    textDocument: { uri, version: 2 }, contentChanges: [{ range: error.range, text: ' FALSE ' }],
+  });
+  assert.deepEqual((await diagnostics(2)).params.diagnostics, []);
+  for (const [index, value] of ['', ' ', '1', '0'].entries()) {
+    const version = index + 3;
+    client.notify('textDocument/didChange', {
+      textDocument: { uri, version }, contentChanges: [{ text: `<Snapshot><Text softWrap="${value}"/></Snapshot>` }],
+    });
+    assert.ok((await diagnostics(version)).params.diagnostics.some(item => item.code === 'invalid-boolean'));
+  }
+  client.notify('textDocument/didChange', {
+    textDocument: { uri, version: 7 }, contentChanges: [{ text: '<Snapshot debug><Text softWrap/></Snapshot>' }],
+  });
+  assert.deepEqual((await diagnostics(7)).params.diagnostics, []);
 });
 
 test('已安装包保留赋值、补齐闭合尖括号并识别无引号 URL', () => {

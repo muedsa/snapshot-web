@@ -3,7 +3,7 @@ title: Parser 文本属性详解
 description: Text、Raw、WidgetSpan 与 Emoji 的基线与混排、完整文本属性、Strut 和可运行示例。
 ---
 
-本页将[标签参考](/reference/parser-tags/#text)中的文本属性展开。属性名和枚举值区分大小写；布尔值请显式写 `"true"` / `"false"`。当前布尔解析仅将忽略大小写的 true 当作真，拼错不一定报错。
+本页将[标签参考](/reference/parser-tags/#text)中的文本属性展开。属性名区分大小写；内置枚举值忽略首尾空白和大小写，并支持连字符别名。布尔值推荐显式写 `"true"` / `"false"`；裸属性为 true，显式空串或拼错会报错。以下新规则需包含 **2026-11-05 属性语法更新**的 Parser，线上版本差异见[语法版本与在线渲染](/guides/language-server/#语法版本与在线渲染)。
 
 ## 从常见任务开始
 `<Text>` 使用与 Kotlin 相同的段落布局。中英文、数字、图标混排时，相同 `fontSize` 不保证可见顶部或底部一致；`<Row crossAxisAlignment="CENTER">` 也只对齐组件盒的中心。服务端默认字体或缺字回退不同，还可能让同一 DSL 在不同平台上出现垂直偏移。请先确定要对齐的对象，再按下方[基线与混排](#基线与混排)选择设置。
@@ -30,7 +30,7 @@ description: Text、Raw、WidgetSpan 与 Emoji 的基线与混排、完整文本
 | `text` | string | 未设置 | 属性形式的文字，位于标签子内容之前；普通 Text 会 trim，Raw 不 trim |
 | `color` | CSS color | 继承，根为黑色 | 字色；前景画笔存在时由画笔绘制 |
 | `fontSize` | float | 继承，根为 14 | 逻辑像素字号，使用有限正数 |
-| `fontFamily` | string | 继承 / 系统字体 | 英文逗号分隔，不逐项 trim；写 Noto Sans SC,Arial，逗号后不要加空格 |
+| `fontFamily` | string | 继承 / 系统字体 | 英文逗号分隔，逐项 trim；可写 Noto Sans SC, Arial，保留名称内部空白与大小写，拒绝空项 |
 | `fontStyle` | enum | 继承 / Skia 默认 | NORMAL、BOLD、ITALIC、BOLD_ITALIC |
 | `height` | float | 继承 / 字体度量 | 行高倍数，不是像素；使用有限正数 |
 | `topRatio` | float | 继承 / Skia 默认 | ascent 在 ascent+descent 中的比例：0..1；-1 按字体度量比例分配 |
@@ -128,7 +128,7 @@ description: Text、Raw、WidgetSpan 与 Emoji 的基线与混排、完整文本
 
 | 属性 | 类型 / 取值 | 默认 | 说明 |
 | --- | --- | --- | --- |
-| `decoration` | UNDERLINE / OVERLINE / LINE_THROUGH / NONE | 未设置 | 英文逗号组合；NONE 取消继承且不能与其他值混用 |
+| `decoration` | UNDERLINE / OVERLINE / LINE_THROUGH / NONE | 未设置 | 空白或英文逗号组合，不混用；支持 underline line-through 等别名，规范化后不可重复；NONE 独立使用并取消继承 |
 | `decorationColor` | CSS color | 黑色 | 不自动跟随 color |
 | `decorationLineStyle` | SOLID / DOUBLE / DOTTED / DASHED / WAVY | SOLID | 线型 |
 | `decorationThickness` | float | 1 | 有限正数，相对粗细倍数，不是像素 |
@@ -143,7 +143,9 @@ description: Text、Raw、WidgetSpan 与 Emoji 的基线与混排、完整文本
 | `textShadow` | 继承 / 未设置 | `offsetX offsetY [blurSigma] [color]`；偏移有限，sigma 有限非负，默认 sigma 0、黑色；多项用逗号分隔 |
 | `fontFeatures` | 继承 / 未设置 | 空白分隔四位小写字母/数字标签；`liga` / `+liga` 为 1，`-kern` 为 0，`tnum=2` 为指定非负整数，`smcp[2:8]` 可解析为范围字段 |
 
-二者均可用 NONE 清除继承，NONE 不可与其他项混用。textShadow 的颜色函数内部逗号不分隔阴影；它使用 sigma，与 boxShadow 的 blurRadius 不同。字体特性是否生效取决于字体支持；范围起点不能大于终点。
+二者均可用 NONE 清除继承，NONE 不可与其他项混用。textShadow 前两个数固定为偏移，其后 blurSigma 和颜色顺序不限、各最多一个，默认 sigma 0、黑色；例如 `0 2 red 4` 与 `0 2 4 red` 等价。不接受重复颜色、多余半径或负 sigma，也不支持盒阴影的 elevation、模糊模式或 CSS inset。颜色函数内部的逗号不分隔阴影；sigma 与 boxShadow 的 blurRadius 语义不同。
+
+字体特性是否生效取决于字体支持；范围起点不能大于终点。只有特殊值 NONE 忽略大小写，普通 OpenType 四字符标签仍按原规则校验，不做枚举转换。
 
 当前 Skiko 的段落样式只接收特性的 tag/value，不使用已解析的 start/end。需要按文本片段应用特性时拆分嵌套 Text / Raw，而不要依赖范围语法，详见 [FontFeature](/reference/text-style/#fontfeature-字体特性)。
 
@@ -170,7 +172,7 @@ description: Text、Raw、WidgetSpan 与 Emoji 的基线与混排、完整文本
 | 属性 | 类型 / 取值 | 创建后的默认 | 说明 |
 | --- | --- | --- | --- |
 | `strutEnabled` | bool | true | 是否启用 |
-| `strutFontFamily` | string | Skia 默认 | 英文逗号列表；与 fontFamily 不同，此处逐项 trim，空名称报错 |
+| `strutFontFamily` | string | Skia 默认 | 与 fontFamily 相同：英文逗号列表，逐项 trim，空名称报错 |
 | `strutFontStyle` | NORMAL / BOLD / ITALIC / BOLD_ITALIC | Skia 默认 | 支撑字体样式 |
 | `strutFontSize` | float | Skia 默认 | 有限正数字号，逻辑像素 |
 | `strutHeight` | float | Skia 默认 | 有限正数行高倍数 |

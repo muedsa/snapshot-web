@@ -6,7 +6,7 @@ description: 可整段复制到 Playground 的信息卡片、图文布局和 SVG
 下面每个示例都包含完整的 `<Snapshot>` 根节点，不需要网络图片。可以复制代码到[在线 Playground](/playground/)尝试运行，也可保存为 `.snapshot` 文件，交给 [Parser](/guides/parser/) 处理。预览由本地 Snapshot 渲染，字体与实际部署环境不同可能使文字宽度略有差异。
 
 {% aside type="note" title="示例与服务版本" %}
-这些模板已使用当前本地 Parser 验证。在线服务独立部署，可能尚未包含最新标签或行为；例如票券示例需要支持 ClipPath 的版本。若出现 `Unknown element tag [ClipPath]`，请更新实际渲染服务的 Parser，或使用本地新版 Parser 运行；编辑器能补全不代表服务端已支持。
+这些模板已使用当前本地 Parser 验证，公开 Open Snapshot 服务也已同步新版 Parser。使用旧依赖或自行部署的服务时，仍需确认支持相应标签与行为；例如票券示例需要 ClipPath。若出现 `Unknown element tag [ClipPath]`，请更新实际渲染服务的 Parser，或使用本地新版 Parser 运行；编辑器能补全不代表其他服务端也已支持。
 {% /aside %}
 
 | 示例 | 输出尺寸 | 练习内容 |

@@ -9,6 +9,7 @@ description: 使用 snapshot-lsp 为类 DOM DSL 提供补全、悬停与实时�
 
 - 覆盖 Parser 默认注册的 39 个标签及其属性，包含 SVG 路径裁剪的 `ClipPath`；提供标签、属性、枚举值和闭合标签补全，以及悬停说明。
 - 对未知标签或属性、重复属性、缺少必填属性、根节点错误、父子关系、子节点数量和部分属性值进行实时诊断；颜色检查支持 Parser 的常用 CSS 颜色写法。
+- 从 0.3.0 起支持边距、坐标、圆角、变换、边框、阴影、列表、字体名、枚举别名及严格布尔规则；复合属性补全带有格式说明和可填写的示例值。
 - 容忍编辑过程中暂时未写完的标签，便于继续补全。
 
 标签和属性名区分大小写。Parser 可能静默忽略未知属性，而语言服务会发出警告，帮助发现拼写错误。
@@ -18,6 +19,30 @@ description: 使用 snapshot-lsp 为类 DOM DSL 提供补全、悬停与实时�
 ## 在线体验
 
 打开[在线 Playground](/playground/)即可使用 Monaco 编辑器中的补全、悬停和问题提示。网站将 `@muedsa/snapshot-lsp/browser` 放在 Web Worker 中运行：编辑时的语言服务在浏览器内完成；点击“运行”才会将 DSL 发往 Open Snapshot 服务生成图片。
+
+### 语法版本与在线渲染
+
+本网站使用 **LSP 0.3.0**，对齐 Snapshot Parser 的 **2026-11-05 属性语法更新**。空白边距、变换函数等新写法需要渲染环境也包含这批 Parser 变更。
+
+公开 Open Snapshot 服务已更新，2026-11-05 已实测通过这批新语法的解析与渲染，以及无效布尔值的错误诊断。Playground 内置模板使用空白边距和简写边框；选择“属性简写”示例可体验椭圆圆角、变换函数、枚举别名与字体列表。
+
+自行部署或使用其他服务时，仍需确认实际 Parser 包含对应变更。编辑器补全只说明语言服务支持该语法，字体、图片和布局效果还需实际渲染验证。
+
+### 0.3.0 的填写与迁移提示
+
+| 属性 | 新写法或变化 | 需要留意 |
+| --- | --- | --- |
+| padding / margin | `8 16`、`1 2 3 4` | 旧 `(1,2,3,4)` 仍按左、上、右、下，等价新 `2 3 4 1` |
+| 对齐与原点 | `alignment="top-left"`、`origin="4 -2"` | 两坐标可用空白、逗号及可选括号；origin 不接受对齐关键字 |
+| 枚举 | `space-between`、`bold-italic` | 忽略值的首尾空白和大小写；ClipPath 等受限候选没有扩大 |
+| 字体列表 | `fontFamily="Arial, Noto Sans"` | 逐项 trim，保留字体名内部空白与大小写，拒绝空项 |
+| 圆角与边框 | `borderRadius="12 / 6"`、`border="2 red"` | 前者为椭圆半径；边框省略样式时为 SOLID，none 表示无边框 |
+| 变换 | `translate(12,8) rotate(30deg) scale(1.2)` | rotate 必须带 deg / rad；作用到点时右侧函数先发生 |
+| 色标与装饰列表 | `gradientStops="0 .5 1"`、`decoration="underline line-through"` | 同一列表不混用空白和逗号；装饰不能重复，NONE 独立使用 |
+| 阴影 | `boxShadow="0 2 red 4"` | 偏移后按数值出现顺序取半径；4 为 blurRadius，文本阴影则为 blurSigma |
+| 布尔 | 裸属性为 true；补全默认 `="true"` | 缺失保留默认值 / 继承；空串、空白、yes、1、0 均报错 |
+
+完整格式、范围与迁移说明见[通用属性格式](/reference/parser-tags/#通用属性格式)，文本专用规则见[Parser 文本属性](/reference/parser-text/)。这些是属性值的语法变化，没有增加 HTML/CSS 属性名；正文、URL 和普通 OpenType 标签不会被当作枚举规范化。
 
 ## 在 VS Code 中使用
 
@@ -41,7 +66,7 @@ description: 使用 snapshot-lsp 为类 DOM DSL 提供补全、悬停与实时�
 不要把实际令牌写进仓库。新版 pnpm 不展开项目级 `.npmrc` 中的环境变量占位符；请使用用户级配置，详见[项目维护说明](https://github.com/muedsa/snapshot-web#本地开发)。配置好 `NODE_AUTH_TOKEN` 后安装：
 
 ```bash
-pnpm add -D @muedsa/snapshot-lsp@^0.2.1
+pnpm add -D @muedsa/snapshot-lsp@^0.3.0
 ```
 
 在支持 LSP 的编辑器中，将 `.snapshot` 文件关联到语言 ID `snapshot`，并以 stdio 启动服务：
@@ -62,10 +87,11 @@ import { startBrowserWorkerServer } from '@muedsa/snapshot-lsp/browser';
 startBrowserWorkerServer(self);
 ```
 
-本网站使用 Monaco 自带的 `monaco.lsp` 客户端连接 Worker。集成 0.2.1 时注意两项协议约定：
+本网站使用 Monaco 自带的 `monaco.lsp` 客户端连接 Worker。集成 0.3.0 时注意以下协议约定：
 
-1. 客户端只有在初始化时显式声明 `textDocument.completion.completionItem.snippetSupport: true`，才会收到含占位符的 snippet；缺省或 false 返回普通文本，例如 `width=""`。
+1. 客户端只有在初始化时显式声明 `textDocument.completion.completionItem.snippetSupport: true`，才会收到含占位符的 snippet；缺省或 false 返回普通文本。新模板可带默认值，例如 snippet `softWrap="${1:true}"` / 普通文本 `softWrap="true"`，以及 `padding="${1:8}"` / `padding="8"`；在值的位置继续补全可选择 `8 16` 等简写。
 2. 接受补全时必须同时应用 `textEdit` 和可选的 `additionalTextEdits`。多行属性值使用单行主编辑及不重叠的额外编辑，遗漏后者会残留旧值或换行。不要只取 `insertText` 或按当前单词范围替换。
+3. 装饰列表按项补全，保留其他项和分隔符，并排除重复项与不适合组合的 NONE。复合值含空白时，补全可能为原来的无引号赋值自动补上引号；应按返回的编辑范围原样应用。
 
 本网站在发送初始化报文时显式补充 `snippetSupport: true`，保留其他能力字段；补全结果（含额外编辑）仍由 Monaco 原生处理。自行接入时也应确认能力协商与实际编辑器行为一致。
 
@@ -83,7 +109,9 @@ const items = service.completions(text, { line: 0, character: text.length }, und
 // 接受候选时，同样要处理 textEdit 和 additionalTextEdits。
 ```
 
-扩展目录的 `AttributeSpec.valueType` 可复用内置值域（类型为导出的 `ValueType`），也可用 `values` 显式覆盖候选；Parser 的自定义标签注册仍需单独完成。
+扩展目录的 `AttributeSpec.valueType` 可复用内置值域（类型为导出的 `ValueType`），也可用 `values` 显式覆盖候选。从 0.3.0 起，`syntax` 可复用内置复合语法，类型为导出的 `AttributeSyntax`，例如 `{ kind: 'string', syntax: 'EdgeInsets' }`。
+
+自定义候选默认区分大小写；仅设置 `values` 或 `valueType` 不会启用枚举别名，需要显式设置 `enumAliases: true`。Parser 的自定义标签注册仍需单独完成，语言服务目录不会改变服务端解析器。
 
 ## 版本与编辑行为
 
@@ -92,7 +120,7 @@ const items = service.completions(text, { line: 0, character: text.length }, und
 - 补齐方向、对齐、图片重复、渐变平铺、文本、字体和画笔模式等枚举；补全与诊断使用相同值域，颜色属性别名也按 CSS 颜色检查。
 - 正确处理无引号 URL / 路径中的 `/`，提示完整标签中必填属性缺少值的情况，并允许 Raw 内嵌套 WidgetSpan。
 
-网站已升级到 0.2.1。语言服务升级不会同步升级服务端 Parser，实际渲染能力仍以部署的 Open Snapshot 版本为准。
+0.3.0 保留以上编辑行为，并新增复合属性模板、按项列表补全和严格布尔诊断。语言服务升级不会同步升级服务端 Parser，实际渲染能力仍以部署的 Open Snapshot 版本为准。
 
 ## 与 Parser 的分工
 

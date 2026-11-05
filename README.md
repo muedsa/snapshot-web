@@ -29,7 +29,7 @@ Widget API 按布局、绘制与效果、图片、文本四组自动生成侧边
 - [Markdoc](https://markdoc.dev/)
 - Tailwind CSS 4
 - [Monaco Editor](https://github.com/microsoft/monaco-editor) 0.57，用于在线 Playground
-- [snapshot-lsp](https://github.com/muedsa/snapshot-lsp)，Playground 的 DSL 语言服务（LSP over Web Worker）
+- [snapshot-lsp](https://github.com/muedsa/snapshot-lsp) 0.3.0，Playground 的 DSL 语言服务（LSP over Web Worker）
 - [@rttnd/starlight-llms-txt](https://github.com/Rettend/starlight-llms-txt) 0.7.0，用于生成 AI 可读取的 Markdown 文档与索引
 - pnpm
 
@@ -93,6 +93,8 @@ pnpm preview
 | `pnpm docs:llms` | 检查 Markdown/llms 导出的覆盖、链接、代码块与表格内容 |
 | `pnpm playground:test` | 验证 LSP Worker 协议、补全、高亮及服务端属性诊断适配 |
 | `pnpm astro -- --help` | 查看 Astro CLI 帮助 |
+
+Playground 的 LSP 0.3.0 与公开 Open Snapshot 服务均已支持 Snapshot Parser 2026-11-05 的新属性语法，已通过线上渲染验证。内置“属性简写”示例展示空白边距、椭圆圆角和变换函数；自行部署时仍需确认实际 Parser 版本，说明见[语法版本与在线渲染](https://snapshot.muedsa.com/guides/language-server/#语法版本与在线渲染)。
 
 ## AI 文档与 Markdown
 
@@ -171,9 +173,9 @@ src/playground/
 
 Monaco 与语言服务只在访问 `/playground/` 时懒加载；编辑器主题跟随站点的深色/浅色切换。
 
-当前使用 `@muedsa/snapshot-lsp@0.2.1`。升级包时同步更新 `package.json`、`pnpm-lock.yaml` 和 `pnpm-workspace.yaml` 中的 `minimumReleaseAgeExclude`，不要仅修改版本号而保留旧锁文件。
+当前使用 `@muedsa/snapshot-lsp@0.3.0`。升级包时同步更新 `package.json`、`pnpm-lock.yaml` 和 `pnpm-workspace.yaml` 中的 `minimumReleaseAgeExclude`，不要仅修改版本号而保留旧锁文件。
 
-0.2.1 按客户端能力决定是否返回 snippet。本项目在初始化报文中显式补充 `snippetSupport`，确保语言服务知道编辑器支持占位符。补全结果仍交给 Monaco 原生处理，包括多行属性值的 `additionalTextEdits`；不要再注册一套重复的补全提供器。升级 Monaco 时需重新确认此适配是否仍有必要。
+语言服务按客户端能力决定是否返回 snippet。本项目在初始化报文中显式补充 `snippetSupport`，确保语言服务知道编辑器支持占位符；0.3.0 模板可带默认值，例如 `softWrap="${1:true}"`。补全结果仍交给 Monaco 原生处理，包括多行属性值的 `additionalTextEdits`、装饰列表的局部替换，以及复合值的自动引号；不要再注册一套重复的补全提供器。升级 Monaco 时需重新确认此适配是否仍有必要。
 
 无引号 URL 中的 `/` 是属性值的一部分。自闭合标签应写成 `<Image url=https://example.com/a.png />`，或使用引号 `<Image url="https://example.com/a.png"/>`。高亮只负责着色，语法与取值诊断由 LSP 提供，最终渲染仍以服务端 Parser 为准。
 
@@ -194,10 +196,14 @@ Monaco 与语言服务只在访问 `/playground/` 时懒加载；编辑器主题
 | 输入与操作 | 预期结果 |
 | --- | --- |
 | `<Snapshot><Container wi\|`，接受 `width`，输入 `100` | 得到 `width="100"`，光标位于引号内，无字面量 `${1}` |
+| `<Snapshot deb\|`，接受 `debug` | 得到 `debug="true"`，true 为可替换的占位值 |
+| `<Snapshot><Container padding=\|8 width="20"/></Snapshot>`，选择 `8 16` | 得到 `padding="8 16"`，后续 width 保留 |
+| `decoration="underline li\|"`，接受 `LINE_THROUGH` | 仅替换当前项，得到 `underline LINE_THROUGH`，不提示重复 UNDERLINE 或 NONE |
 | `<Snapshot><Container wi\|dht="100"/></Snapshot>`，接受 `width` | 仅修正属性名，保留原赋值 |
 | `textDirection="` 后换行输入 `R\|`，再换行输入 `BAD"`，接受 `RTL` | 整个属性值替换为 `"RTL"`，旧值及内部换行全部移除 |
 | `<Snapshot><Text></Te\|` 后换行输入 `</Snapshot>`，接受 `Text` | 补齐 `</Text>`，不吞掉下一行 |
 | `<Snapshot><Image url=https://example.com/a.png fit="CO\|" /></Snapshot>` | 可补全 `CONTAIN` / `COVER`，URL 与后续属性正确着色 |
+| `softWrap="yes"` 改为 `softWrap=" FALSE "` | 先显示布尔错误，修改后诊断消失；裸 softWrap 也合法 |
 
 测试前保存自己的编辑器草稿，完成后恢复；不必点击“运行”。浏览器语言服务与 Open Snapshot 的部署版本相互独立，前端测试通过不代表后端已同步支持全部特性。
 

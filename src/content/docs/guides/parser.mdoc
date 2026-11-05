@@ -57,6 +57,8 @@ fun main() {
 
 编写类 DOM DSL 时，可以使用 [`snapshot-lsp`](/guides/language-server/) 获取标签、属性和枚举补全、悬停说明及实时诊断；[在线 Playground](/playground/) 已集成这项语言服务。
 
+包含 2026-11-05 属性语法更新的 Parser 还支持 `padding="8 16"`、`borderRadius="12 / 6"`、变换函数和枚举别名等写法，详见[通用属性格式](/reference/parser-tags/#通用属性格式)。使用 HTTP 渲染服务时，先核对[编辑器与后端的版本差异](/guides/language-server/#语法版本与在线渲染)；补全通过不代表服务端已升级。
+
 ## 复用 Parser
 
 当标签管理器配置相同，可以长期持有一个 Parser：

@@ -48,7 +48,7 @@ description: Parser 的属性诊断、异常分类、服务端映射和自定义
 
 ```text
 Attr [mainAxisAlignment] value is invalid: …
-元素：<Row>；实际值："MIDDLE"；格式：以下取值之一，区分大小写；可用值：START, END, CENTER, SPACE_BETWEEN, SPACE_AROUND, SPACE_EVENLY；示例：START
+元素：<Row>；实际值："MIDDLE"；格式：以下枚举名称之一；忽略首尾空白和大小写，连字符可代替下划线；可用值：START, END, CENTER, SPACE_BETWEEN, SPACE_AROUND, SPACE_EVENLY；示例：START
 ```
 
 内置说明覆盖数值、CSS 颜色、对齐、边距、半径、偏移、矩阵、边框、阴影、渐变列表、文本装饰、字体特性、SVG 路径、`viewBox`、URL 和 Data URI。枚举候选从实际枚举定义生成；`ClipPath.fit` 仅列出 `FILL` / `CONTAIN`，`fillRule` 仅列出 `NON_ZERO` / `EVEN_ODD`。改名或带前缀的内置属性也保留类型说明，例如 `foregroundGradientBegin`。
@@ -75,7 +75,7 @@ Attr [mainAxisAlignment] value is invalid: …
 | `examples` | `List<String>` | 示例值，默认空列表 |
 | `allowedValues` | `List<String>` | 枚举项或关键字，默认空列表；复合格式中可能只对应其中一个字段 |
 
-例如边框格式中的可用值是样式枚举项，不能只填写 `SOLID`，仍需按 `format` 填写宽度、样式和颜色。
+例如边框格式中的可用值是样式枚举项，不能只填写 `SOLID`，仍需按 `format` 填写宽度、可选样式和颜色（如 `2 red`），或独立写 `none`。
 
 ```kotlin
 import com.muedsa.snapshot.parser.ParseException
@@ -111,13 +111,15 @@ fun explainDocument(source: String) {
 
 属性值格式错误通常指向值的起始字符；只写属性名时指向属性名；缺少必填属性时指向所在标签的起始位置。直接解析属性 Map 时可能缺少标签位置，调用方应处理未设置的位置。
 
-提示中的“实际值”最多预览原值的前 120 个字符，并转义换行、制表符等字符；结构化的 `rawValue` 保留完整内容。用于日志或界面时，应自行选择展示长度。
+提示中的“实际值”最多预览原值的前 120 个字符，并转义换行、制表符等字符；结构化的 `rawValue` 保留完整内容，即使内置解析过程 trim 或规范化了值，也不会覆盖原始输入。用于日志或界面时，应自行选择展示长度。
+
+布尔属性另有明确规则：缺失保留默认值 / 继承，裸属性表示 true；显式 `""`、空白、yes、1、0 等均报错。空字符串不能当作裸属性，详见[布尔值格式](/reference/parser-tags/#数值与布尔值)。
 
 ### 诊断边界
 
 - 仍然在首个错误处抛出异常，不汇总全部问题；根标签属性在 `parse()` 时校验，其余标签属性在 `createWidget()` / `snapshot()` 时校验。
 - 结构错误、组件组合约束以及统一属性解析入口之外的校验可能没有 `attributeDiagnostic`。自定义解析器主动抛出的 `ParseException` 也不会被自动补成属性诊断。
-- 填写说明不改变内置属性语法、默认值或布尔转换规则。例如已赋值的布尔文本只有 `true`（忽略大小写）转换为 true，其余文本转换为 false；不会因为增加格式说明就改成严格报错。
+- 填写说明本身不改变解析行为。2026-11-05 的属性语法更新另行引入了严格布尔校验、枚举别名和复合值简写；旧版可能仍把无效布尔文本当作 false。LSP 和服务端的支持范围需分别核对，见[版本说明](/guides/language-server/#语法版本与在线渲染)。
 
 ### 解析阶段错误
 
