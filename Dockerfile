@@ -7,7 +7,7 @@ WORKDIR /app
 ENV CI=true
 
 RUN corepack enable \
-    && corepack prepare pnpm@10.33.0 --activate
+    && corepack prepare pnpm@12.4.2 --activate
 
 # 先复制依赖清单，使源码变化时可以复用依赖安装层。
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
