@@ -11,7 +11,8 @@ on:
 
 concurrency:
   group: container-${{ github.ref }}
-  cancel-in-progress: true
+  # 串行执行 main 的运行，避免新推送中断正在进行的 SSH 同步。
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 env:
   REGISTRY: ghcr.io
@@ -81,6 +82,24 @@ jobs:
 
       - name: Check Markdown and llms exports
         run: pnpm docs:llms
+
+      - name: Upload static site for SSH deployment
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v7
+        with:
+          name: snapshot-site
+          path: dist/
+          include-hidden-files: true
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 7
+
+  deploy:
+    name: Deploy static site via SSH
+    needs: quality
+    if: github.ref == 'refs/heads/main'
+    permissions: {}
+    uses: ./.github/workflows/deploy-static.yml
 
   build:
     name: Build container image

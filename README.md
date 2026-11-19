@@ -370,7 +370,7 @@ docker run --rm -p 8080:80 snapshot-web
 
 所有触发方式都会先运行 `quality` 作业：安装锁文件中的依赖后，依次执行 `docs:test`、`docs:coverage`、`playground:test`、`build`、`docs:links` 和 `docs:llms`。链接与 AI 文档检查读取本次构建的 `dist/`。`build` 镜像作业通过 `needs: quality` 等待这些检查全部成功，检查失败时不会构建或发布镜像。
 
-`docs:coverage` 对照工作流中 `SNAPSHOT_DOCS_REF` 指定的 Snapshot 提交，源码检出到 `.ci/snapshot`，只读取 Kotlin 源文件，不运行 Gradle。同步上游 API 文档时，应一起更新该提交并运行覆盖检查；这不包含使用方安装流程或 Kotlin 示例编译验证。CI 使用 Node.js 22 和 pnpm 10.33.0，与 Dockerfile 的构建环境保持一致。
+`docs:coverage` 对照工作流中 `SNAPSHOT_DOCS_REF` 指定的 Snapshot 提交，源码检出到 `.ci/snapshot`，只读取 Kotlin 源文件，不运行 Gradle。同步上游 API 文档时，应一起更新该提交并运行覆盖检查；这不包含使用方安装流程或 Kotlin 示例编译验证。CI 使用 Node.js 22 和 `package.json` 中锁定的 pnpm 12.4.2，与 Dockerfile 的构建环境保持一致。
 
 工作流登录 GHCR 和从 GitHub Packages 安装 `@muedsa/snapshot-lsp` 均使用 GitHub 自动提供的 `GITHUB_TOKEN`，不再依赖自定义的 `SNAPSHOT_LSP_TOKEN`。`GITHUB_TOKEN` 可以读取明确授权给当前仓库的其他包：在 **LSP npm 包的 Package settings → Manage Actions access** 中添加本仓库，并授予至少 **Read** 权限。仅拥有 LSP 源码仓库的访问权限不等于拥有包的 Actions 读取权限，详见 [GitHub Packages 的访问控制说明](https://docs.github.com/en/packages/learn-github-packages/configuring-a-packages-access-control-and-visibility#ensuring-workflow-access-to-your-package)。
 
