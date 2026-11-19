@@ -2,6 +2,21 @@ name: Deploy static site via SSH
 
 on:
   workflow_call:
+    secrets:
+      DEPLOY_HOST:
+        required: true
+      DEPLOY_USER:
+        required: true
+      DEPLOY_PORT:
+        required: false
+      DEPLOY_PATH:
+        required: true
+      DEPLOY_SSH_KEY:
+        required: true
+      DEPLOY_SSH_PASSPHRASE:
+        required: false
+      DEPLOY_KNOWN_HOSTS:
+        required: true
 
 jobs:
   sync:
